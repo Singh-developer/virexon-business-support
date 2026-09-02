@@ -4,6 +4,7 @@
 
 @php
 $isAgent = auth()->user()->isAgent();
+<<<<<<< HEAD
 $card = $agent->virtualCard;
 
 if (!$card) {
@@ -14,6 +15,8 @@ if (!$card) {
 
 @if($card)
 @php
+=======
+>>>>>>> 4f8931dc4f474c0b9c8ea80d3239f0d810bd25e2
 
 $statusValue = $card->status instanceof \BackedEnum
 ? $card->status->value
@@ -40,6 +43,7 @@ $statusValue = $card->status instanceof \BackedEnum
 
     </div>
 
+<<<<<<< HEAD
     <div class="flex items-center gap-3">
         <span class="badge {{ $agent->status==='active'?'success':'neutral' }}">
             {{ ucfirst($agent->status) }}
@@ -52,6 +56,11 @@ $statusValue = $card->status instanceof \BackedEnum
             </button>
         </form>
     </div>
+=======
+    <span class="badge success">
+        {{ ucfirst($statusValue) }}
+    </span>
+>>>>>>> 4f8931dc4f474c0b9c8ea80d3239f0d810bd25e2
 
 </div>
 
@@ -484,6 +493,9 @@ $statusValue = $card->status instanceof \BackedEnum
 
     });
 </script>
+<<<<<<< HEAD
 @endif
+=======
+>>>>>>> 4f8931dc4f474c0b9c8ea80d3239f0d810bd25e2
 
 @endsection

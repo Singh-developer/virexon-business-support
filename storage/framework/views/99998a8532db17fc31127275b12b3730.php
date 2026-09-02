@@ -52,7 +52,6 @@
             <section class="content"><?php if(session('success')): ?><div class="flash success">✓ <?php echo e(session('success')); ?></div><?php endif; ?>
                 <?php if($errors->any()): ?><div class="flash error"><?php echo e($errors->first()); ?></div><?php endif; ?><?php echo e($slot ?? ''); ?><?php echo $__env->yieldContent('content'); ?></section>
 
-
             <footer class="footer">© <?php echo e(now()->year); ?> Agent Business Support · Partnering your growth</footer>
         </main>
     </div>

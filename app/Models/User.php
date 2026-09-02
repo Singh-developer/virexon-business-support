@@ -26,7 +26,6 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
-
     public function business()
     {
         return $this->belongsTo(Business::class);

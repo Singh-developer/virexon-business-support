@@ -30,6 +30,7 @@
                 @if(auth()->user()->isAdmin())
                 <a class="nav-item {{ request()->routeIs('settings.gateways', 'settings.payment-mode') ? 'active' : '' }}" href="{{ route('settings.gateways') }}">⚙ <span>Platform Settings</span></a>
                 @endif
+                <div class="nav-label">WORKSPACE</div><a class="nav-item {{ request()->routeIs('dashboard')?'active':'' }}" href="{{ route('dashboard') }}">⌂ <span>Dashboard</span></a><a class="nav-item {{ request()->routeIs('businesses.*')?'active':'' }}" href="{{ route('businesses.index') }}">▦ <span>Businesses</span></a>@if(auth()->user()->isAdmin())<a class="nav-item {{ request()->routeIs('agents.*')?'active':'' }}" href="{{ route('agents.index') }}">◉ <span>Agents</span></a>@endif<a class="nav-item {{ request()->routeIs('cards.*')?'active':'' }}" href="{{ route('cards.index') }}">▣ <span>Virtual Cards</span></a><a class="nav-item {{ request()->routeIs('payments.*')?'active':'' }}" href="{{ route('payments.index') }}">↗ <span>Payments</span></a><a class="nav-item {{ request()->routeIs('transactions.*')?'active':'' }}" href="{{ route('transactions.index') }}">≡ <span>Transactions</span></a>@if(in_array(auth()->user()->role?->slug,['super-admin','admin'],true))<a class="nav-item {{ request()->routeIs('settings.*')?'active':'' }}" href="{{ route('settings.gateways') }}">⚙ <span>Settings</span></a>@endif
             </div>
             <div class="sidebar-footer">
                 <div class="secure">● Live secure environment</div>
@@ -53,6 +54,23 @@
                 @if($errors->any())<div class="flash error">{{ $errors->first() }}</div>@endif{{ $slot ?? '' }}@yield('content')</section>
 
 
+            <a
+                class="nav-item {{ request()->routeIs('settings.profile') ? 'active' : '' }}"
+                href="{{ route('settings.profile') }}">
+                ⚙
+                <span>My Settings</span>
+            </a>
+
+            @if(auth()->user()->isAdmin())
+
+            <a
+                class="nav-item {{ request()->routeIs('settings.gateways', 'settings.payment-mode') ? 'active' : '' }}"
+                href="{{ route('settings.gateways') }}">
+                ⚙
+                <span>Platform Settings</span>
+            </a>
+
+            @endif
             <footer class="footer">© {{ now()->year }} Agent Business Support · Partnering your growth</footer>
         </main>
     </div>

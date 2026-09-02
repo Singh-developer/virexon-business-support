@@ -26,8 +26,6 @@ Route::post('/register-agent', [RegistrationController::class, 'store'])->name('
 
 Route::get('/login', [
     AuthController::class,
-    'showLogin'
-])->name('login');
 
 Route::post('/login', [
     AuthController::class,
