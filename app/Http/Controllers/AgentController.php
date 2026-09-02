@@ -162,6 +162,22 @@ class AgentController extends Controller
             );
     }
 
+    public function toggleStatus(User $agent)
+    {
+        abort_unless($agent->isAgent(), 404);
+
+        $agent->update([
+            'status' => $agent->status === 'active' ? 'inactive' : 'active'
+        ]);
+
+        $statusText = $agent->status === 'active' ? 'enabled' : 'disabled';
+
+        return back()->with(
+            'success',
+            "Agent login access has been {$statusText}."
+        );
+    }
+
     public function show(User $agent)
     {
         abort_unless(

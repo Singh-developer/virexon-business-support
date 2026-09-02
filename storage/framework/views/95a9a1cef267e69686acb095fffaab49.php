@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('content'); ?>
 
-@section('content')
-
-@php
+<?php
 $isAgent = auth()->user()->isAgent();
 $card = $agent->virtualCard;
 
@@ -10,52 +8,58 @@ if (!$card) {
     // If agent has no card, we shouldn't try to render the card details
     echo "<div class='panel'><div class='panel-head'><h3>No Virtual Card</h3><p>This agent does not have a virtual card assigned yet.</p></div></div>";
 }
-@endphp
+?>
 
-@if($card)
-@php
+<?php if($card): ?>
+<?php
 
 $statusValue = $card->status instanceof \BackedEnum
 ? $card->status->value
 : $card->status;
-@endphp
+?>
 
 <div class="page-head">
 
     <div>
 
         <div class="eyebrow">
-            {{ $isAgent ? 'MY VIRTUAL CARD' : 'CARD DETAILS' }}
+            <?php echo e($isAgent ? 'MY VIRTUAL CARD' : 'CARD DETAILS'); ?>
+
         </div>
 
         <h1>
-            {{ $card->reference }}
+            <?php echo e($card->reference); ?>
+
         </h1>
 
         <p>
-            {{ $card->cardholder_name }}
+            <?php echo e($card->cardholder_name); ?>
+
             ·
-            {{ $card->business->name }}
+            <?php echo e($card->business->name); ?>
+
         </p>
 
     </div>
 
     <div class="flex items-center gap-3">
-        <span class="badge {{ $agent->status==='active'?'success':'neutral' }}">
-            {{ ucfirst($agent->status) }}
+        <span class="badge <?php echo e($agent->status==='active'?'success':'neutral'); ?>">
+            <?php echo e(ucfirst($agent->status)); ?>
+
         </span>
-        <form method="POST" action="{{ route('agents.toggle-status', $agent) }}">
-            @csrf
-            @method('PATCH')
-            <button type="submit" class="btn tiny {{ $agent->status === 'active' ? 'secondary' : 'primary' }}" onclick="return confirm('Are you sure you want to {{ $agent->status === 'active' ? 'disable' : 'enable' }} login for this agent?');">
-                {{ $agent->status === 'active' ? 'Disable Login' : 'Enable Login' }}
+        <form method="POST" action="<?php echo e(route('agents.toggle-status', $agent)); ?>">
+            <?php echo csrf_field(); ?>
+            <?php echo method_field('PATCH'); ?>
+            <button type="submit" class="btn tiny <?php echo e($agent->status === 'active' ? 'secondary' : 'primary'); ?>" onclick="return confirm('Are you sure you want to <?php echo e($agent->status === 'active' ? 'disable' : 'enable'); ?> login for this agent?');">
+                <?php echo e($agent->status === 'active' ? 'Disable Login' : 'Enable Login'); ?>
+
             </button>
         </form>
     </div>
 
 </div>
 
-@if(session('card_created') && session('generated_cvv'))
+<?php if(session('card_created') && session('generated_cvv')): ?>
 
 <div class="flash success">
 
@@ -64,7 +68,8 @@ $statusValue = $card->status instanceof \BackedEnum
     <div style="margin-top:10px;">
         Sandbox CVV:
         <strong class="mono">
-            {{ session('generated_cvv') }}
+            <?php echo e(session('generated_cvv')); ?>
+
         </strong>
     </div>
 
@@ -75,12 +80,10 @@ $statusValue = $card->status instanceof \BackedEnum
 
 </div>
 
-@endif
+<?php endif; ?>
 
 
-{{-- ================================================================
-     CARD VISUAL
-================================================================ --}}
+
 
 <div class="card-visual">
 
@@ -99,7 +102,8 @@ $statusValue = $card->status instanceof \BackedEnum
     <div
         id="card-pan-display"
         class="card-number">
-        {{ $card->maskedPan() }}
+        <?php echo e($card->maskedPan()); ?>
+
     </div>
 
     <div class="card-bottom">
@@ -111,7 +115,8 @@ $statusValue = $card->status instanceof \BackedEnum
             </div>
 
             <div class="card-holder">
-                {{ strtoupper($card->cardholder_name) }}
+                <?php echo e(strtoupper($card->cardholder_name)); ?>
+
             </div>
 
         </div>
@@ -124,7 +129,8 @@ $statusValue = $card->status instanceof \BackedEnum
 
             <div class="card-expiry">
 
-                {{ $card->expiry_date->format('m/y') }}
+                <?php echo e($card->expiry_date->format('m/y')); ?>
+
 
             </div>
 
@@ -135,9 +141,7 @@ $statusValue = $card->status instanceof \BackedEnum
 </div>
 
 
-{{-- ================================================================
-     PAN CONTROLS
-================================================================ --}}
+
 
 <div class="panel">
 
@@ -167,7 +171,8 @@ $statusValue = $card->status instanceof \BackedEnum
             </span>
 
             <strong>
-                {{ $card->cardholder_name }}
+                <?php echo e($card->cardholder_name); ?>
+
             </strong>
 
         </div>
@@ -180,7 +185,8 @@ $statusValue = $card->status instanceof \BackedEnum
             </span>
 
             <strong>
-                {{ $card->expiry_date->format('m / Y') }}
+                <?php echo e($card->expiry_date->format('m / Y')); ?>
+
             </strong>
 
         </div>
@@ -195,7 +201,8 @@ $statusValue = $card->status instanceof \BackedEnum
             <strong
                 id="card-pan-text"
                 class="mono">
-                {{ $card->maskedPan() }}
+                <?php echo e($card->maskedPan()); ?>
+
             </strong>
 
         </div>
@@ -243,9 +250,7 @@ $statusValue = $card->status instanceof \BackedEnum
 </div>
 
 
-{{-- ================================================================
-     LIMITS
-================================================================ --}}
+
 
 <div class="stats-grid three">
 
@@ -256,7 +261,8 @@ $statusValue = $card->status instanceof \BackedEnum
         </div>
 
         <div class="stat-value">
-            ₹{{ number_format($card->card_limit, 2) }}
+            ₹<?php echo e(number_format($card->card_limit, 2)); ?>
+
         </div>
 
     </div>
@@ -269,7 +275,8 @@ $statusValue = $card->status instanceof \BackedEnum
         </div>
 
         <div class="stat-value">
-            ₹{{ number_format($card->current_usage, 2) }}
+            ₹<?php echo e(number_format($card->current_usage, 2)); ?>
+
         </div>
 
     </div>
@@ -282,7 +289,8 @@ $statusValue = $card->status instanceof \BackedEnum
         </div>
 
         <div class="stat-value">
-            ₹{{ number_format($card->remaining_limit, 2) }}
+            ₹<?php echo e(number_format($card->remaining_limit, 2)); ?>
+
         </div>
 
     </div>
@@ -290,11 +298,9 @@ $statusValue = $card->status instanceof \BackedEnum
 </div>
 
 
-@if(! $isAgent)
+<?php if(! $isAgent): ?>
 
-{{-- ============================================================
-         ADMIN ONLY
-    ============================================================= --}}
+
 
 <div class="panel">
 
@@ -324,7 +330,8 @@ $statusValue = $card->status instanceof \BackedEnum
             </span>
 
             <strong>
-                ₹{{ number_format($card->daily_limit, 2) }}
+                ₹<?php echo e(number_format($card->daily_limit, 2)); ?>
+
             </strong>
 
         </div>
@@ -337,7 +344,8 @@ $statusValue = $card->status instanceof \BackedEnum
             </span>
 
             <strong>
-                ₹{{ number_format($card->monthly_limit, 2) }}
+                ₹<?php echo e(number_format($card->monthly_limit, 2)); ?>
+
             </strong>
 
         </div>
@@ -350,7 +358,8 @@ $statusValue = $card->status instanceof \BackedEnum
             </span>
 
             <strong>
-                ₹{{ number_format($card->per_transaction_limit, 2) }}
+                ₹<?php echo e(number_format($card->per_transaction_limit, 2)); ?>
+
             </strong>
 
         </div>
@@ -359,7 +368,7 @@ $statusValue = $card->status instanceof \BackedEnum
 
 </div>
 
-@endif
+<?php endif; ?>
 
 
 <script>
@@ -389,11 +398,11 @@ $statusValue = $card->status instanceof \BackedEnum
         try {
 
             const response = await fetch(
-                @json(route('cards.reveal-pan', $card)), {
+                <?php echo json_encode(route('cards.reveal-pan', $card), 512) ?>, {
                     method: 'POST',
 
                     headers: {
-                        'X-CSRF-TOKEN': @json(csrf_token()),
+                        'X-CSRF-TOKEN': <?php echo json_encode(csrf_token(), 15, 512) ?>,
 
                         'Accept': 'application/json',
                     },
@@ -484,6 +493,7 @@ $statusValue = $card->status instanceof \BackedEnum
 
     });
 </script>
-@endif
+<?php endif; ?>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/agents/show.blade.php ENDPATH**/ ?>

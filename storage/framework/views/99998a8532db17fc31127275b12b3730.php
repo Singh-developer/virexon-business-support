@@ -18,7 +18,18 @@
                 </div>
             </div>
             <div class="sidebar-scroll">
-                <div class="nav-label">WORKSPACE</div><a class="nav-item <?php echo e(request()->routeIs('dashboard')?'active':''); ?>" href="<?php echo e(route('dashboard')); ?>">⌂ <span>Dashboard</span></a><a class="nav-item <?php echo e(request()->routeIs('businesses.*')?'active':''); ?>" href="<?php echo e(route('businesses.index')); ?>">▦ <span>Businesses</span></a><?php if(auth()->user()->isAdmin()): ?><a class="nav-item <?php echo e(request()->routeIs('agents.*')?'active':''); ?>" href="<?php echo e(route('agents.index')); ?>">◉ <span>Agents</span></a><?php endif; ?><a class="nav-item <?php echo e(request()->routeIs('cards.*')?'active':''); ?>" href="<?php echo e(route('cards.index')); ?>">▣ <span>Virtual Cards</span></a><a class="nav-item <?php echo e(request()->routeIs('payments.*')?'active':''); ?>" href="<?php echo e(route('payments.index')); ?>">↗ <span>Payments</span></a><a class="nav-item <?php echo e(request()->routeIs('transactions.*')?'active':''); ?>" href="<?php echo e(route('transactions.index')); ?>">≡ <span>Transactions</span></a><?php if(in_array(auth()->user()->role?->slug,['super-admin','admin'],true)): ?><a class="nav-item <?php echo e(request()->routeIs('settings.*')?'active':''); ?>" href="<?php echo e(route('settings.gateways')); ?>">⚙ <span>Settings</span></a><?php endif; ?>
+                <div class="nav-label">WORKSPACE</div>
+                <a class="nav-item <?php echo e(request()->routeIs('dashboard', 'admin.dashboard')?'active':''); ?>" href="<?php echo e(auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard')); ?>">⌂ <span>Dashboard</span></a>
+                <a class="nav-item <?php echo e(request()->routeIs('businesses.*')?'active':''); ?>" href="<?php echo e(route('businesses.index')); ?>">▦ <span>Businesses</span></a>
+                <?php if(auth()->user()->isAdmin()): ?><a class="nav-item <?php echo e(request()->routeIs('agents.*')?'active':''); ?>" href="<?php echo e(route('agents.index')); ?>">◉ <span>Agents</span></a><?php endif; ?>
+                <a class="nav-item <?php echo e(request()->routeIs('cards.*')?'active':''); ?>" href="<?php echo e(route('cards.index')); ?>">▣ <span>Virtual Cards</span></a>
+                <a class="nav-item <?php echo e(request()->routeIs('payments.*')?'active':''); ?>" href="<?php echo e(route('payments.index')); ?>">↗ <span>Payments</span></a>
+                <a class="nav-item <?php echo e(request()->routeIs('transactions.*')?'active':''); ?>" href="<?php echo e(route('transactions.index')); ?>">≡ <span>Transactions</span></a>
+                <div class="nav-label" style="margin-top:20px;">SETTINGS</div>
+                <a class="nav-item <?php echo e(request()->routeIs('settings.profile') ? 'active' : ''); ?>" href="<?php echo e(route('settings.profile')); ?>">⚙ <span>My Settings</span></a>
+                <?php if(auth()->user()->isAdmin()): ?>
+                <a class="nav-item <?php echo e(request()->routeIs('settings.gateways', 'settings.payment-mode') ? 'active' : ''); ?>" href="<?php echo e(route('settings.gateways')); ?>">⚙ <span>Platform Settings</span></a>
+                <?php endif; ?>
             </div>
             <div class="sidebar-footer">
                 <div class="secure">● Live secure environment</div>
@@ -41,23 +52,7 @@
             <section class="content"><?php if(session('success')): ?><div class="flash success">✓ <?php echo e(session('success')); ?></div><?php endif; ?>
                 <?php if($errors->any()): ?><div class="flash error"><?php echo e($errors->first()); ?></div><?php endif; ?><?php echo e($slot ?? ''); ?><?php echo $__env->yieldContent('content'); ?></section>
 
-            <a
-                class="nav-item <?php echo e(request()->routeIs('settings.profile') ? 'active' : ''); ?>"
-                href="<?php echo e(route('settings.profile')); ?>">
-                ⚙
-                <span>My Settings</span>
-            </a>
 
-            <?php if(auth()->user()->isAdmin()): ?>
-
-            <a
-                class="nav-item <?php echo e(request()->routeIs('settings.gateways', 'settings.payment-mode') ? 'active' : ''); ?>"
-                href="<?php echo e(route('settings.gateways')); ?>">
-                ⚙
-                <span>Platform Settings</span>
-            </a>
-
-            <?php endif; ?>
             <footer class="footer">© <?php echo e(now()->year); ?> Agent Business Support · Partnering your growth</footer>
         </main>
     </div>

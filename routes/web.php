@@ -11,7 +11,8 @@ use App\Http\Controllers\{
     PaymentController,
     TransactionController,
     WebhookController,
-    SettingsController
+    SettingsController,
+    RegistrationController
 };
 
 /*
@@ -19,6 +20,9 @@ use App\Http\Controllers\{
 | Authentication
 |--------------------------------------------------------------------------
 */
+
+Route::get('/register-agent', [RegistrationController::class, 'create'])->name('register.agent');
+Route::post('/register-agent', [RegistrationController::class, 'store'])->name('register.agent.store');
 
 Route::get('/login', [
     AuthController::class,
@@ -42,6 +46,10 @@ Route::post('/logout', [
 |--------------------------------------------------------------------------
 */
 
+Route::get('/', function () {
+    return view('home');
+})->name('home');
+
 Route::middleware('auth')->group(function () {
 
     /*
@@ -50,12 +58,20 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/', function () {
+    /* Route::get('/', function () {
         return redirect()->route('dashboard');
-    });
+    }); */
 
-    Route::get('/dashboard', DashboardController::class)
-        ->name('dashboard');
+    Route::get('/dashboard', function () {
+        if (auth()->user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+        return view('dashboard.dashboard');
+    })->name('dashboard');
+
+    Route::get('/admin/dashboard', DashboardController::class)
+        ->name('admin.dashboard')
+        ->middleware('role:super-admin,admin');
 
 
     /*
@@ -129,6 +145,11 @@ Route::middleware('auth')->group(function () {
         /*
         | Agent Management
         */
+        Route::patch(
+        'agents/{agent}/toggle-status',
+        [AgentController::class, 'toggleStatus']
+    )->name('agents.toggle-status');
+
         Route::resource(
             'agents',
             AgentController::class
@@ -225,16 +246,39 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
+    /*
+     * Agent + Admin own profile.
+     */
+    Route::get('/settings/profile', [
+        SettingsController::class,
+        'profile',
+    ])->name('settings.profile');
+
+    Route::put('/settings/profile', [
+        SettingsController::class,
+        'updateProfile',
+    ])->name('settings.profile.update');
+
     Route::middleware('role:super-admin,admin')->group(function () {
 
         Route::get('/settings/gateways', [
             SettingsController::class,
-            'index'
+            'gateways'
         ])->name('settings.gateways');
 
-        Route::post('/settings/gateways/{gateway}', [
+        Route::post('/settings/payment-mode', [
             SettingsController::class,
-            'update'
+            'updatePaymentMode',
+        ])->name('settings.payment-mode.update');
+
+        Route::post('/settings/gateways', [
+            SettingsController::class,
+            'storeGateway'
+        ])->name('settings.gateways.store');
+
+        Route::put('/settings/gateways/{gateway}', [
+            SettingsController::class,
+            'updateGateway'
         ])->name('settings.gateways.update');
     });
 });
@@ -274,45 +318,28 @@ Route::post('/payments/paytm/callback', [
 |--------------------------------------------------------------------------
 */
 
-/*
- * Agent + Admin own profile.
- */
-Route::get('/settings/profile', [
-    SettingsController::class,
-    'profile',
-])->name('settings.profile');
-
-Route::put('/settings/profile', [
-    SettingsController::class,
-    'updateProfile',
-])->name('settings.profile.update');
 
 
-/*
-|--------------------------------------------------------------------------
-| Admin / Super Admin only
-|--------------------------------------------------------------------------
-*/
 
-Route::middleware(
-    'role:super-admin,admin'
-)->group(function () {
+/* Step form mail OTP */
 
-    Route::get('/settings/gateways', [
-        SettingsController::class,
-        'gateways',
-    ])->name('settings.gateways');
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
-    Route::post('/settings/payment-mode', [
-        SettingsController::class,
-        'updatePaymentMode',
-    ])->name('settings.payment-mode.update');
+Route::post('/register/agent/send-otp', function (Request $request) {
+    $user = auth()->user();
 
-    Route::post(
-        '/settings/gateways/{gateway}',
-        [
-            SettingsController::class,
-            'updateGateway',
-        ]
-    )->name('settings.gateways.update');
-});
+    if (!$user) {
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+
+    $otp = rand(100000, 999999);
+    session(['loan_form_otp' => $otp]);
+
+    Mail::raw("Your verification OTP for the application is: $otp", function ($message) use ($user) {
+        $message->to($user->email)
+            ->subject('Loan Application - Verification OTP');
+    });
+
+    return response()->json(['success' => true]);
+})->name('agent.send-otp')->middleware('auth');

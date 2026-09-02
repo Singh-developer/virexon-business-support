@@ -128,38 +128,54 @@ class SettingsController extends Controller
     |--------------------------------------------------------------------------
     */
 
+    public function storeGateway(Request $request)
+    {
+        abort_unless(auth()->user()->isAdmin(), 403);
+
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:payment_gateways,slug',
+        ]);
+
+        PaymentGateway::create([
+            'name' => $data['name'],
+            'slug' => \Illuminate\Support\Str::slug($data['slug']),
+            'status' => false,
+            'environment' => 'test',
+            'credentials' => [],
+        ]);
+
+        return back()->with('success', 'Payment gateway added successfully.');
+    }
+
     public function updateGateway(
         Request $request,
         PaymentGateway $gateway
     ) {
-        abort_unless(
-            auth()->user()->isAdmin(),
-            403
-        );
+        abort_unless(auth()->user()->isAdmin(), 403);
 
         $data = $request->validate([
-            'status' => [
-                'nullable',
-                'boolean',
-            ],
-
-            'environment' => [
-                'required',
-                'in:test,staging,production',
-            ],
+            'status' => 'nullable|boolean',
+            'environment' => 'required|in:test,staging,production',
+            'credentials' => 'nullable|array',
+            'credentials.*' => 'nullable|string',
         ]);
+
+        $credentials = $gateway->credentials ?? [];
+        if (!empty($data['credentials'])) {
+            foreach ($data['credentials'] as $key => $val) {
+                if (!empty($val)) {
+                    $credentials[$key] = $val;
+                }
+            }
+        }
 
         $gateway->update([
-            'status' =>
-                $request->boolean('status'),
-
-            'environment' =>
-                $data['environment'],
+            'status' => $request->boolean('status'),
+            'environment' => $data['environment'],
+            'credentials' => $credentials,
         ]);
 
-        return back()->with(
-            'success',
-            'Gateway settings updated.'
-        );
+        return back()->with('success', 'Gateway settings updated.');
     }
 }

@@ -7,8 +7,14 @@
   },
   "devDependencies": {
     "@vitejs/plugin-basic-ssl": "^2.0.0",
+    "autoprefixer": "^10.5.4",
     "axios": "^1.8.4",
-    "vite": "^7.0.0",
-    "laravel-vite-plugin": "^2.0.0"
+    "laravel-vite-plugin": "^2.0.0",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
+    "vite": "^7.0.0"
+  },
+  "dependencies": {
+    "alpinejs": "^3.17.1"
   }
 }
