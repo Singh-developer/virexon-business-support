@@ -1,0 +1,20 @@
+<?php
+namespace Database\Factories;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
+use App\Models\User;
+class UserFactory extends Factory {
+    protected $model = User::class;
+    protected static ?string $password;
+
+    public function definition(): array {
+        return [
+            'name' => fake()->name(),
+            'email' => fake()->unique()->safeEmail(),
+            'email_verified_at' => now(),
+            'password' => static::$password ??= 'password',
+            'remember_token' => Str::random(10),
+            'status' => 'active'
+        ];
+    }
+}
