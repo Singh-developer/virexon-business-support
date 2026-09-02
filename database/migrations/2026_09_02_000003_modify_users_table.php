@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration;use Illuminate\Database\Schema\Blueprint;use Illuminate\Support\Facades\Schema;
+return new class extends Migration {public function up():void{Schema::table('users',function(Blueprint $t){$t->foreignId('role_id')->nullable()->after('id')->constrained()->nullOnDelete();$t->foreignId('business_id')->nullable()->after('role_id')->constrained()->nullOnDelete();$t->string('phone')->nullable()->after('email');$t->string('status')->default('active')->index();});}public function down():void{Schema::table('users',function(Blueprint $t){$t->dropForeign(['role_id']);$t->dropForeign(['business_id']);$t->dropColumn(['role_id','business_id','phone','status']);});}};
