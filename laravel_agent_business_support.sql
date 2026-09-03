@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 02, 2026 at 03:09 PM
+-- Generation Time: Sep 03, 2026 at 01:54 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -96,7 +96,11 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (9, '2026_09_02_000008_add_secure_card_details_to_virtual_cards', 1),
 (10, '2026_08_27_100032_create_user_details_table', 2),
 (11, '2026_08_31_081605_add_status_to_user_details_table', 2),
-(12, '2026_09_02_000009_create_system_settings_table', 2);
+(12, '2026_09_02_000009_create_system_settings_table', 2),
+(13, '2026_09_03_094720_add_new_fields_to_user_details_table', 3),
+(14, '2026_09_03_101510_create_reference_people_table', 4),
+(15, '2026_09_03_113536_change_credentials_column_type_in_payment_gateways', 5),
+(16, '2026_09_03_121652_add_personal_email_to_user_details', 6);
 
 -- --------------------------------------------------------
 
@@ -154,7 +158,7 @@ CREATE TABLE `payment_gateways` (
   `slug` varchar(255) NOT NULL,
   `status` tinyint(1) NOT NULL DEFAULT 0,
   `environment` varchar(255) NOT NULL DEFAULT 'test',
-  `credentials` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`credentials`)),
+  `credentials` text DEFAULT NULL,
   `configuration` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`configuration`)),
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -165,9 +169,9 @@ CREATE TABLE `payment_gateways` (
 --
 
 INSERT INTO `payment_gateways` (`id`, `name`, `slug`, `status`, `environment`, `credentials`, `configuration`, `created_at`, `updated_at`) VALUES
-(1, 'Mock Sandbox', 'mock', 1, 'test', NULL, NULL, '2026-09-02 09:20:37', '2026-09-02 09:20:37'),
-(2, 'Razorpay', 'razorpay', 0, 'test', NULL, NULL, '2026-09-02 09:20:37', '2026-09-02 09:20:37'),
-(3, 'Paytm', 'paytm', 0, 'staging', NULL, NULL, '2026-09-02 09:20:37', '2026-09-02 09:20:37');
+(1, 'Mock Sandbox', 'mock', 1, 'sandbox', 'eyJpdiI6InE2L0YrVmpMYS9Ub0NrWFNXM051dXc9PSIsInZhbHVlIjoieDlxTXA5b0xPclhha2dzdnh5T1hHOXZHdGRBV3VxK1ljR3psOVJxNWxLbEE2WlhQZXZmU2NMMkNYZi8rWkNLQUNjY1hTbm9iR3pyeTZqYjVRYWNwNk84d2dDYUZPQUhEQ3d5NDJQTHVpTnFXeG54Yi9LTWp5Z1BtczFJcEZ2bTdnUWM2d3pVRFdEZDU1UXI5L1dOUS80L1FDY0lMR1k3bEFHSThYZThVRnpFPSIsIm1hYyI6ImYyMTJjZGVlNzg5MDA1MjYzY2RlZjg2NTExZWEyMzc5ZjVjM2FlOGE1MDI0ZGI2NzE3MmY1N2Y1YTg2Y2IzZmEiLCJ0YWciOiIifQ==', NULL, '2026-09-02 09:20:37', '2026-09-03 06:13:11'),
+(2, 'Razorpay', 'razorpay', 0, 'sandbox', 'eyJpdiI6Ilc0dXlBQTJ6RE5iNEpzNzMxT0RLbFE9PSIsInZhbHVlIjoicVVBRnJMcjcwN2loT2V6dEQ3ZTBsWXFIWXNuOCtCWlFqeEQ4WXdpakt0TUNjcmVyd05nN3hMa3VndWliZlNoL3RkRjZzRFc1TlBGM1hOOCt4eThoNlFkc1BaUzd6VGYza2Rla1IrTUZ0NmxrV0tieGlBWkJhQ1lKSzhZempjU0RyVWwzc2JGcERsSThzZy8rd2NkY0ZGYWRGZUNjdThscEZaVXRxamQ1L2N3PSIsIm1hYyI6IjU0MzcxOWQwNTg5MjYyYzc1ZWFmZTlhMWEyNDFjMTY2Zjk2MGNiOWQyNzY3MWM0OGM4NjU0ZDJjYTA3NTZiNjMiLCJ0YWciOiIifQ==', NULL, '2026-09-02 09:20:37', '2026-09-03 06:17:56'),
+(3, 'Paytm', 'paytm', 0, 'sandbox', 'eyJpdiI6IkJsaEtFV1RJY0Q5MzBkNi9yNnBEWmc9PSIsInZhbHVlIjoiMVBGZjBKb2xXV3I0bjFVOWVHaUk5YUZoaDhuSzJHVW1pUXFpb0tiKzZhUWFrNkR5TndVREtwaER1V0pvYWZRN3FjVCtPKzBhQ3JLY1VLRnVxRU92RTdaNVp2K2xHQlQ5cGlFbVBiand0ZjJXSzNnZU9wZUdIQ0hzY2t5ZTNwSndqczlqbFpyWHM2andGTndnd25aTUJzcnNhZVlkNEt1Q1A5ZlVtc2UveFpZPSIsIm1hYyI6IjIxNjM3YTNjZWY3ZGFiNDQyMjM4ZDBkMTNkNDEzM2M1YjY4NGI2ZWQ1ZjRiMzJhMDhiZGMyMWNkZTUzODJmMTAiLCJ0YWciOiIifQ==', NULL, '2026-09-02 09:20:37', '2026-09-03 06:18:02');
 
 -- --------------------------------------------------------
 
@@ -241,6 +245,31 @@ INSERT INTO `permission_role` (`permission_id`, `role_id`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `reference_people`
+--
+
+CREATE TABLE `reference_people` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `person_name` varchar(255) NOT NULL,
+  `mobile` varchar(255) NOT NULL,
+  `company_agent_id` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `reference_people`
+--
+
+INSERT INTO `reference_people` (`id`, `user_id`, `person_name`, `mobile`, `company_agent_id`, `created_at`, `updated_at`) VALUES
+(1, 2, 'persoan 1', '8526548526', 'gdfgdfg', '2026-09-03 05:04:28', '2026-09-03 05:04:28'),
+(2, 5, 'hgj', '5555665565', 'hjghj', '2026-09-03 05:11:23', '2026-09-03 05:11:23'),
+(3, 5, '67rh', '7733883388', 'ghrtggui5t', '2026-09-03 05:11:23', '2026-09-03 05:11:23');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `roles`
 --
 
@@ -274,6 +303,13 @@ CREATE TABLE `system_settings` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `system_settings`
+--
+
+INSERT INTO `system_settings` (`id`, `key`, `value`, `created_at`, `updated_at`) VALUES
+(1, 'payment_mode', 'sandbox', '2026-09-03 05:58:27', '2026-09-03 05:58:30');
 
 -- --------------------------------------------------------
 
@@ -336,7 +372,11 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `role_id`, `business_id`, `name`, `email`, `phone`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`, `status`) VALUES
 (1, 1, NULL, 'Super Admin', 'admin@agent-support.local', '+91 90000 00001', NULL, '$2y$12$jYt0vnT5Na2Tau/OK.NTOOsnulaSfwECScH66NjXbLao9dFinM7KG', NULL, '2026-09-02 09:20:36', '2026-09-02 09:20:36', 'active'),
-(2, 3, 1, 'Rahul Sharma', 'agent@agent-support.local', '+91 90000 00002', NULL, '$2y$12$AZ0UsOZpwAbOYtAKY3ihae6i6yENkA4e92wwlTwPdRvExM4DgfuJG', NULL, '2026-09-02 09:20:37', '2026-09-02 09:20:37', 'active');
+(2, 3, 1, 'erewr', 'firstform@yopmail.com', '+91 90000 00002', NULL, '$2y$12$AZ0UsOZpwAbOYtAKY3ihae6i6yENkA4e92wwlTwPdRvExM4DgfuJG', NULL, '2026-09-02 09:20:37', '2026-09-03 05:04:28', 'active'),
+(4, 3, NULL, 'fewef', 'gfgf@yopmail.com', NULL, NULL, '$2y$12$zKraq/DZzI8MfSwKoM15o.CArAn.ylTcYKhDpeXqUbRTHzcPz9D.m', NULL, '2026-09-02 14:48:01', '2026-09-02 14:48:01', 'active'),
+(5, 3, NULL, 'tttt', 'ttttttt@yopmail.com', NULL, NULL, '$2y$12$fJqjtGuegxTsghnXNcOGredfm4KTWs3/5zu/.l1j8iOaDjxO1e0Om', NULL, '2026-09-03 05:11:23', '2026-09-03 05:11:23', 'active'),
+(6, 3, NULL, 'Test Agent', 'testagent@example.com', NULL, NULL, '$2y$12$cZghAEfoDddv5gOOA0GKcuFH/MrKGSSp9dTBnEnJ8tC1vDtj4rleW', NULL, '2026-09-03 10:42:34', '2026-09-03 10:42:34', 'active'),
+(7, 3, 1, 'Rahul Sharma', 'agent@agent-support.local', '+91 90000 00002', NULL, '$2y$12$siAzHPMO98jkvRAsGVafhOs9Spgu2HE3rBrd2MQ5RHZJ8zoNUnBDu', NULL, '2026-09-03 10:48:11', '2026-09-03 10:48:11', 'active');
 
 -- --------------------------------------------------------
 
@@ -354,6 +394,7 @@ CREATE TABLE `user_details` (
   `date_of_birth` date DEFAULT NULL,
   `gender` enum('male','female','other') DEFAULT NULL,
   `mobile` varchar(255) DEFAULT NULL,
+  `personal_email` varchar(255) DEFAULT NULL,
   `whatsapp_number` varchar(255) DEFAULT NULL,
   `is_married` tinyint(1) NOT NULL DEFAULT 0,
   `spouse_name` varchar(255) DEFAULT NULL,
@@ -377,8 +418,22 @@ CREATE TABLE `user_details` (
   `pan_file_path` varchar(255) DEFAULT NULL,
   `aadhar_file_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `guardian_name` varchar(255) DEFAULT NULL,
+  `address_line_2` varchar(255) DEFAULT NULL,
+  `account_type` varchar(255) DEFAULT NULL,
+  `branch_name` varchar(255) DEFAULT NULL,
+  `purpose_of_advance` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `user_details`
+--
+
+INSERT INTO `user_details` (`id`, `user_id`, `application_status`, `agent_id_number`, `father_name`, `mother_name`, `date_of_birth`, `gender`, `mobile`, `personal_email`, `whatsapp_number`, `is_married`, `spouse_name`, `spouse_mobile`, `current_address`, `current_city`, `current_state`, `current_pincode`, `permanent_address`, `permanent_city`, `permanent_state`, `permanent_pincode`, `loan_amount`, `loan_tenure`, `account_name`, `bank_name`, `account_number`, `routing_number`, `pan_number`, `aadhar_number`, `pan_file_path`, `aadhar_file_path`, `created_at`, `updated_at`, `guardian_name`, `address_line_2`, `account_type`, `branch_name`, `purpose_of_advance`) VALUES
+(1, 4, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50000.00, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-09-02 14:48:01', '2026-09-02 14:48:01', NULL, NULL, NULL, NULL, NULL),
+(4, 2, 'pending', '4324', 'rewrr', NULL, '2026-09-08', 'male', '435345345', NULL, NULL, 0, NULL, NULL, 'dwqd', 'qdw', 'qdwqd', 'wdqd', NULL, NULL, NULL, NULL, 45.00, 60, 'dwqd', 'wqdwq', 'dwqd', 'wqdq', '3423423423', NULL, NULL, NULL, '2026-09-03 05:04:28', '2026-09-03 05:04:28', 'rewrr', 'wdd', 'Savings', 'fergerg', 'gdfgbdfhdfh'),
+(5, 5, 'pending', 'ttttt', 'tttt', NULL, '2026-09-30', 'male', '53425234324', NULL, NULL, 0, NULL, NULL, 'trtet', 'gjhj', 'hgjhg', 'jhgj', NULL, NULL, NULL, NULL, 55.00, 60, 'hjhgj', 'hgj', 'hgjj', 'jhgj', '34543534', NULL, NULL, NULL, '2026-09-03 05:11:23', '2026-09-03 05:11:23', 'tttt', 'hgfhjh', 'Savings', 'hgj', 'jhgjghj');
 
 -- --------------------------------------------------------
 
@@ -502,6 +557,14 @@ ALTER TABLE `permission_role`
   ADD KEY `permission_role_role_id_foreign` (`role_id`);
 
 --
+-- Indexes for table `reference_people`
+--
+ALTER TABLE `reference_people`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `reference_people_company_agent_id_unique` (`company_agent_id`),
+  ADD KEY `reference_people_user_id_foreign` (`user_id`);
+
+--
 -- Indexes for table `roles`
 --
 ALTER TABLE `roles`
@@ -591,7 +654,7 @@ ALTER TABLE `businesses`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `payments`
@@ -612,6 +675,12 @@ ALTER TABLE `permissions`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
+-- AUTO_INCREMENT for table `reference_people`
+--
+ALTER TABLE `reference_people`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT for table `roles`
 --
 ALTER TABLE `roles`
@@ -621,7 +690,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `system_settings`
 --
 ALTER TABLE `system_settings`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `transactions`
@@ -633,19 +702,19 @@ ALTER TABLE `transactions`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `user_details`
 --
 ALTER TABLE `user_details`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `virtual_cards`
 --
 ALTER TABLE `virtual_cards`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `webhook_events`
@@ -683,6 +752,12 @@ ALTER TABLE `payments`
 ALTER TABLE `permission_role`
   ADD CONSTRAINT `permission_role_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `permission_role_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `reference_people`
+--
+ALTER TABLE `reference_people`
+  ADD CONSTRAINT `reference_people_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `transactions`

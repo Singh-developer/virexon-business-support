@@ -21,11 +21,15 @@ use App\Http\Controllers\{
 |--------------------------------------------------------------------------
 */
 
-Route::get('/register-agent', [RegistrationController::class, 'create'])->name('register.agent');
-Route::post('/register-agent', [RegistrationController::class, 'store'])->name('register.agent.store');
+
+Route::get('/terms', function () {
+    return view('terms');
+})->name('terms');
 
 Route::get('/login', [
     AuthController::class,
+    'showLogin'
+])->name('login');
 
 Route::post('/login', [
     AuthController::class,
@@ -49,6 +53,14 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware('auth')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Agent Registration Form
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/register-agent', [RegistrationController::class, 'create_new'])->name('register.agent');
+    Route::post('/register-agent', [RegistrationController::class, 'store_new'])->name('register.agent.store');
 
     /*
     |--------------------------------------------------------------------------
@@ -144,9 +156,9 @@ Route::middleware('auth')->group(function () {
         | Agent Management
         */
         Route::patch(
-        'agents/{agent}/toggle-status',
-        [AgentController::class, 'toggleStatus']
-    )->name('agents.toggle-status');
+            'agents/{agent}/toggle-status',
+            [AgentController::class, 'toggleStatus']
+        )->name('agents.toggle-status');
 
         Route::resource(
             'agents',
@@ -278,6 +290,11 @@ Route::middleware('auth')->group(function () {
             SettingsController::class,
             'updateGateway'
         ])->name('settings.gateways.update');
+        
+        Route::delete('/settings/gateways/{gateway}', [
+            SettingsController::class,
+            'destroyGateway'
+        ])->name('settings.gateways.destroy');
     });
 });
 
@@ -325,19 +342,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 Route::post('/register/agent/send-otp', function (Request $request) {
-    $user = auth()->user();
-
-    if (!$user) {
-        return response()->json(['error' => 'Unauthenticated'], 401);
-    }
+    $request->validate(['email' => 'required|email']);
+    $email = $request->email;
 
     $otp = rand(100000, 999999);
     session(['loan_form_otp' => $otp]);
 
-    Mail::raw("Your verification OTP for the application is: $otp", function ($message) use ($user) {
-        $message->to($user->email)
+    Mail::raw("Your verification OTP for the application is: $otp", function ($message) use ($email) {
+        $message->to($email)
             ->subject('Loan Application - Verification OTP');
     });
 
     return response()->json(['success' => true]);
-})->name('agent.send-otp')->middleware('auth');
+})->name('agent.send-otp');

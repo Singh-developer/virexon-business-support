@@ -90,12 +90,12 @@
 
         </div>
 
+        @if(!auth()->user()->isAgent())
         <div class="notice">
-
             You can edit your own profile information.
             Platform payment configuration is available only to Admin users.
-
         </div>
+        @endif
 
         <div class="form-actions">
 

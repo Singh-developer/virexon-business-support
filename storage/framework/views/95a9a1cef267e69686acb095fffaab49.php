@@ -12,7 +12,6 @@ if (!$card) {
 
 <?php if($card): ?>
 <?php
-
 $statusValue = $card->status instanceof \BackedEnum
 ? $card->status->value
 : $card->status;
@@ -36,7 +35,7 @@ $statusValue = $card->status instanceof \BackedEnum
             <?php echo e($card->cardholder_name); ?>
 
             ·
-            <?php echo e($card->business->name); ?>
+            <?php echo e($card->business->name ?? 'No Business'); ?>
 
         </p>
 
@@ -47,6 +46,13 @@ $statusValue = $card->status instanceof \BackedEnum
             <?php echo e(ucfirst($agent->status)); ?>
 
         </span>
+        
+        <?php if(auth()->user()->isAdmin()): ?>
+        <a href="<?php echo e(route('agents.edit', $agent)); ?>" class="btn tiny secondary">
+            Edit Agent
+        </a>
+        <?php endif; ?>
+
         <form method="POST" action="<?php echo e(route('agents.toggle-status', $agent)); ?>">
             <?php echo csrf_field(); ?>
             <?php echo method_field('PATCH'); ?>
@@ -56,7 +62,6 @@ $statusValue = $card->status instanceof \BackedEnum
             </button>
         </form>
     </div>
-
 </div>
 
 <?php if(session('card_created') && session('generated_cvv')): ?>

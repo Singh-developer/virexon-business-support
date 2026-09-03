@@ -61,34 +61,46 @@
                 @csrf
                 @method('PUT')
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
                     <strong style="font-size:16px;">{{ $gateway->name ?? 'Gateway #'.$gateway->id }}</strong>
                     
-                    <div style="display:flex; gap:15px; align-items:center;">
+                    <div style="display:flex; gap:15px; align-items:center; flex-wrap: wrap;">
                         <label style="margin:0;">
                             <input type="checkbox" name="status" value="1" @checked($gateway->status)> Active
                         </label>
                         
                         <select name="environment" style="width:auto; padding:4px;">
-                            <option value="test" @selected($gateway->environment === 'test')>Test</option>
-                            <option value="staging" @selected($gateway->environment === 'staging')>Staging</option>
+                            <option value="sandbox" @selected($gateway->environment === 'sandbox')>Sandbox</option>
                             <option value="production" @selected($gateway->environment === 'production')>Production</option>
                         </select>
                         
-                        <button class="btn tiny primary">Save Changes</button>
+                        <button type="submit" class="btn primary">Save Changes</button> {{-- tiny --}}
                     </div>
                 </div>
 
                 <div class="form-grid">
                     <label>
-                        API Key / Merchant ID
-                        <input type="text" name="credentials[api_key]" placeholder="Leave blank to keep unchanged">
+                        Sandbox API Key / Merchant ID
+                        <input type="text" name="credentials[sandbox_api_key]" value="{{ $gateway->credentials['sandbox_api_key'] ?? '' }}" placeholder="Leave blank to keep unchanged">
                     </label>
                     <label>
-                        Secret Key
-                        <input type="password" name="credentials[api_secret]" placeholder="Leave blank to keep unchanged">
+                        Sandbox Secret Key
+                        <input type="text" name="credentials[sandbox_api_secret]" value="{{ $gateway->credentials['sandbox_api_secret'] ?? '' }}" placeholder="Leave blank to keep unchanged">
+                    </label>
+                    <label>
+                        Production API Key / Merchant ID
+                        <input type="text" name="credentials[production_api_key]" value="{{ $gateway->credentials['production_api_key'] ?? '' }}" placeholder="Leave blank to keep unchanged">
+                    </label>
+                    <label>
+                        Production Secret Key
+                        <input type="text" name="credentials[production_api_secret]" value="{{ $gateway->credentials['production_api_secret'] ?? '' }}" placeholder="Leave blank to keep unchanged">
                     </label>
                 </div>
+            </form>
+            <form method="POST" action="{{ route('settings.gateways.destroy', $gateway) }}" style="margin-top: 15px; text-align: right;" onsubmit="return confirm('Are you sure you want to remove this gateway?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn tiny secondary" style="color: #e53e3e; border-color: #e53e3e;">Remove Gateway</button>
             </form>
         </div>
         @empty

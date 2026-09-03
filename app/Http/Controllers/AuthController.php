@@ -11,19 +11,29 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
         return view('auth.login');
     }
     public function login(LoginRequest $request): RedirectResponse
     {
-        if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        $loginField = $request->input('login');
+        
+        $user = \App\Models\User::where('email', $loginField)
+            ->orWhereHas('detail', function ($query) use ($loginField) {
+                $query->where('agent_id_number', $loginField);
+            })->first();
+
+        if ($user && Auth::attempt(['email' => $user->email, 'password' => $request->input('password')], $request->boolean('remember'))) {
             $request->session()->regenerate();
             if (Auth::user()->status !== 'active') {
                 Auth::logout();
-                return back()->withErrors(['email' => 'This account is inactive.']);
+                return back()->withErrors(['login' => 'This account is inactive.']);
             }
             return redirect()->intended(route('dashboard'));
         }
-        return back()->withErrors(['email' => 'The provided credentials are incorrect.'])->onlyInput('email');
+        return back()->withErrors(['login' => 'The provided credentials are incorrect.'])->onlyInput('login');
     }
     public function logout(Request $request): RedirectResponse
     {

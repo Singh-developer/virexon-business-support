@@ -14,6 +14,123 @@ class RegistrationController extends Controller
         return view('auth.register-extended');
     }
 
+    public function create_new()
+    {
+        return view('auth.register-new');
+    }
+
+    public function store_new(Request $request)
+    {
+        $userDetailId = auth()->check() ? optional(auth()->user()->detail)->id : null;
+        $userId = auth()->check() ? auth()->id() : null;
+
+        $validated = $request->validate([
+            // Personal Info
+            'name' => 'required|string|max:255',
+            'guardian_name' => 'required|string|max:255',
+            'agent_id_number' => 'required|string|max:255|unique:user_details,agent_id_number,' . $userDetailId,
+            'date_of_birth' => 'required|date',
+            'gender' => 'required|in:male,female,other',
+            'is_married' => 'required|boolean',
+            'mobile' => 'required|string|max:20',
+            'personal_email' => 'required|string|email|max:255',
+            'pan_number' => 'required|string|max:20|unique:user_details,pan_number,' . $userDetailId,
+            
+            // Address Info
+            'current_address' => 'required|string|max:255',
+            'address_line_2' => 'nullable|string|max:255',
+            'current_city' => 'required|string|max:255',
+            'current_state' => 'required|string|max:255',
+            'current_pincode' => 'required|string|max:20',
+            
+            // Bank Details
+            'account_name' => 'required|string|max:255',
+            'bank_name' => 'required|string|max:255',
+            'account_number' => 'required|string|max:255',
+            'routing_number' => 'required|string|max:255', // IFSC Code
+            'account_type' => 'required|string|max:255',
+            'branch_name' => 'required|string|max:255',
+            
+            // Advance Details
+            'loan_amount' => 'required|numeric|max:500000',
+            'purpose_of_advance' => 'required|string|max:300',
+            
+            // References
+            'references' => 'required|array|min:1',
+            'references.*.person_name' => 'required|string|max:255',
+            'references.*.mobile' => ['required', 'regex:/^[0-9]{10}$/'],
+            'references.*.company_agent_id' => 'required|string|max:255|unique:reference_people,company_agent_id',
+            
+            // OTP
+            'otp' => 'required|digits:6',
+        ]);
+
+        if ($request->otp != session('loan_form_otp')) {
+            return back()->withErrors(['otp' => 'The provided OTP is incorrect or has expired.'])->withInput();
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $user = auth()->user();
+            $user->update([
+                'name' => $validated['name'],
+            ]);
+
+            $user->detail()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'agent_id_number' => $validated['agent_id_number'],
+                    'father_name' => $validated['guardian_name'], // Save guardian_name into father_name for backward compatibility
+                    'guardian_name' => $validated['guardian_name'],
+                    'date_of_birth' => $validated['date_of_birth'],
+                    'gender' => $validated['gender'],
+                    'is_married' => $validated['is_married'],
+                    'mobile' => $validated['mobile'],
+                    'personal_email' => $validated['personal_email'],
+                    'pan_number' => $validated['pan_number'],
+                    
+                    'current_address' => $validated['current_address'],
+                    'address_line_2' => $validated['address_line_2'],
+                    'current_city' => $validated['current_city'],
+                    'current_state' => $validated['current_state'],
+                    'current_pincode' => $validated['current_pincode'],
+                    
+                    'account_name' => $validated['account_name'],
+                    'bank_name' => $validated['bank_name'],
+                    'account_number' => $validated['account_number'],
+                    'routing_number' => $validated['routing_number'],
+                    'account_type' => $validated['account_type'],
+                    'branch_name' => $validated['branch_name'],
+                    
+                    'loan_amount' => $validated['loan_amount'],
+                    'purpose_of_advance' => $validated['purpose_of_advance'],
+                    
+                    'loan_tenure' => 60, // Fixed 60 months tenure as per UI
+                ]
+            );
+
+            // Store References
+            $user->referencePersons()->delete(); // Clear old references if any
+            foreach ($validated['references'] as $ref) {
+                $user->referencePersons()->create([
+                    'person_name' => $ref['person_name'],
+                    'mobile' => $ref['mobile'],
+                    'company_agent_id' => $ref['company_agent_id'],
+                ]);
+            }
+
+            session()->forget('loan_form_otp');
+
+            DB::commit();
+
+            return redirect()->route('dashboard')->with('success', 'Application submitted successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Submission failed: ' . $e->getMessage())->withInput();
+        }
+    }
+
     public function store(Request $request)
     {
         $step = (int) $request->input('current_step', 1);

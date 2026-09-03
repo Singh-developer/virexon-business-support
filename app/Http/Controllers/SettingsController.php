@@ -141,7 +141,7 @@ class SettingsController extends Controller
             'name' => $data['name'],
             'slug' => \Illuminate\Support\Str::slug($data['slug']),
             'status' => false,
-            'environment' => 'test',
+            'environment' => 'sandbox',
             'credentials' => [],
         ]);
 
@@ -156,7 +156,7 @@ class SettingsController extends Controller
 
         $data = $request->validate([
             'status' => 'nullable|boolean',
-            'environment' => 'required|in:test,staging,production',
+            'environment' => 'required|in:sandbox,production',
             'credentials' => 'nullable|array',
             'credentials.*' => 'nullable|string',
         ]);
@@ -177,5 +177,12 @@ class SettingsController extends Controller
         ]);
 
         return back()->with('success', 'Gateway settings updated.');
+    }
+
+    public function destroyGateway(PaymentGateway $gateway)
+    {
+        abort_unless(auth()->user()->isAdmin(), 403);
+        $gateway->delete();
+        return back()->with('success', 'Gateway removed successfully.');
     }
 }

@@ -61,6 +61,11 @@ class User extends Authenticatable
         return $this->hasOne(UserDetail::class);
     }
 
+    public function referencePersons()
+    {
+        return $this->hasMany(ReferencePerson::class);
+    }
+
     // ---------------------------------------------
 
     public function hasPermission(string $permission): bool

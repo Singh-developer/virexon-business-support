@@ -4,7 +4,6 @@
 
 @php
 $isAgent = auth()->user()->isAgent();
-<<<<<<< HEAD
 $card = $agent->virtualCard;
 
 if (!$card) {
@@ -15,9 +14,6 @@ if (!$card) {
 
 @if($card)
 @php
-=======
->>>>>>> 4f8931dc4f474c0b9c8ea80d3239f0d810bd25e2
-
 $statusValue = $card->status instanceof \BackedEnum
 ? $card->status->value
 : $card->status;
@@ -38,16 +34,22 @@ $statusValue = $card->status instanceof \BackedEnum
         <p>
             {{ $card->cardholder_name }}
             ·
-            {{ $card->business->name }}
+            {{ $card->business->name ?? 'No Business' }}
         </p>
 
     </div>
 
-<<<<<<< HEAD
     <div class="flex items-center gap-3">
         <span class="badge {{ $agent->status==='active'?'success':'neutral' }}">
             {{ ucfirst($agent->status) }}
         </span>
+        
+        @if(auth()->user()->isAdmin())
+        <a href="{{ route('agents.edit', $agent) }}" class="btn tiny secondary">
+            Edit Agent
+        </a>
+        @endif
+
         <form method="POST" action="{{ route('agents.toggle-status', $agent) }}">
             @csrf
             @method('PATCH')
@@ -56,12 +58,6 @@ $statusValue = $card->status instanceof \BackedEnum
             </button>
         </form>
     </div>
-=======
-    <span class="badge success">
-        {{ ucfirst($statusValue) }}
-    </span>
->>>>>>> 4f8931dc4f474c0b9c8ea80d3239f0d810bd25e2
-
 </div>
 
 @if(session('card_created') && session('generated_cvv'))
@@ -493,9 +489,6 @@ $statusValue = $card->status instanceof \BackedEnum
 
     });
 </script>
-<<<<<<< HEAD
 @endif
-=======
->>>>>>> 4f8931dc4f474c0b9c8ea80d3239f0d810bd25e2
 
 @endsection

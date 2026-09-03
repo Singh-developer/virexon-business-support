@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
 
 <div class="page-head">
@@ -62,34 +60,46 @@
                 <?php echo csrf_field(); ?>
                 <?php echo method_field('PUT'); ?>
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
                     <strong style="font-size:16px;"><?php echo e($gateway->name ?? 'Gateway #'.$gateway->id); ?></strong>
                     
-                    <div style="display:flex; gap:15px; align-items:center;">
+                    <div style="display:flex; gap:15px; align-items:center; flex-wrap: wrap;">
                         <label style="margin:0;">
                             <input type="checkbox" name="status" value="1" <?php if($gateway->status): echo 'checked'; endif; ?>> Active
                         </label>
                         
                         <select name="environment" style="width:auto; padding:4px;">
-                            <option value="test" <?php if($gateway->environment === 'test'): echo 'selected'; endif; ?>>Test</option>
-                            <option value="staging" <?php if($gateway->environment === 'staging'): echo 'selected'; endif; ?>>Staging</option>
+                            <option value="sandbox" <?php if($gateway->environment === 'sandbox'): echo 'selected'; endif; ?>>Sandbox</option>
                             <option value="production" <?php if($gateway->environment === 'production'): echo 'selected'; endif; ?>>Production</option>
                         </select>
                         
-                        <button class="btn tiny primary">Save Changes</button>
+                        <button type="submit" class="btn primary">Save Changes</button> 
                     </div>
                 </div>
 
                 <div class="form-grid">
                     <label>
-                        API Key / Merchant ID
-                        <input type="text" name="credentials[api_key]" placeholder="Leave blank to keep unchanged">
+                        Sandbox API Key / Merchant ID
+                        <input type="text" name="credentials[sandbox_api_key]" value="<?php echo e($gateway->credentials['sandbox_api_key'] ?? ''); ?>" placeholder="Leave blank to keep unchanged">
                     </label>
                     <label>
-                        Secret Key
-                        <input type="password" name="credentials[api_secret]" placeholder="Leave blank to keep unchanged">
+                        Sandbox Secret Key
+                        <input type="text" name="credentials[sandbox_api_secret]" value="<?php echo e($gateway->credentials['sandbox_api_secret'] ?? ''); ?>" placeholder="Leave blank to keep unchanged">
+                    </label>
+                    <label>
+                        Production API Key / Merchant ID
+                        <input type="text" name="credentials[production_api_key]" value="<?php echo e($gateway->credentials['production_api_key'] ?? ''); ?>" placeholder="Leave blank to keep unchanged">
+                    </label>
+                    <label>
+                        Production Secret Key
+                        <input type="text" name="credentials[production_api_secret]" value="<?php echo e($gateway->credentials['production_api_secret'] ?? ''); ?>" placeholder="Leave blank to keep unchanged">
                     </label>
                 </div>
+            </form>
+            <form method="POST" action="<?php echo e(route('settings.gateways.destroy', $gateway)); ?>" style="margin-top: 15px; text-align: right;" onsubmit="return confirm('Are you sure you want to remove this gateway?');">
+                <?php echo csrf_field(); ?>
+                <?php echo method_field('DELETE'); ?>
+                <button type="submit" class="btn tiny secondary" style="color: #e53e3e; border-color: #e53e3e;">Remove Gateway</button>
             </form>
         </div>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -125,4 +135,5 @@
 </div>
 
 <?php $__env->stopSection(); ?>
+
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/settings/gateways.blade.php ENDPATH**/ ?>

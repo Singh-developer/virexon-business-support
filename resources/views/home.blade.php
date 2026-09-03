@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Business Support</title>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -17,14 +18,17 @@
         ========================================= */
         :root {
             /* User Requested Colors */
-            --primary: #6A0DAD;       /* Main Purple */
-            --primary-light: #f3ebf8; /* Light Purple */
-            --secondary: #e62e04;     /* Red/Orange */
-            
+            --primary: #6A0DAD;
+            /* Main Purple */
+            --primary-light: #f3ebf8;
+            /* Light Purple */
+            --secondary: #e62e04;
+            /* Red/Orange */
+
             /* Logo & Footer Gradient Colors */
             --logo-grad-start: #2e75e7;
             --logo-grad-end: #03245f;
-            
+
             /* Base Colors */
             --text-dark: #1a1a24;
             --text-muted: #6b7280;
@@ -32,11 +36,11 @@
             --bg-page: #fafafa;
             --border-color: #e5e7eb;
             --hero-bg: linear-gradient(135deg, #f5f0fa 0%, #e9f0fa 100%);
-            
+
             /* Shadows & Border Radius */
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
             --shadow-md: 0 4px 6px rgba(106, 13, 173, 0.05);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             --radius-md: 8px;
             --radius-lg: 16px;
             --radius-xl: 24px;
@@ -51,7 +55,7 @@
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
         }
-        
+
         body {
             background-color: var(--bg-white);
             color: var(--text-dark);
@@ -168,10 +172,11 @@
             font-weight: 500;
             color: var(--text-dark);
             transition: color 0.3s;
-            padding: 5px 0;
+            padding: 6px 16px;
         }
 
-        .nav-links a:hover, .nav-links a.active {
+        .nav-links a:hover,
+        .nav-links a.active {
             color: var(--primary);
             border-bottom: 2px solid var(--primary);
         }
@@ -263,7 +268,7 @@
             flex-direction: column;
             justify-content: center;
         }
-        
+
         .stat-item:last-child {
             border-right: none;
             flex-direction: row;
@@ -314,7 +319,7 @@
             box-shadow: var(--shadow-lg);
             z-index: 1;
         }
-        
+
         .hero-image-bg::after {
             content: '';
             position: absolute;
@@ -343,15 +348,31 @@
             width: 260px;
             animation: float 4s ease-in-out infinite;
         }
-        
-        .float-card:nth-child(2) { animation-delay: 1s; }
-        .float-card:nth-child(3) { animation-delay: 2s; }
-        .float-card:nth-child(4) { animation-delay: 3s; }
+
+        .float-card:nth-child(2) {
+            animation-delay: 1s;
+        }
+
+        .float-card:nth-child(3) {
+            animation-delay: 2s;
+        }
+
+        .float-card:nth-child(4) {
+            animation-delay: 3s;
+        }
 
         @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-            100% { transform: translateY(0px); }
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
         }
 
         .fc-icon {
@@ -365,14 +386,21 @@
             justify-content: center;
             font-size: 16px;
         }
-        
+
         .fc-icon.secondary {
             background: rgba(230, 46, 4, 0.1);
             color: var(--secondary);
         }
 
-        .fc-text h4 { font-size: 14px; margin-bottom: 2px; }
-        .fc-text p { font-size: 11px; color: var(--text-muted); }
+        .fc-text h4 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .fc-text p {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
 
         /* =========================================
            FEATURES SECTION
@@ -400,8 +428,15 @@
             flex-shrink: 0;
         }
 
-        .fb-text h4 { font-size: 16px; margin-bottom: 5px; }
-        .fb-text p { font-size: 13px; color: var(--text-muted); }
+        .fb-text h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .fb-text p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
 
         /* =========================================
            HOW IT WORKS SECTION
@@ -470,8 +505,15 @@
             font-weight: bold;
         }
 
-        .step h4 { font-size: 16px; margin-bottom: 5px; }
-        .step p { font-size: 13px; color: var(--text-muted); }
+        .step h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .step p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
 
         .step-arrow {
             color: var(--border-color);
@@ -489,7 +531,10 @@
             gap: 40px;
         }
 
-        .who-can-benefit .section-title { text-align: left; margin-bottom: 30px; }
+        .who-can-benefit .section-title {
+            text-align: left;
+            margin-bottom: 30px;
+        }
 
         .benefit-grid {
             display: grid;
@@ -517,11 +562,20 @@
             color: var(--primary);
             margin-bottom: 15px;
         }
-        
-        .benefit-card:nth-child(2) i { color: var(--secondary); }
 
-        .benefit-card h4 { font-size: 15px; margin-bottom: 8px; }
-        .benefit-card p { font-size: 13px; color: var(--text-muted); }
+        .benefit-card:nth-child(2) i {
+            color: var(--secondary);
+        }
+
+        .benefit-card h4 {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .benefit-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
 
         /* CTA Box */
         .cta-box {
@@ -549,14 +603,27 @@
             z-index: 1;
         }
 
-        .cta-content { position: relative; z-index: 2; }
-        .cta-box h3 { font-size: 28px; margin-bottom: 15px; }
-        .cta-box p { font-size: 15px; color: rgba(255,255,255,0.8); margin-bottom: 30px; line-height: 1.6; }
+        .cta-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .cta-box h3 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .cta-box p {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
 
         .cta-stats {
             display: flex;
             justify-content: space-between;
-            border-top: 1px solid rgba(255,255,255,0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
             padding-top: 25px;
             flex-wrap: wrap;
             gap: 15px;
@@ -568,23 +635,40 @@
             gap: 10px;
         }
 
-        .cta-stat-item i { font-size: 24px; color: #4ade80; }
-        .cta-stat-item i.text-primary { color: #fff; }
-        .cta-stat-item h4 { font-size: 16px; font-weight: 700; margin-bottom: 2px;}
-        .cta-stat-item span { font-size: 12px; color: rgba(255,255,255,0.7); display: block; }
+        .cta-stat-item i {
+            font-size: 24px;
+            color: #4ade80;
+        }
+
+        .cta-stat-item i.text-primary {
+            color: #fff;
+        }
+
+        .cta-stat-item h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .cta-stat-item span {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            display: block;
+        }
 
         /* =========================================
            STUNNING FOOTER
         ========================================= */
         footer {
-            background-color: var(--logo-grad-end); /* Deep dark blue */
+            background-color: var(--logo-grad-end);
+            /* Deep dark blue */
             color: #fff;
             padding: 70px 0 30px;
             position: relative;
             margin-top: 60px;
             font-size: 14px;
         }
-        
+
         /* Wavy Top Border Effect */
         .footer-wave {
             position: absolute;
@@ -601,7 +685,9 @@
             height: 40px;
         }
 
-        .footer-wave .shape-fill { fill: var(--bg-white); }
+        .footer-wave .shape-fill {
+            fill: var(--bg-white);
+        }
 
         .footer-grid {
             display: grid;
@@ -619,11 +705,20 @@
             margin-bottom: 15px;
         }
 
-        .footer-logo i { color: var(--primary-light); }
-        .footer-logo span { color: var(--primary-light); display: block; font-size: 11px; font-weight: 500; letter-spacing: 2px;}
+        .footer-logo i {
+            color: var(--primary-light);
+        }
+
+        .footer-logo span {
+            color: var(--primary-light);
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 2px;
+        }
 
         .footer-about p {
-            color: rgba(255,255,255,0.7);
+            color: rgba(255, 255, 255, 0.7);
             margin-bottom: 20px;
             line-height: 1.6;
         }
@@ -637,7 +732,7 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -669,9 +764,12 @@
             background: var(--secondary);
         }
 
-        .footer-links li { margin-bottom: 12px; }
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
         .footer-links a {
-            color: rgba(255,255,255,0.7);
+            color: rgba(255, 255, 255, 0.7);
             transition: color 0.3s, padding-left 0.3s;
             display: inline-block;
         }
@@ -685,16 +783,21 @@
             display: flex;
             gap: 15px;
             margin-bottom: 15px;
-            color: rgba(255,255,255,0.7);
+            color: rgba(255, 255, 255, 0.7);
             align-items: flex-start;
         }
-        .contact-info i { color: var(--primary-light); font-size: 18px; margin-top: 3px; }
+
+        .contact-info i {
+            color: var(--primary-light);
+            font-size: 18px;
+            margin-top: 3px;
+        }
 
         .footer-bottom {
             text-align: center;
             padding-top: 25px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.5);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
             font-size: 13px;
         }
 
@@ -702,18 +805,44 @@
            RESPONSIVE DESIGN (MOBILE & TABLET)
         ========================================= */
         @media (max-width: 1024px) {
-            .hero-title { font-size: 38px; }
-            .hero { padding: 40px 30px; }
-            .hero-visual { height: 400px; }
-            .hero-image-bg { width: 300px; height: 350px; }
-            .features { grid-template-columns: repeat(2, 1fr); gap: 30px; }
-            .cta-stats { grid-template-columns: 1fr 1fr; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .hero-title {
+                font-size: 38px;
+            }
+
+            .hero {
+                padding: 40px 30px;
+            }
+
+            .hero-visual {
+                height: 400px;
+            }
+
+            .hero-image-bg {
+                width: 300px;
+                height: 350px;
+            }
+
+            .features {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 30px;
+            }
+
+            .cta-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
 
         @media (max-width: 768px) {
+
             /* Navbar Mobile */
-            .menu-toggle { display: block; }
+            .menu-toggle {
+                display: block;
+            }
+
             .nav-links {
                 display: none;
                 flex-direction: column;
@@ -726,8 +855,15 @@
                 box-shadow: var(--shadow-md);
                 gap: 15px;
             }
-            .nav-links.active { display: flex; }
-            .nav-actions { display: none; }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-actions {
+                display: none;
+            }
+
             .nav-links .nav-actions-mobile {
                 display: flex;
                 flex-direction: column;
@@ -736,54 +872,115 @@
                 border-top: 1px solid var(--border-color);
                 padding-top: 15px;
             }
-            
+
             /* Hide desktop actions in header on mobile */
-            header > .container > .nav-actions { display: none; }
+            header>.container>.nav-actions {
+                display: none;
+            }
 
             /* Hero Mobile */
-            .hero { flex-direction: column; padding: 40px 20px; }
-            .hero-content { max-width: 100%; text-align: center; }
-            .hero-subtitle { margin: 0 auto 30px auto; }
+            .hero {
+                flex-direction: column;
+                padding: 40px 20px;
+            }
+
+            .hero-content {
+                max-width: 100%;
+                text-align: center;
+            }
+
+            .hero-subtitle {
+                margin: 0 auto 30px auto;
+            }
+
             .hero-stats {
                 flex-direction: column;
                 gap: 15px;
                 padding: 15px;
             }
-            .stat-item { border-right: none; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; align-items: center; }
-            .stat-item:last-child { border-bottom: none; padding-bottom: 0; justify-content: center; }
-            .hero-actions { justify-content: center; }
-            .hero-visual { display: none; } /* Hide heavy visuals on mobile */
+
+            .stat-item {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding-bottom: 10px;
+                align-items: center;
+            }
+
+            .stat-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+                justify-content: center;
+            }
+
+            .hero-actions {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                display: none;
+            }
+
+            /* Hide heavy visuals on mobile */
 
             /* Features Mobile */
-            .features { grid-template-columns: 1fr; padding: 40px 0; }
+            .features {
+                grid-template-columns: 1fr;
+                padding: 40px 0;
+            }
 
             /* How it Works Mobile */
-            .steps-container { flex-direction: column; align-items: center; gap: 30px; }
-            .step-arrow { transform: rotate(90deg); margin: 0; }
+            .steps-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 30px;
+            }
+
+            .step-arrow {
+                transform: rotate(90deg);
+                margin: 0;
+            }
 
             /* Bottom Section Mobile */
-            .bottom-section { grid-template-columns: 1fr; padding: 40px 0; }
-            .who-can-benefit .section-title { text-align: center; }
-            .benefit-grid { grid-template-columns: 1fr; }
-            .cta-stats { flex-direction: column; align-items: flex-start; }
+            .bottom-section {
+                grid-template-columns: 1fr;
+                padding: 40px 0;
+            }
+
+            .who-can-benefit .section-title {
+                text-align: center;
+            }
+
+            .benefit-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-stats {
+                flex-direction: column;
+                align-items: flex-start;
+            }
 
             /* Footer Mobile */
-            .footer-grid { grid-template-columns: 1fr; gap: 30px; }
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <header>
         <div class="container navbar">
             <div class="logo">
-                <i class="fa-solid fa-handshake logo-icon"></i>
+                <!-- <i class="fa-solid fa-handshake logo-icon"></i>
                 <div class="logo-text">
                     AGENT
                     <span>Business Support</span>
-                </div>
+                </div> -->
+                <img src="{{ asset('images/virexon-light.png')}}" alt="Virexon" style="max-width: 50%;" />
             </div>
-            
+
             <ul class="nav-links" id="navLinks">
                 <li><a href="#" class="active">Home</a></li>
                 <li><a href="#">About Us</a></li>
@@ -792,10 +989,10 @@
                 <li><a href="#">Documents</a></li>
                 <li><a href="#">FAQs</a></li> -->
                 <li><a href="#">Contact Us</a></li>
-                
+
                 <div class="nav-actions-mobile" style="display: none;">
                     <a href="{{ route('login') }}" class="btn btn-outline" style="width: 100%;"><i class="fa-regular fa-user"></i> Login</a>
-                    <a href="{{ route('register.agent') }}" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-lock"></i> Agent Portal</a>
+                    <a href="{{ route('register.agent') }}" class="btn btn-outline" style="width: 100%;"><i class="fa-solid fa-lock"></i> Agent Portal</a>
                 </div>
             </ul>
 
@@ -814,12 +1011,12 @@
                 <div class="badge">
                     <i class="fa-regular fa-star"></i> SUPPORTING AGENTS. BUILDING SUCCESS.
                 </div>
-                
+
                 <h1 class="hero-title">
                     Business Support Advance <br>
                     <span>For Your Growth</span>
                 </h1>
-                
+
                 <p class="hero-subtitle">
                     We empower our selected working agents with interest-free business support advances up to ₹5,00,000 to help you grow your business, achieve more, and earn better.
                 </p>
@@ -897,7 +1094,7 @@
                     <p>Get financial support for marketing, promotion, inventory, and expansion.</p>
                 </div>
             </div>
-            
+
             <div class="feature-box">
                 <div class="fb-icon"><i class="fa-solid fa-chart-line"></i></div>
                 <div class="fb-text">
@@ -927,7 +1124,7 @@
     <div class="container">
         <section class="how-it-works">
             <h2 class="section-title">How It Works</h2>
-            
+
             <div class="steps-container">
                 <div class="step">
                     <div class="step-icon">
@@ -937,7 +1134,7 @@
                     <h4>Apply Online</h4>
                     <p>Submit your advance request with basic details</p>
                 </div>
-                
+
                 <i class="fa-solid fa-arrow-right step-arrow"></i>
 
                 <div class="step">
@@ -987,7 +1184,7 @@
 
     <div class="container">
         <section class="bottom-section">
-            
+
             <div class="who-can-benefit">
                 <h2 class="section-title">Who Can Benefit?</h2>
                 <div class="benefit-grid">
@@ -1018,7 +1215,7 @@
                 <div class="cta-content">
                     <h3>Your Growth, Our Commitment</h3>
                     <p>We believe in your potential. Our Business Support Advance is designed to give you the financial strength you need to achieve bigger goals.</p>
-                    
+
                     <div class="cta-stats">
                         <div class="cta-stat-item">
                             <i class="fa-solid fa-hand-holding-dollar text-primary"></i>
@@ -1064,14 +1261,15 @@
 
         <div class="container">
             <div class="footer-grid">
-                
+
                 <div class="footer-about">
                     <div class="footer-logo">
-                        <i class="fa-solid fa-handshake"></i>
+                        <!-- <i class="fa-solid fa-handshake"></i>
                         <div style="line-height: 1.1;">
                             AGENT
                             <span>Support</span>
-                        </div>
+                        </div> -->
+                        <img src="{{ asset('images/virexon-light.png')}}" alt="Virexon" style="max-width: 30%;" />
                     </div>
                     <p>Empowering agents nationwide with zero-interest financial backing. Achieve your sales targets, expand your reach, and secure your financial future with our seamless support network.</p>
                     <div class="social-icons">
@@ -1137,9 +1335,9 @@
 
         menuToggle.addEventListener('click', () => {
             navLinks.classList.toggle('active');
-            
+
             // Show mobile actions only when menu is active
-            if(navLinks.classList.contains('active')) {
+            if (navLinks.classList.contains('active')) {
                 mobileActions.style.display = 'flex';
                 menuToggle.classList.replace('fa-bars', 'fa-xmark');
             } else {
@@ -1150,4 +1348,5 @@
     </script>
 
 </body>
+
 </html>

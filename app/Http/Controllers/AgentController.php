@@ -72,7 +72,7 @@ class AgentController extends Controller
             $data,
             $role
         ) {
-            User::create([
+            $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,
@@ -81,6 +81,12 @@ class AgentController extends Controller
                 'business_id' => $data['business_id'],
                 'status' => $data['status'],
             ]);
+
+            if (isset($data['personal_email'])) {
+                $user->detail()->create([
+                    'personal_email' => $data['personal_email']
+                ]);
+            }
         });
 
         return redirect()
@@ -139,6 +145,11 @@ class AgentController extends Controller
                     : []
                 ),
             ]);
+
+            $agent->detail()->updateOrCreate(
+                ['user_id' => $agent->id],
+                ['personal_email' => $data['personal_email'] ?? null]
+            );
 
             /*
              * DO NOT CREATE A CARD HERE.
@@ -215,6 +226,12 @@ class AgentController extends Controller
                     'users',
                     'email'
                 )->ignore($agent?->id),
+            ],
+
+            'personal_email' => [
+                'nullable',
+                'email',
+                'max:180',
             ],
 
             'phone' => [
