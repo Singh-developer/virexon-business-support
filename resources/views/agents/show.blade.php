@@ -4,12 +4,16 @@
 
 @php
 $isAgent = auth()->user()->isAgent();
-$card = $agent->virtualCard;
+$card    = $agent->virtualCard;
+$detail  = $agent->detail;
+$refs    = $agent->referencePersons ?? collect();
+$appStatus = optional($detail)->application_status ?? 'pending';
 
-if (!$card) {
-    // If agent has no card, we shouldn't try to render the card details
-    echo "<div class='panel'><div class='panel-head'><h3>No Virtual Card</h3><p>This agent does not have a virtual card assigned yet.</p></div></div>";
-}
+$statusColor = match($appStatus) {
+    'approved' => 'success',
+    'rejected' => 'failed',
+    default    => 'pending',
+};
 @endphp
 
 @if($card)
@@ -489,6 +493,130 @@ $statusValue = $card->status instanceof \BackedEnum
 
     });
 </script>
+@endif
+
+{{-- ====================================================================
+     NO CARD NOTICE
+==================================================================== --}}
+@if(!$card)
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>No Virtual Card</h3>
+            <p>This agent does not have a virtual card assigned yet.</p>
+        </div>
+        <a href="{{ route('cards.create') }}" class="btn tiny primary">Create Card</a>
+    </div>
+</div>
+@endif
+
+{{-- ====================================================================
+     APPLICATION STATUS (Admin Only)
+==================================================================== --}}
+@if(!$isAgent)
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>Application Status</h3>
+            <p>Approve or reject this agent's application. This controls what the agent can edit in their profile.</p>
+        </div>
+        <span class="badge {{ $statusColor }}">{{ ucfirst($appStatus) }}</span>
+    </div>
+
+    <form method="POST" action="{{ route('agents.application-status', $agent) }}" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        @csrf
+        <select name="application_status" style="border:1px solid #d1d5db; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; min-width:160px; color:#1e293b; background:#fff;">
+            <option value="pending"  @selected($appStatus === 'pending')>⏳ Pending</option>
+            <option value="approved" @selected($appStatus === 'approved')>✅ Approved</option>
+            <option value="rejected" @selected($appStatus === 'rejected')>❌ Rejected</option>
+        </select>
+        <button type="submit" class="btn primary" onclick="return confirm('Update application status?')">
+            Save Status
+        </button>
+    </form>
+</div>
+
+{{-- ====================================================================
+     FULL AGENT DETAILS (Admin read-only view)
+==================================================================== --}}
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>Agent Application Details</h3>
+            <p>Information submitted by the agent during registration.</p>
+        </div>
+    </div>
+
+    <style>
+        .agent-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; }
+        .agent-detail-grid .detail-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+        .agent-detail-grid .detail-item:nth-child(odd) { border-right: 1px solid #f1f5f9; }
+        .agent-detail-grid .detail-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: #94a3b8; margin-bottom: 4px; }
+        .agent-detail-grid .detail-value { font-size: 13px; font-weight: 600; color: #1e293b; }
+        .agent-detail-grid .detail-value.empty { color: #cbd5e1; font-style: italic; font-weight: 400; }
+        .agent-section-head { grid-column: 1 / -1; background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #64748b; }
+        @media(max-width:600px){ .agent-detail-grid { grid-template-columns: 1fr; } .agent-detail-grid .detail-item { border-right: none !important; } }
+    </style>
+
+    @php
+    function dv($val) { return filled($val) ? e($val) : '<span class="empty">—</span>'; }
+    @endphp
+
+    <div class="agent-detail-grid">
+        {{-- Personal Info --}}
+        <div class="agent-section-head">Personal Information</div>
+        <div class="detail-item"><div class="detail-label">Full Name</div><div class="detail-value">{!! dv($agent->name) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Official Email</div><div class="detail-value">{!! dv($agent->email) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Personal Email</div><div class="detail-value">{!! dv(optional($detail)->personal_email) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Mobile</div><div class="detail-value">{!! dv(optional($detail)->mobile) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Guardian / Father Name</div><div class="detail-value">{!! dv(optional($detail)->guardian_name ?? optional($detail)->father_name) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Agent ID Number</div><div class="detail-value">{!! dv(optional($detail)->agent_id_number) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Date of Birth</div><div class="detail-value">{!! dv(optional($detail)->date_of_birth) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Gender</div><div class="detail-value">{!! dv(optional($detail)->gender ? ucfirst(optional($detail)->gender) : null) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">PAN Number</div><div class="detail-value">{!! dv(optional($detail)->pan_number) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Marital Status</div><div class="detail-value">{!! dv(optional($detail)->is_married ? 'Married' : (optional($detail)->is_married === 0 ? 'Single' : null)) !!}</div></div>
+
+        {{-- Address --}}
+        <div class="agent-section-head">Address Details</div>
+        <div class="detail-item" style="grid-column:1/-1"><div class="detail-label">Current Address</div><div class="detail-value">{!! dv(optional($detail)->current_address) !!}@if(optional($detail)->address_line_2), {{ optional($detail)->address_line_2 }}@endif</div></div>
+        <div class="detail-item"><div class="detail-label">City</div><div class="detail-value">{!! dv(optional($detail)->current_city) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">State</div><div class="detail-value">{!! dv(optional($detail)->current_state) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Pincode</div><div class="detail-value">{!! dv(optional($detail)->current_pincode) !!}</div></div>
+
+        {{-- Bank --}}
+        <div class="agent-section-head">Bank Details</div>
+        <div class="detail-item"><div class="detail-label">Account Holder</div><div class="detail-value">{!! dv(optional($detail)->account_name) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Bank Name</div><div class="detail-value">{!! dv(optional($detail)->bank_name) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Account Number</div><div class="detail-value">{!! dv(optional($detail)->account_number) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">IFSC / Routing</div><div class="detail-value">{!! dv(optional($detail)->routing_number) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Account Type</div><div class="detail-value">{!! dv(optional($detail)->account_type) !!}</div></div>
+        <div class="detail-item"><div class="detail-label">Branch</div><div class="detail-value">{!! dv(optional($detail)->branch_name) !!}</div></div>
+
+        {{-- Advance --}}
+        <div class="agent-section-head">Advance Details</div>
+        <div class="detail-item"><div class="detail-label">Loan Amount Requested</div><div class="detail-value">{{ optional($detail)->loan_amount ? '₹'.number_format(optional($detail)->loan_amount, 2) : '—' }}</div></div>
+        <div class="detail-item"><div class="detail-label">Purpose of Advance</div><div class="detail-value">{!! dv(optional($detail)->purpose_of_advance) !!}</div></div>
+    </div>
+
+    {{-- References --}}
+    @if($refs->count())
+    <div style="margin-top:0; border-top:1px solid #f1f5f9;">
+        <div class="agent-section-head" style="background:#f8fafc; padding:10px 16px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b;">References ({{ $refs->count() }})</div>
+        <div style="padding:12px 16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px;">
+            @foreach($refs as $i => $ref)
+            <div style="border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:8px;">Reference {{ $i + 1 }}</div>
+                <div style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:4px;">{{ $ref->person_name }}</div>
+                <div style="font-size:12px; color:#64748b;">📞 {{ $ref->mobile }}</div>
+                <div style="font-size:11px; color:#94a3b8; margin-top:4px;">ID: {{ $ref->company_agent_id }}</div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @else
+    <div style="padding:16px; color:#94a3b8; font-size:12px; border-top:1px solid #f1f5f9;">No references submitted yet.</div>
+    @endif
+</div>
 @endif
 
 @endsection

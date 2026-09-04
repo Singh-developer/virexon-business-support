@@ -104,9 +104,10 @@ class AgentController extends Controller
             404
         );
 
-        return view('agents.form', [
-            'agent' => $agent,
+        $agent->load(['detail', 'referencePersons', 'business', 'virtualCard']);
 
+        return view('agents.form', [
+            'agent'      => $agent,
             'businesses' => Business::query()
                 ->where('status', 'active')
                 ->orderBy('name')
@@ -199,12 +200,33 @@ class AgentController extends Controller
         $agent->load([
             'business',
             'virtualCard',
+            'detail',
+            'referencePersons',
+            'role',
         ]);
 
         return view(
             'agents.show',
             compact('agent')
         );
+    }
+
+    public function updateApplicationStatus(Request $request, User $agent)
+    {
+        abort_unless($agent->isAgent(), 404);
+
+        $data = $request->validate([
+            'application_status' => 'required|in:pending,approved,rejected',
+        ]);
+
+        $agent->detail()->updateOrCreate(
+            ['user_id' => $agent->id],
+            ['application_status' => $data['application_status']]
+        );
+
+        $statusLabel = ucfirst($data['application_status']);
+
+        return back()->with('success', "Agent application has been marked as {$statusLabel}.");
     }
 
     private function validated(

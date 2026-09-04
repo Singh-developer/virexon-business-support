@@ -34,7 +34,7 @@
                     <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <span class="font-semibold text-white">support@firmname.com</span>
+                    <span class="font-semibold text-white">support@virexon.in</span>
                 </div>
 
                 <!-- Bell Icon with red count 3 badge -->
@@ -140,7 +140,7 @@
                         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                         </svg>
-                        <span class="text-xs">Agent Registration</span>
+                        <span class="text-xs">Fund Application</span>
                     </a>
 
                     <a href="#" class="flex items-center justify-between px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
@@ -215,8 +215,8 @@
             <div class="mt-6 bg-slate-50 rounded-xl p-3 border border-slate-200/80">
                 <div class="font-bold text-slate-800 text-xs mb-1">Need Help?</div>
                 <div class="text-[10px] text-slate-500 mb-2">Mon - Sat (10 AM - 6 PM)</div>
-                <div class="font-bold text-xs text-[#0D6EFD]">0120-1234567</div>
-                <div class="text-[10px] text-slate-500 truncate">support@firmname.com</div>
+                <!-- <div class="font-bold text-xs text-[#0D6EFD]">0120-1234567</div> -->
+                <div class="text-[10px] text-slate-500 truncate">support@virexon.in</div>
             </div>
         </div>
     </div>

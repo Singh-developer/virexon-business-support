@@ -73,7 +73,70 @@
                 <header class="topbar">
                     <div class="mobile-menu">☰</div>
                     <div class="breadcrumbs">Agent Business Support <span>/</span> {{ $title ?? 'Dashboard' }}</div>
-                    <div class="top-actions"><span class="pill online">● System Healthy</span>
+                        <div class="top-actions"><span class="pill online">● System Healthy</span>
+                        
+                        @if(auth()->user()->isAdmin())
+                        <div class="notification-container" style="position: relative; display: inline-block;">
+                            <button onclick="toggleNotifDropdown(event)" class="icon-btn" style="position: relative; border: none; background: transparent; cursor: pointer; font-size: 1.25rem;">
+                                🔔
+                                @php $unreadCount = auth()->user()->unreadNotifications->count(); @endphp
+                                @if($unreadCount > 0)
+                                <span style="position: absolute; top: -5px; right: -5px; background: #e11d48; color: white; font-size: 0.65rem; font-weight: bold; border-radius: 99px; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; line-height: 1;">
+                                    {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+                                </span>
+                                @endif
+                            </button>
+                            
+                            <div id="notif-dropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; width: 320px; background: white; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden; text-align: left;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                                    <span style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">Notifications</span>
+                                    @if($unreadCount > 0)
+                                    <form method="POST" action="{{ route('notifications.mark-read') }}" style="margin: 0;">
+                                        @csrf
+                                        <button type="submit" style="border: none; background: transparent; font-size: 0.75rem; color: #3b82f6; cursor: pointer; padding: 0;">Mark all read</button>
+                                    </form>
+                                    @endif
+                                </div>
+                                <div style="max-height: 300px; overflow-y: auto;">
+                                    @forelse(auth()->user()->notifications as $notification)
+                                    <a href="{{ isset($notification->data['agent_id']) ? route('agents.edit', $notification->data['agent_id']) : '#' }}" style="display: block; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-decoration: none; background: {{ $notification->read_at ? '#ffffff' : '#f0f9ff' }}; transition: background 0.2s;">
+                                        <div style="font-size: 0.875rem; color: #1e293b; font-weight: {{ $notification->read_at ? '400' : '600' }}; line-height: 1.4;">
+                                            {{ $notification->data['message'] ?? 'New notification' }}
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">
+                                            {{ $notification->created_at->diffForHumans() }}
+                                        </div>
+                                    </a>
+                                    @empty
+                                    <div style="padding: 16px; text-align: center; color: #64748b; font-size: 0.875rem;">
+                                        No notifications.
+                                    </div>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+
+                        <script>
+                            function toggleNotifDropdown(e) {
+                                e.stopPropagation();
+                                const dropdown = document.getElementById('notif-dropdown');
+                                if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                                    dropdown.style.display = 'block';
+                                } else {
+                                    dropdown.style.display = 'none';
+                                }
+                            }
+                            
+                            // Close dropdown when clicking outside
+                            document.addEventListener('click', function(e) {
+                                const dropdown = document.getElementById('notif-dropdown');
+                                if (dropdown && dropdown.style.display === 'block' && !dropdown.contains(e.target)) {
+                                    dropdown.style.display = 'none';
+                                }
+                            });
+                        </script>
+                        @endif
+
                         <div class="avatar">{{ strtoupper(substr(auth()->user()->name,0,1)) }}</div>
                         <div>
                             <div class="user-name">{{ auth()->user()->name }}</div>
@@ -82,7 +145,8 @@
                         <form method="POST" action="{{ route('logout') }}">@csrf<button class="icon-btn" title="Logout">↪</button></form>
                     </div>
                 </header>
-                <section class="content">@if(session('success'))<div class="flash success">✓ {{ session('success') }}</div>@endif
+                <section class="content">
+                    @if(session('success'))<div class="flash success">✓ {{ session('success') }}</div>@endif
                     @if($errors->any())<div class="flash error">{{ $errors->first() }}</div>@endif{{ $slot ?? '' }}@yield('content')</section>
                 <footer class="footer">© {{ now()->year }} Agent Business Support · Partnering your growth</footer>
             </main>

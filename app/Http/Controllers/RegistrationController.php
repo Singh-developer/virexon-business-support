@@ -16,13 +16,24 @@ class RegistrationController extends Controller
 
     public function create_new()
     {
-        return view('auth.register-new');
+        $user = auth()->user();
+        $detail = $user ? $user->detail : null;
+        
+        // Agent ID number is required on submit, so if it's there, they submitted
+        $alreadySubmitted = $detail && !empty($detail->agent_id_number);
+        $status = $alreadySubmitted ? $detail->application_status : null;
+
+        return view('auth.register-new', compact('user', 'detail', 'alreadySubmitted', 'status'));
     }
 
     public function store_new(Request $request)
     {
         $userDetailId = auth()->check() ? optional(auth()->user()->detail)->id : null;
         $userId = auth()->check() ? auth()->id() : null;
+
+        if (auth()->check() && auth()->user()->detail && !empty(auth()->user()->detail->agent_id_number)) {
+            return redirect()->route('dashboard')->with('success', 'Your application is already submitted.');
+        }
 
         $validated = $request->validate([
             // Personal Info
@@ -56,7 +67,7 @@ class RegistrationController extends Controller
             'purpose_of_advance' => 'required|string|max:300',
             
             // References
-            'references' => 'required|array|min:1',
+            'references' => 'required|array|min:1|max:2',
             'references.*.person_name' => 'required|string|max:255',
             'references.*.mobile' => ['required', 'regex:/^[0-9]{10}$/'],
             'references.*.company_agent_id' => 'required|string|max:255|unique:reference_people,company_agent_id',
@@ -123,6 +134,12 @@ class RegistrationController extends Controller
             session()->forget('loan_form_otp');
 
             DB::commit();
+
+            // Notify Admins
+            $admins = User::whereHas('role', function($q) {
+                $q->whereIn('slug', ['admin', 'super-admin']);
+            })->get();
+            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\AgentRegisteredNotification($user));
 
             return redirect()->route('dashboard')->with('success', 'Application submitted successfully!');
         } catch (\Exception $e) {
@@ -275,6 +292,12 @@ class RegistrationController extends Controller
             DB::commit();
 
             if ($step === 7) {
+                // Notify Admins
+                $admins = User::whereHas('role', function($q) {
+                    $q->whereIn('slug', ['admin', 'super-admin']);
+                })->get();
+                \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\AgentRegisteredNotification($user));
+
                 return redirect()->route('dashboard')->with('success', 'Application completed and submitted for admin approval!');
             }
 

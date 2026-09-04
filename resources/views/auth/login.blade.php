@@ -29,7 +29,25 @@
             <input name="login" type="text" value="{{ old('login') }}" placeholder="Enter email or Agent ID" required>
             
             <label>Password</label>
-            <input name="password" type="password" placeholder="Enter password" required>
+            <div style="position: relative;">
+                <input name="password" id="login-password" type="password" placeholder="Enter password" required style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+                <button type="button" onclick="togglePassword('login-password', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #64748b; font-size: 1.2rem; padding: 0;">
+                    <span class="eye-icon">👁️</span>
+                </button>
+            </div>
+            
+            <script>
+                function togglePassword(inputId, btn) {
+                    const input = document.getElementById(inputId);
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        btn.querySelector('.eye-icon').innerText = '🙈';
+                    } else {
+                        input.type = 'password';
+                        btn.querySelector('.eye-icon').innerText = '👁️';
+                    }
+                }
+            </script>
                 {{-- <div class="remember">
                     <label><input type="checkbox" name="remember" value="1"> Remember me</label><span>Forgot Password?</span>
                 </div> --}}

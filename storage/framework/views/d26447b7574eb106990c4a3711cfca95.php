@@ -46,6 +46,38 @@
         <div class="progress"><span style="width:78%"></span></div><small>78% successful processing rate</small>
     </div>
 </div>
+<?php if(auth()->user()->isAdmin() && auth()->user()->unreadNotifications->isNotEmpty()): ?>
+<div class="panel" style="margin-bottom: 16px;">
+    <div class="panel-head">
+        <div>
+            <h3>Notifications</h3>
+            <p>Recent alerts and registrations</p>
+        </div>
+        <form method="POST" action="<?php echo e(route('notifications.mark-read')); ?>" style="display:inline;">
+            <?php echo csrf_field(); ?>
+            <button type="submit" class="btn secondary" style="font-size: 11px; padding: 4px 8px; cursor: pointer;">Mark all as read</button>
+        </form>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <tbody>
+                <?php $__currentLoopData = auth()->user()->unreadNotifications->take(5); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <tr>
+                    <td style="padding: 16px;">
+                        <strong style="color: #2967d8; font-size: 11px;">NEW REGISTRATION</strong><br>
+                        <span style="font-size: 13px;"><?php echo e($notification->data['message'] ?? 'New notification'); ?></span>
+                    </td>
+                    <td style="text-align: right; color: #8a97a9; font-size: 11px; padding: 16px;">
+                        <?php echo e($notification->created_at->diffForHumans()); ?>
+
+                    </td>
+                </tr>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
 <div class="panel">
     <div class="panel-head">
         <div>

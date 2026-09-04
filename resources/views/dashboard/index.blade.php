@@ -46,6 +46,37 @@
         <div class="progress"><span style="width:78%"></span></div><small>78% successful processing rate</small>
     </div>
 </div>
+@if(auth()->user()->isAdmin() && auth()->user()->unreadNotifications->isNotEmpty())
+<div class="panel" style="margin-bottom: 16px;">
+    <div class="panel-head">
+        <div>
+            <h3>Notifications</h3>
+            <p>Recent alerts and registrations</p>
+        </div>
+        <form method="POST" action="{{ route('notifications.mark-read') }}" style="display:inline;">
+            @csrf
+            <button type="submit" class="btn secondary" style="font-size: 11px; padding: 4px 8px; cursor: pointer;">Mark all as read</button>
+        </form>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <tbody>
+                @foreach(auth()->user()->unreadNotifications->take(5) as $notification)
+                <tr>
+                    <td style="padding: 16px;">
+                        <strong style="color: #2967d8; font-size: 11px;">NEW REGISTRATION</strong><br>
+                        <span style="font-size: 13px;">{{ $notification->data['message'] ?? 'New notification' }}</span>
+                    </td>
+                    <td style="text-align: right; color: #8a97a9; font-size: 11px; padding: 16px;">
+                        {{ $notification->created_at->diffForHumans() }}
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 <div class="panel">
     <div class="panel-head">
         <div>

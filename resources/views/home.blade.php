@@ -992,13 +992,13 @@
 
                 <div class="nav-actions-mobile" style="display: none;">
                     <a href="{{ route('login') }}" class="btn btn-outline" style="width: 100%;"><i class="fa-regular fa-user"></i> Login</a>
-                    <a href="{{ route('register.agent') }}" class="btn btn-outline" style="width: 100%;"><i class="fa-solid fa-lock"></i> Agent Portal</a>
+                    <!-- <a href="{{ route('register.agent') }}" class="btn btn-outline" style="width: 100%;"><i class="fa-solid fa-lock"></i> Agent Portal</a> -->
                 </div>
             </ul>
 
             <div class="nav-actions">
                 <a href="{{ route('login') }}" class="btn btn-outline"><i class="fa-regular fa-user"></i> Login</a>
-                <a href="{{ route('register.agent') }}" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Agent Register</a>
+                <!-- <a href="{{ route('register.agent') }}" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Agent Register</a> -->
             </div>
 
             <i class="fa-solid fa-bars menu-toggle" id="menuToggle"></i>

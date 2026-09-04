@@ -160,6 +160,11 @@ Route::middleware('auth')->group(function () {
             [AgentController::class, 'toggleStatus']
         )->name('agents.toggle-status');
 
+        Route::post(
+            'agents/{agent}/application-status',
+            [AgentController::class, 'updateApplicationStatus']
+        )->name('agents.application-status');
+
         Route::resource(
             'agents',
             AgentController::class
@@ -295,6 +300,11 @@ Route::middleware('auth')->group(function () {
             SettingsController::class,
             'destroyGateway'
         ])->name('settings.gateways.destroy');
+        
+        Route::post('/notifications/mark-read', function () {
+            auth()->user()->unreadNotifications->markAsRead();
+            return back()->with('success', 'Notifications marked as read.');
+        })->name('notifications.mark-read');
     });
 });
 

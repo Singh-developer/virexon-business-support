@@ -347,13 +347,36 @@
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">
                                         Password
                                     </label>
-                                    <input type="password" name="password" class="w-full rounded-xl border-gray-300 bg-gray-50 p-3 focus:bg-white focus:ring-2 focus:ring-blue-500 transition">
+                                    <div class="relative">
+                                        <input type="password" id="reg-password" name="password" class="w-full rounded-xl border-gray-300 bg-gray-50 p-3 pr-10 focus:bg-white focus:ring-2 focus:ring-blue-500 transition">
+                                        <button type="button" onclick="togglePassword('reg-password', this)" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
+                                            <span class="eye-icon">👁️</span>
+                                        </button>
+                                    </div>
                                     <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-sm font-semibold text-gray-700">Confirm Password <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="password" id="reg-password-confirm" name="password_confirmation" class="w-full rounded-xl border-gray-300 bg-gray-50 p-3 pr-10 focus:bg-white focus:ring-2 focus:ring-blue-500 transition">
+                                    <button type="button" onclick="togglePassword('reg-password-confirm', this)" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
+                                        <span class="eye-icon">👁️</span>
+                                    </button>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
-                                    <input type="password" name="password_confirmation" class="w-full rounded-xl border-gray-300 bg-gray-50 p-3 focus:bg-white focus:ring-2 focus:ring-blue-500 transition">
-                                </div>
+                            </div>
+                            
+                            <script>
+                                function togglePassword(inputId, btn) {
+                                    const input = document.getElementById(inputId);
+                                    if (input.type === 'password') {
+                                        input.type = 'text';
+                                        btn.querySelector('.eye-icon').innerText = '🙈';
+                                    } else {
+                                        input.type = 'password';
+                                        btn.querySelector('.eye-icon').innerText = '👁️';
+                                    }
+                                }
+                            </script>
                             </div>
                             @else
                             <div class="bg-blue-50 p-4 rounded-xl text-sm text-blue-800">

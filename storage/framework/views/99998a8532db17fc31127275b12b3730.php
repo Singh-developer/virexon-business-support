@@ -74,7 +74,73 @@
                 <header class="topbar">
                     <div class="mobile-menu">☰</div>
                     <div class="breadcrumbs">Agent Business Support <span>/</span> <?php echo e($title ?? 'Dashboard'); ?></div>
-                    <div class="top-actions"><span class="pill online">● System Healthy</span>
+                        <div class="top-actions"><span class="pill online">● System Healthy</span>
+                        
+                        <?php if(auth()->user()->isAdmin()): ?>
+                        <div class="notification-container" style="position: relative; display: inline-block;">
+                            <button onclick="toggleNotifDropdown(event)" class="icon-btn" style="position: relative; border: none; background: transparent; cursor: pointer; font-size: 1.25rem;">
+                                🔔
+                                <?php $unreadCount = auth()->user()->unreadNotifications->count(); ?>
+                                <?php if($unreadCount > 0): ?>
+                                <span style="position: absolute; top: -5px; right: -5px; background: #e11d48; color: white; font-size: 0.65rem; font-weight: bold; border-radius: 99px; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; line-height: 1;">
+                                    <?php echo e($unreadCount > 9 ? '9+' : $unreadCount); ?>
+
+                                </span>
+                                <?php endif; ?>
+                            </button>
+                            
+                            <div id="notif-dropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; width: 320px; background: white; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden; text-align: left;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                                    <span style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">Notifications</span>
+                                    <?php if($unreadCount > 0): ?>
+                                    <form method="POST" action="<?php echo e(route('notifications.mark-read')); ?>" style="margin: 0;">
+                                        <?php echo csrf_field(); ?>
+                                        <button type="submit" style="border: none; background: transparent; font-size: 0.75rem; color: #3b82f6; cursor: pointer; padding: 0;">Mark all read</button>
+                                    </form>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="max-height: 300px; overflow-y: auto;">
+                                    <?php $__empty_1 = true; $__currentLoopData = auth()->user()->notifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                    <a href="<?php echo e(isset($notification->data['agent_id']) ? route('agents.edit', $notification->data['agent_id']) : '#'); ?>" style="display: block; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-decoration: none; background: <?php echo e($notification->read_at ? '#ffffff' : '#f0f9ff'); ?>; transition: background 0.2s;">
+                                        <div style="font-size: 0.875rem; color: #1e293b; font-weight: <?php echo e($notification->read_at ? '400' : '600'); ?>; line-height: 1.4;">
+                                            <?php echo e($notification->data['message'] ?? 'New notification'); ?>
+
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">
+                                            <?php echo e($notification->created_at->diffForHumans()); ?>
+
+                                        </div>
+                                    </a>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                    <div style="padding: 16px; text-align: center; color: #64748b; font-size: 0.875rem;">
+                                        No notifications.
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <script>
+                            function toggleNotifDropdown(e) {
+                                e.stopPropagation();
+                                const dropdown = document.getElementById('notif-dropdown');
+                                if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+                                    dropdown.style.display = 'block';
+                                } else {
+                                    dropdown.style.display = 'none';
+                                }
+                            }
+                            
+                            // Close dropdown when clicking outside
+                            document.addEventListener('click', function(e) {
+                                const dropdown = document.getElementById('notif-dropdown');
+                                if (dropdown && dropdown.style.display === 'block' && !dropdown.contains(e.target)) {
+                                    dropdown.style.display = 'none';
+                                }
+                            });
+                        </script>
+                        <?php endif; ?>
+
                         <div class="avatar"><?php echo e(strtoupper(substr(auth()->user()->name,0,1))); ?></div>
                         <div>
                             <div class="user-name"><?php echo e(auth()->user()->name); ?></div>
@@ -83,7 +149,8 @@
                         <form method="POST" action="<?php echo e(route('logout')); ?>"><?php echo csrf_field(); ?><button class="icon-btn" title="Logout">↪</button></form>
                     </div>
                 </header>
-                <section class="content"><?php if(session('success')): ?><div class="flash success">✓ <?php echo e(session('success')); ?></div><?php endif; ?>
+                <section class="content">
+                    <?php if(session('success')): ?><div class="flash success">✓ <?php echo e(session('success')); ?></div><?php endif; ?>
                     <?php if($errors->any()): ?><div class="flash error"><?php echo e($errors->first()); ?></div><?php endif; ?><?php echo e($slot ?? ''); ?><?php echo $__env->yieldContent('content'); ?></section>
                 <footer class="footer">© <?php echo e(now()->year); ?> Agent Business Support · Partnering your growth</footer>
             </main>

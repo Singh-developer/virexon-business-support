@@ -54,6 +54,41 @@
                     </div>
                 </div>
 
+                @if(isset($alreadySubmitted) && $alreadySubmitted)
+                    <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-8 text-center shadow-sm">
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                            @if($status === 'approved')
+                                <i class="fa-solid fa-circle-check text-green-500"></i>
+                            @elseif($status === 'rejected')
+                                <i class="fa-solid fa-circle-xmark text-red-500"></i>
+                            @else
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            @endif
+                        </div>
+                        <h2 class="text-xl font-bold mb-2">Application Already Submitted</h2>
+                        <p class="text-blue-700 mb-6">
+                            You have already submitted your Business Support Advance application form.
+                            The current status of your application is:
+                        </p>
+                        
+                        <div class="inline-block px-6 py-2 rounded-full font-bold uppercase tracking-wider text-sm
+                            @if($status === 'approved') bg-green-100 text-green-700 border border-green-300
+                            @elseif($status === 'rejected') bg-red-100 text-red-700 border border-red-300
+                            @else bg-yellow-100 text-yellow-700 border border-yellow-300 @endif
+                        ">
+                            {{ $status ?? 'Pending' }}
+                        </div>
+                        
+                        <div class="mt-8 pt-6 border-t border-blue-200">
+                            <a href="{{ route('settings.profile') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition">
+                                View Your Profile
+                            </a>
+                            <a href="{{ route('dashboard') }}" class="inline-block bg-white hover:bg-gray-50 text-blue-700 border border-blue-300 font-medium py-2 px-6 rounded transition ml-2">
+                                Go to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                @else
                 <form method="POST" action="{{ route('register.agent.store') }}">
                     @csrf
 
@@ -205,7 +240,7 @@
                     <div class="mb-8 border border-gray-100 rounded-lg p-5">
                         <div class="flex justify-between items-center mb-5">
                             <h2 class="form-section-title !mb-0"><span class="number">5</span> Reference Person Detail</h2>
-                            <button type="button" onclick="addReference()" class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold hover:bg-green-200"><i class="fa-solid fa-plus mr-1"></i> Add Reference</button>
+                            <button type="button" id="add-reference-btn" onclick="addReference()" class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold hover:bg-green-200"><i class="fa-solid fa-plus mr-1"></i> Add Reference</button>
                         </div>
                         <div id="references-container">
                             <div class="reference-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end bg-gray-50 p-4 rounded border border-gray-200 relative">
@@ -256,6 +291,7 @@
                     </div>
 
                 </form>
+                @endif
             </div>
 
             <!-- Sidebar Info -->
@@ -354,6 +390,11 @@
 
         function addReference() {
             const container = document.getElementById('references-container');
+            if (document.querySelectorAll('.reference-row').length >= 2) {
+                alert('You can only add a maximum of 2 references.');
+                return;
+            }
+
             const row = document.createElement('div');
             row.className = 'reference-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end bg-gray-50 p-4 rounded border border-gray-200 relative';
             
@@ -397,6 +438,16 @@
                     btn.classList.add('block');
                 }
             });
+
+            // Hide/Show Add button based on max count
+            const addBtn = document.getElementById('add-reference-btn');
+            if (addBtn) {
+                if (rows.length >= 2) {
+                    addBtn.classList.add('hidden');
+                } else {
+                    addBtn.classList.remove('hidden');
+                }
+            }
         }
 
         function sendOtp() {
