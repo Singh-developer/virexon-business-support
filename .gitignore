@@ -6,3 +6,4 @@
 /storage/*.key
 /storage/framework/cache/data/*
 /storage/logs/*
+*.zip
