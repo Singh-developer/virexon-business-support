@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\AgentDocument;
 
 class User extends Authenticatable
 {
@@ -42,6 +43,26 @@ class User extends Authenticatable
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(AgentDocument::class);
+    }
+
+    public function advances()
+    {
+        return $this->hasMany(Advance::class);
+    }
+
+    public function commissions()
+    {
+        return $this->hasMany(Commission::class);
     }
 
     // --- Relationships Restored From Old Model ---

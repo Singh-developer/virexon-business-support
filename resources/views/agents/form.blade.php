@@ -150,23 +150,119 @@
     <div class="panel-head">
         <div>
             <h3>Application Status</h3>
-            <p>Approve or reject this agent's application. Approved agents have some profile fields locked.</p>
+            <p>Approve or reject this agent's application. Setting <strong>"Form Received"</strong> will prompt the agent to upload their documents.</p>
         </div>
         <span class="badge {{ $statusColor }}">{{ ucfirst($appStatus) }}</span>
     </div>
 
     <form method="POST" action="{{ route('agents.application-status', $agent) }}" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         @csrf
-        <select name="application_status" style="border:1px solid #d1d5db; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; min-width:180px; color:#1e293b; background:#fff;">
-            <option value="pending"  @selected($appStatus === 'pending')>⏳ Pending</option>
-            <option value="approved" @selected($appStatus === 'approved')>✅ Approved</option>
-            <option value="rejected" @selected($appStatus === 'rejected')>❌ Rejected</option>
+        <select name="application_status" style="border:1px solid #d1d5db; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; min-width:200px; color:#1e293b; background:#fff;">
+            <option value="pending"       @selected($appStatus === 'pending')\>⏳ Pending</option>
+            <option value="form_received" @selected($appStatus === 'form_received')>📋 Form Received — Request Docs</option>
+            <option value="approved"      @selected($appStatus === 'approved')>✅ Approved</option>
+            <option value="rejected"      @selected($appStatus === 'rejected')>❌ Rejected</option>
         </select>
         <button type="submit" class="btn primary" onclick="return confirm('Update this agent\'s application status?')">
             Save Status
         </button>
+        <a href="{{ route('admin.documents.index', $agent->id) }}" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            📁 Review Documents
+        </a>
     </form>
 </div>
+
+@if($appStatus === 'approved')
+{{-- ====================================================================
+     SECTION 2.5: ADVANCE & COMMISSION
+==================================================================== --}}
+@php
+    $activeAdvance = $agent->advances()->where('status', 'active')->first();
+    $totalCommission = $agent->commissions()->sum('net_amount');
+    $totalDeductions = $agent->commissions()->sum('advance_deduction');
+@endphp
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>Advance & Commission</h3>
+            <p>Issue an advance to the agent or process their commission payouts.</p>
+        </div>
+        <div style="text-align:right;">
+            <div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;">Net Commissions Paid</div>
+            <div style="font-size:16px;font-weight:700;color:#10b981;">₹{{ number_format($totalCommission, 2) }}</div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:20px;padding:20px;border-top:1px solid #f1f5f9;">
+        
+        {{-- Advance Box --}}
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
+            <div style="font-weight:800;font-size:12px;text-transform:uppercase;color:#475569;margin-bottom:12px;letter-spacing:0.05em;">Issue Advance</div>
+            
+            @if($activeAdvance)
+                <div style="background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:12px;">
+                    <div style="font-size:12px;color:#1e40af;font-weight:700;">Active Advance</div>
+                    <div style="font-size:18px;font-weight:800;color:#1e293b;margin:4px 0;">₹{{ number_format($activeAdvance->outstanding_amount, 2) }} <span style="font-size:12px;font-weight:600;color:#64748b;">outstanding</span></div>
+                    <div style="font-size:12px;color:#64748b;">Original: ₹{{ number_format($activeAdvance->total_amount, 2) }}</div>
+                    
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e2e8f0;font-size:12px;">
+                        Repayment Method: 
+                        @if($activeAdvance->repayment_type === 'unselected')
+                            <strong style="color:#ef4444;">Not selected yet</strong>
+                        @elseif($activeAdvance->repayment_type === 'one_time')
+                            <strong>One-Time Deduction</strong>
+                        @elseif($activeAdvance->repayment_type === 'emi')
+                            <strong>EMI (₹{{ number_format($activeAdvance->emi_amount, 2) }} per payout)</strong>
+                        @endif
+                    </div>
+                </div>
+            @else
+                <form action="{{ route('admin.advances.store', $agent->id) }}" method="POST" style="margin:0;">
+                    @csrf
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div>
+                            <label style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">Advance Amount (₹)</label>
+                            <input type="number" step="0.01" name="amount" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;">
+                        </div>
+                        <button type="submit" class="btn primary" style="width:100%;justify-content:center;">Issue Advance</button>
+                    </div>
+                </form>
+            @endif
+        </div>
+
+        {{-- Commission Box --}}
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
+            <div style="font-weight:800;font-size:12px;text-transform:uppercase;color:#475569;margin-bottom:12px;letter-spacing:0.05em;">Pay Commission</div>
+            
+            @if($activeAdvance && $activeAdvance->repayment_type === 'unselected')
+                <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:12px;color:#991b1b;font-size:13px;">
+                    <strong>Wait!</strong> The agent has an active advance but hasn't selected a repayment method. Commission cannot be processed until they choose how to repay it.
+                </div>
+            @else
+                <form action="{{ route('admin.commissions.store', $agent->id) }}" method="POST" style="margin:0;">
+                    @csrf
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div>
+                            <label style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">Gross Commission Amount (₹)</label>
+                            <input type="number" step="0.01" name="gross_amount" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">Description / Note</label>
+                            <input type="text" name="description" placeholder="e.g. October Sales" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;">
+                        </div>
+                        @if($activeAdvance)
+                        <div style="background:#eff6ff;color:#1e40af;font-size:11px;padding:8px;border-radius:6px;">
+                            ℹ️ Advance deduction ({{ $activeAdvance->repayment_type === 'emi' ? 'EMI' : 'Full' }}) will be automatically calculated and subtracted from this gross amount.
+                        </div>
+                        @endif
+                        <button type="submit" class="btn primary" style="width:100%;justify-content:center;background:#10b981;border-color:#10b981;">Process Payout</button>
+                    </div>
+                </form>
+            @endif
+        </div>
+    </div>
+</div>
+@endif
 
 
 {{-- ====================================================================

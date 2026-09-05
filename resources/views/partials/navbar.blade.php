@@ -24,7 +24,7 @@
                     <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <span class="font-semibold text-white">0120-1234567</span>
+                    <!-- <span class="font-semibold text-white">0120-1234567</span> -->
                 </div>
 
                 <span class="hidden md:inline text-slate-600">|</span>
@@ -37,12 +37,54 @@
                     <span class="font-semibold text-white">support@virexon.in</span>
                 </div>
 
-                <!-- Bell Icon with red count 3 badge -->
-                <div class="relative cursor-pointer p-1">
+                <!-- Bell Icon with Notifications -->
+                <div class="relative cursor-pointer p-1" id="agent-notif-btn">
                     <svg class="w-5 h-5 text-slate-200 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
                     </svg>
-                    <span class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">3</span>
+                    @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
+                    <span class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                        {{ Auth::user()->unreadNotifications->count() > 9 ? '9+' : Auth::user()->unreadNotifications->count() }}
+                    </span>
+                    @endif
+
+                    <!-- Notification Dropdown -->
+                    <div id="agent-notif-dropdown" class="absolute right-0 top-full mt-3 w-80 bg-white rounded-xl shadow-xl hidden border border-slate-200 z-50 overflow-hidden" style="cursor: default;">
+                        <div class="flex justify-between items-center px-4 py-3 border-b border-slate-100 bg-slate-50">
+                            <span class="font-bold text-sm text-slate-800">Notifications</span>
+                            @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
+                            <form method="POST" action="{{ route('notifications.mark-read') }}" class="m-0">
+                                @csrf
+                                <button type="submit" class="text-xs font-semibold text-blue-600 hover:text-blue-800 focus:outline-none">Mark all read</button>
+                            </form>
+                            @endif
+                        </div>
+                        <div class="max-h-[300px] overflow-y-auto">
+                            @if(Auth::check())
+                                @forelse(Auth::user()->notifications as $notification)
+                                    @php
+                                        $notifUrl = '#';
+                                        if (isset($notification->data['ticket_id'])) {
+                                            $notifUrl = route('tickets.show', $notification->data['ticket_id']);
+                                        }
+                                        $finalUrl = route('notifications.read', ['id' => $notification->id, 'redirect' => $notifUrl]);
+                                    @endphp
+                                    <a href="{{ $finalUrl }}" class="block px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition {{ $notification->read_at ? 'opacity-70' : 'bg-blue-50/30' }}">
+                                        <div class="text-sm text-slate-800 {{ $notification->read_at ? '' : 'font-semibold' }} leading-tight mb-1">
+                                            {{ $notification->data['message'] ?? 'New notification' }}
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 font-medium">
+                                            {{ $notification->created_at->diffForHumans() }}
+                                        </div>
+                                    </a>
+                                @empty
+                                    <div class="px-4 py-6 text-center text-slate-500 text-sm font-medium">
+                                        No notifications yet.
+                                    </div>
+                                @endforelse
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Agent ID Dropdown Button -->
@@ -108,7 +150,7 @@
 
                 <!-- Navigation Links -->
                 <nav class="space-y-1.5 text-xs font-semibold">
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-[#0D6EFD] text-white shadow-sm font-bold transition">
+                    <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-[#0D6EFD] text-white shadow-sm font-bold transition">
                         <svg class="w-4 h-4 text-white fill-current" viewBox="0 0 20 20">
                             <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                         </svg>
@@ -141,6 +183,18 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                         </svg>
                         <span class="text-xs">Fund Application</span>
+                    </a>
+
+                    <a href="{{ route('documents.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span class="text-xs">My Documents</span>
+                    </a>
+
+                    <a href="{{ route('advances.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                        <i class="fa-solid fa-wallet text-slate-500 w-4 text-center"></i>
+                        <span class="text-xs">Advance & Balance</span>
                     </a>
 
                     <a href="#" class="flex items-center justify-between px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
@@ -192,11 +246,11 @@
                         </div>
                     </div>
 
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <a href="{{ route('tickets.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
                         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span class="text-xs">Support & Help</span>
+                        <span class="text-xs">Support Tickets</span>
                     </a>
 
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
@@ -255,6 +309,18 @@
                 });
             }
 
+            // Notification Dropdown Toggle
+            const agentNotifBtn = document.getElementById('agent-notif-btn');
+            const agentNotifDropdown = document.getElementById('agent-notif-dropdown');
+
+            if (agentNotifBtn && agentNotifDropdown) {
+                agentNotifBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    agentNotifDropdown.classList.toggle('hidden');
+                });
+            }
+
+            // Mobile Profile Toggles
             const mobileProfileBtn = document.getElementById('mobile-profile-btn');
             const mobileProfileDropdown = document.getElementById('mobile-profile-dropdown');
             if (mobileProfileBtn && mobileProfileDropdown) {
@@ -271,10 +337,15 @@
                     e.stopPropagation();
                     desktopProfileDropdown.classList.toggle('hidden');
                 });
-            } // Close header dropdown when clicking outside
+            } 
+            
+            // Close dropdowns when clicking outside
             document.addEventListener('click', function(e) {
                 if (headerProfileDropdown && !headerProfileDropdown.classList.contains('hidden') && !headerProfileBtn.contains(e.target)) {
                     headerProfileDropdown.classList.add('hidden');
+                }
+                if (agentNotifDropdown && !agentNotifDropdown.classList.contains('hidden') && !agentNotifBtn.contains(e.target)) {
+                    agentNotifDropdown.classList.add('hidden');
                 }
             });
         });

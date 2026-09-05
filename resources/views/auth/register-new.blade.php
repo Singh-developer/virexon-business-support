@@ -61,6 +61,8 @@
                                 <i class="fa-solid fa-circle-check text-green-500"></i>
                             @elseif($status === 'rejected')
                                 <i class="fa-solid fa-circle-xmark text-red-500"></i>
+                            @elseif($status === 'form_received')
+                                <i class="fa-solid fa-file-circle-check text-blue-500"></i>
                             @else
                                 <i class="fa-solid fa-clock-rotate-left"></i>
                             @endif
@@ -87,6 +89,57 @@
                                 Go to Dashboard
                             </a>
                         </div>
+                        @if($status === 'form_received')
+                            <h2 class="text-xl font-bold mb-2 text-blue-900">Form Received Successfully! 🎉</h2>
+                            <p class="text-blue-700 mb-4">
+                                Your Business Support Advance application has been received by the admin. The next step is to upload your KYC and supporting documents.
+                            </p>
+                            <div class="inline-block px-6 py-2 rounded-full font-bold uppercase tracking-wider text-sm bg-blue-100 text-blue-700 border border-blue-300 mb-6">
+                                Form Received — Documents Required
+                            </div>
+                            <div class="bg-white border border-blue-200 rounded-lg p-4 mb-6 text-left">
+                                <div class="font-semibold text-slate-800 text-sm mb-3"><i class="fa-regular fa-file-lines mr-2 text-blue-500"></i>Documents to Upload:</div>
+                                <ul class="space-y-2 text-sm text-slate-600">
+                                    <li class="flex items-center gap-2"><i class="fa-regular fa-id-card text-blue-400"></i> PAN Card</li>
+                                    <li class="flex items-center gap-2"><i class="fa-regular fa-address-card text-green-400"></i> Aadhaar Card</li>
+                                    <li class="flex items-center gap-2"><i class="fa-regular fa-image text-purple-400"></i> Passport Size Photograph</li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-building-columns text-yellow-500"></i> Bank Passbook / Cancelled Cheque</li>
+                                    <li class="flex items-center gap-2"><i class="fa-regular fa-id-badge text-orange-400"></i> Agent ID Proof / Agreement</li>
+                                    <li class="flex items-center gap-2"><i class="fa-solid fa-house-user text-red-400"></i> Address Proof</li>
+                                </ul>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                <a href="{{ route('documents.index') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition">
+                                    <i class="fa-solid fa-arrow-up-from-bracket"></i> Upload Documents Now →
+                                </a>
+                                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-blue-700 border border-blue-300 font-medium py-3 px-6 rounded-lg transition">
+                                    Go to Dashboard
+                                </a>
+                            </div>
+                        @else
+                            <h2 class="text-xl font-bold mb-2">Application Already Submitted</h2>
+                            <p class="text-blue-700 mb-6">
+                                You have already submitted your Business Support Advance application form.
+                                The current status of your application is:
+                            </p>
+                            
+                            <div class="inline-block px-6 py-2 rounded-full font-bold uppercase tracking-wider text-sm
+                                @if($status === 'approved') bg-green-100 text-green-700 border border-green-300
+                                @elseif($status === 'rejected') bg-red-100 text-red-700 border border-red-300
+                                @else bg-yellow-100 text-yellow-700 border border-yellow-300 @endif
+                            ">
+                                {{ $status ?? 'Pending' }}
+                            </div>
+                            
+                            <div class="mt-8 pt-6 border-t border-blue-200">
+                                <a href="{{ route('settings.profile') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition">
+                                    View Your Profile
+                                </a>
+                                <a href="{{ route('dashboard') }}" class="inline-block bg-white hover:bg-gray-50 text-blue-700 border border-blue-300 font-medium py-2 px-6 rounded transition ml-2">
+                                    Go to Dashboard
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 @else
                 <form method="POST" action="{{ route('register.agent.store') }}">

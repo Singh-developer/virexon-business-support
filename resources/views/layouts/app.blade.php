@@ -58,6 +58,7 @@
                     <a class="nav-item {{ request()->routeIs('cards.*')?'active':'' }}" href="{{ route('cards.index') }}">▣ <span>Virtual Cards</span></a>
                     <a class="nav-item {{ request()->routeIs('payments.*')?'active':'' }}" href="{{ route('payments.index') }}">↗ <span>Payments</span></a>
                     <a class="nav-item {{ request()->routeIs('transactions.*')?'active':'' }}" href="{{ route('transactions.index') }}">≡ <span>Transactions</span></a>
+                    <a class="nav-item {{ request()->routeIs('admin.tickets.*')?'active':'' }}" href="{{ route('admin.tickets.index') }}">⚑ <span>Support Tickets</span></a>
                     <div class="nav-label" style="margin-top:20px;">SETTINGS</div>
                     <a class="nav-item {{ request()->routeIs('settings.profile') ? 'active' : '' }}" href="{{ route('settings.profile') }}">⚙ <span>My Settings</span></a>
                     @if(auth()->user()->isAdmin())
@@ -99,7 +100,18 @@
                                 </div>
                                 <div style="max-height: 300px; overflow-y: auto;">
                                     @forelse(auth()->user()->notifications as $notification)
-                                    <a href="{{ isset($notification->data['agent_id']) ? route('agents.edit', $notification->data['agent_id']) : '#' }}" style="display: block; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-decoration: none; background: {{ $notification->read_at ? '#ffffff' : '#f0f9ff' }}; transition: background 0.2s;">
+                                    @php
+                                        $notifUrl = '#';
+                                        if (isset($notification->data['ticket_id']) && auth()->user()->isAdmin()) {
+                                            $notifUrl = route('admin.tickets.show', $notification->data['ticket_id']);
+                                        } elseif (isset($notification->data['ticket_id'])) {
+                                            $notifUrl = route('tickets.show', $notification->data['ticket_id']);
+                                        } elseif (isset($notification->data['agent_id'])) {
+                                            $notifUrl = route('agents.edit', $notification->data['agent_id']);
+                                        }
+                                        $finalUrl = route('notifications.read', ['id' => $notification->id, 'redirect' => $notifUrl]);
+                                    @endphp
+                                    <a href="{{ $finalUrl }}" style="display: block; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-decoration: none; background: {{ $notification->read_at ? '#ffffff' : '#f0f9ff' }}; transition: background 0.2s;">
                                         <div style="font-size: 0.875rem; color: #1e293b; font-weight: {{ $notification->read_at ? '400' : '600' }}; line-height: 1.4;">
                                             {{ $notification->data['message'] ?? 'New notification' }}
                                         </div>

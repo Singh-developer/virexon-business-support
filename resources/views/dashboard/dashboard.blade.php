@@ -173,8 +173,8 @@
                     </div>
                 </div>
                 <div class="mt-2">
-                    <div class="font-bold text-sm text-[#0D6EFD]">0120-1234567</div>
-                    <div class="text-[11px] text-slate-500 truncate">support@firmname.com</div>
+                    <!-- <div class="font-bold text-sm text-[#0D6EFD]">0120-1234567</div> -->
+                    <div class="text-[11px] text-slate-500 truncate">support@virexon.in</div>
                 </div>
             </div>
         </aside>

@@ -120,6 +120,35 @@ Route::middleware('auth')->group(function () {
         'index'
     ])->name('cards.index');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Support Tickets (Agent)
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('tickets', \App\Http\Controllers\TicketController::class)->only(['index', 'create', 'store', 'show']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Agent Documents (Upload)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
+    Route::post('documents', [App\Http\Controllers\DocumentController::class, 'store'])->name('documents.store');
+
+    // Advances & Balance (Agent)
+    Route::get('advances', [App\Http\Controllers\AdvanceController::class, 'index'])->name('advances.index');
+    Route::post('advances/repayment', [App\Http\Controllers\AdvanceController::class, 'updateRepaymentMethod'])->name('advances.repayment');
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/notifications/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark-read');
+    Route::get('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'read'])->name('notifications.read');
+
 
     /*
     |--------------------------------------------------------------------------
@@ -144,6 +173,20 @@ Route::middleware('auth')->group(function () {
 
 
         /*
+        | Support Tickets (Admin)
+        */
+        Route::get('/admin/tickets', [\App\Http\Controllers\TicketController::class, 'adminIndex'])->name('admin.tickets.index');
+        Route::get('/admin/tickets/{ticket}', [\App\Http\Controllers\TicketController::class, 'adminShow'])->name('admin.tickets.show');
+        Route::patch('/admin/tickets/{ticket}/status', [\App\Http\Controllers\TicketController::class, 'adminUpdate'])->name('admin.tickets.update');
+
+        /*
+        | Agent Documents (Admin Review)
+        */
+        Route::get('/admin/agents/{userId}/documents', [\App\Http\Controllers\DocumentController::class, 'adminIndex'])->name('admin.documents.index');
+        Route::patch('/admin/agents/{userId}/documents/{docId}', [\App\Http\Controllers\DocumentController::class, 'adminReview'])->name('admin.documents.review');
+
+
+        /*
         | Change Card Status
         */
         Route::post('/cards/{card}/status', [
@@ -155,15 +198,19 @@ Route::middleware('auth')->group(function () {
         /*
         | Agent Management
         */
+        Route::get('agents/import-sample', [AgentController::class, 'downloadSample'])->name('agents.import.sample');
+        Route::post('agents/import', [AgentController::class, 'import'])->name('agents.import');
+
         Route::patch(
             'agents/{agent}/toggle-status',
             [AgentController::class, 'toggleStatus']
         )->name('agents.toggle-status');
 
-        Route::post(
-            'agents/{agent}/application-status',
-            [AgentController::class, 'updateApplicationStatus']
-        )->name('agents.application-status');
+        Route::patch('agents/{agent}/application-status', [App\Http\Controllers\AgentController::class, 'updateApplicationStatus'])->name('agents.application-status');
+        
+        // Advances & Commissions
+        Route::post('agents/{agent}/advances', [App\Http\Controllers\Admin\AdvanceController::class, 'store'])->name('admin.advances.store');
+        Route::post('agents/{agent}/commissions', [App\Http\Controllers\Admin\CommissionController::class, 'store'])->name('admin.commissions.store');
 
         Route::resource(
             'agents',
@@ -300,11 +347,6 @@ Route::middleware('auth')->group(function () {
             SettingsController::class,
             'destroyGateway'
         ])->name('settings.gateways.destroy');
-        
-        Route::post('/notifications/mark-read', function () {
-            auth()->user()->unreadNotifications->markAsRead();
-            return back()->with('success', 'Notifications marked as read.');
-        })->name('notifications.mark-read');
     });
 });
 
