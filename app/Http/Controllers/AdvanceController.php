@@ -15,7 +15,24 @@ class AdvanceController extends Controller
         $totalCommission = $commissions->sum('net_amount');
         $totalDeductions = $commissions->sum('advance_deduction');
 
-        return view('advances.index', compact('activeAdvance', 'commissions', 'totalCommission', 'totalDeductions'));
+        // Load agent settings (max_limit, commission)
+        $user->loadMissing('detail');
+        $detail = $user->detail;
+        $maxLimit = $detail->max_limit ?? 500000;
+        $commissionType = $detail->commission_type ?? 'percentage';
+        $commissionRate = $detail->commission_rate ?? 0;
+        $commissionFixed = $detail->commission_fixed ?? 0;
+
+        return view('advances.index', compact(
+            'activeAdvance',
+            'commissions',
+            'totalCommission',
+            'totalDeductions',
+            'maxLimit',
+            'commissionType',
+            'commissionRate',
+            'commissionFixed'
+        ));
     }
 
     public function updateRepaymentMethod(Request $request)

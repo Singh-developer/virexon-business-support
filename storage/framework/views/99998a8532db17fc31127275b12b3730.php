@@ -4,11 +4,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name','Agent Business Support') }} @isset($title) · {{ $title }} @endisset</title>@vite(['resources/css/app.css','resources/js/app.js'])
+    <title><?php echo e(config('app.name','Agent Business Support')); ?> <?php if(isset($title)): ?> · <?php echo e($title); ?> <?php endif; ?></title><?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css','resources/js/app.js']); ?>
 </head>
 
 <body>
-    @if(auth()->check() && auth()->user()->isAgent())
+    <?php if(auth()->check() && auth()->user()->isAgent()): ?>
         <!-- Google Fonts & Tailwind (for Agent Layout) -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,24 +26,25 @@
             }
         </script>
         <div class="bg-[#F4F6F8] text-slate-800 antialiased min-h-screen w-full flex flex-col font-sans">
-            @include('partials.navbar')
+            <?php echo $__env->make('partials.navbar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             <div class="flex-1 flex w-full justify-center">
                 <main class="flex-1 p-4 lg:p-6 space-y-6 max-w-7xl">
                     <section class="content" style="background: transparent; box-shadow: none; border: none; padding: 0;">
-                        @if(session('success'))<div class="flash success">✓ {{ session('success') }}</div>@endif
-                        @if($errors->any())<div class="flash error">{{ $errors->first() }}</div>@endif
-                        {{ $slot ?? '' }}
-                        @yield('content')
+                        <?php if(session('success')): ?><div class="flash success">✓ <?php echo e(session('success')); ?></div><?php endif; ?>
+                        <?php if($errors->any()): ?><div class="flash error"><?php echo e($errors->first()); ?></div><?php endif; ?>
+                        <?php echo e($slot ?? ''); ?>
+
+                        <?php echo $__env->yieldContent('content'); ?>
                     </section>
                 </main>
             </div>
         </div>
-    @else
+    <?php else: ?>
         <!-- Admin Layout Wrapper -->
         <div class="app-shell">
             <aside class="sidebar">
                 <div class="brand">
-                    <img src="{{ asset('images/virexon-light.png') }}" alt="Virexon" style="width: calc(100%/4*2); height: auto;">
+                    <img src="<?php echo e(asset('images/virexon-light.png')); ?>" alt="Virexon" style="width: calc(100%/4*2); height: auto;">
                     <!-- <div class="brand-mark">🤝</div> -->
                     <div>
                         <div class="brand-title">AGENT</div>
@@ -52,21 +53,21 @@
                 </div>
                 <div class="sidebar-scroll">
                     <div class="nav-label">WORKSPACE</div>
-                    <a class="nav-item {{ request()->routeIs('dashboard', 'admin.dashboard')?'active':'' }}" href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}">⌂ <span>Dashboard</span></a>
-                    <a class="nav-item {{ request()->routeIs('businesses.*')?'active':'' }}" href="{{ route('businesses.index') }}">▦ <span>Businesses</span></a>
-                    @if(auth()->user()->isAdmin())<a class="nav-item {{ request()->routeIs('agents.*')?'active':'' }}" href="{{ route('agents.index') }}">◉ <span>Agents</span></a>@endif
-                    <a class="nav-item {{ request()->routeIs('cards.*')?'active':'' }}" href="{{ route('cards.index') }}">▣ <span>Virtual Cards</span></a>
-                    <a class="nav-item {{ request()->routeIs('payments.*')?'active':'' }}" href="{{ route('payments.index') }}">↗ <span>Payments</span></a>
-                    <a class="nav-item {{ request()->routeIs('transactions.*')?'active':'' }}" href="{{ route('transactions.index') }}">≡ <span>Transactions</span></a>
-                    @if(auth()->user()->isAdmin())<a class="nav-item {{ request()->routeIs('assertions.*')?'active':'' }}" href="{{ route('assertions.index') }}">✉ <span>Assertion Letters</span></a>@endif
-                    <a class="nav-item {{ request()->routeIs('admin.tickets.*')?'active':'' }}" href="{{ route('admin.tickets.index') }}">⚑ <span>Support Tickets</span></a>
+                    <a class="nav-item <?php echo e(request()->routeIs('dashboard', 'admin.dashboard')?'active':''); ?>" href="<?php echo e(auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard')); ?>">⌂ <span>Dashboard</span></a>
+                    <a class="nav-item <?php echo e(request()->routeIs('businesses.*')?'active':''); ?>" href="<?php echo e(route('businesses.index')); ?>">▦ <span>Businesses</span></a>
+                    <?php if(auth()->user()->isAdmin()): ?><a class="nav-item <?php echo e(request()->routeIs('agents.*')?'active':''); ?>" href="<?php echo e(route('agents.index')); ?>">◉ <span>Agents</span></a><?php endif; ?>
+                    <a class="nav-item <?php echo e(request()->routeIs('cards.*')?'active':''); ?>" href="<?php echo e(route('cards.index')); ?>">▣ <span>Virtual Cards</span></a>
+                    <a class="nav-item <?php echo e(request()->routeIs('payments.*')?'active':''); ?>" href="<?php echo e(route('payments.index')); ?>">↗ <span>Payments</span></a>
+                    <a class="nav-item <?php echo e(request()->routeIs('transactions.*')?'active':''); ?>" href="<?php echo e(route('transactions.index')); ?>">≡ <span>Transactions</span></a>
+                    <?php if(auth()->user()->isAdmin()): ?><a class="nav-item <?php echo e(request()->routeIs('assertions.*')?'active':''); ?>" href="<?php echo e(route('assertions.index')); ?>">✉ <span>Assertion Letters</span></a><?php endif; ?>
+                    <a class="nav-item <?php echo e(request()->routeIs('admin.tickets.*')?'active':''); ?>" href="<?php echo e(route('admin.tickets.index')); ?>">⚑ <span>Support Tickets</span></a>
                     <div class="nav-label" style="margin-top:20px;">SETTINGS</div>
-                    <a class="nav-item {{ request()->routeIs('settings.profile') ? 'active' : '' }}" href="{{ route('settings.profile') }}">⚙ <span>My Settings</span></a>
-                    @if(auth()->user()->isAdmin())
-                    <a class="nav-item {{ request()->routeIs('settings.gateways', 'settings.payment-mode') ? 'active' : '' }}" href="{{ route('settings.gateways') }}">⚙ <span>Platform Settings</span></a>
-                    <a class="nav-item {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}" href="{{ route('admin.roles.index') }}">🛡 <span>Roles</span></a>
-                    <a class="nav-item {{ request()->routeIs('admin.users.index') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">👥 <span>Users</span></a>
-                    @endif
+                    <a class="nav-item <?php echo e(request()->routeIs('settings.profile') ? 'active' : ''); ?>" href="<?php echo e(route('settings.profile')); ?>">⚙ <span>My Settings</span></a>
+                    <?php if(auth()->user()->isAdmin()): ?>
+                    <a class="nav-item <?php echo e(request()->routeIs('settings.gateways', 'settings.payment-mode') ? 'active' : ''); ?>" href="<?php echo e(route('settings.gateways')); ?>">⚙ <span>Platform Settings</span></a>
+                    <a class="nav-item <?php echo e(request()->routeIs('admin.roles.*') ? 'active' : ''); ?>" href="<?php echo e(route('admin.roles.index')); ?>">🛡 <span>Roles</span></a>
+                    <a class="nav-item <?php echo e(request()->routeIs('admin.users.index') ? 'active' : ''); ?>" href="<?php echo e(route('admin.users.index')); ?>">👥 <span>Users</span></a>
+                    <?php endif; ?>
                 </div>
                 <div class="sidebar-footer">
                     <div class="secure">● Live secure environment</div>
@@ -76,34 +77,35 @@
             <main class="main">
                 <header class="topbar">
                     <div class="mobile-menu">☰</div>
-                    <div class="breadcrumbs">Agent Business Support <span>/</span> {{ $title ?? 'Dashboard' }}</div>
+                    <div class="breadcrumbs">Agent Business Support <span>/</span> <?php echo e($title ?? 'Dashboard'); ?></div>
                         <div class="top-actions"><span class="pill online">● System Healthy</span>
                         
-                        @if(auth()->user()->isAdmin())
+                        <?php if(auth()->user()->isAdmin()): ?>
                         <div class="notification-container" style="position: relative; display: inline-block;">
                             <button onclick="toggleNotifDropdown(event)" class="icon-btn" style="position: relative; border: none; background: transparent; cursor: pointer; font-size: 1.25rem;">
                                 🔔
-                                @php $unreadCount = auth()->user()->unreadNotifications->count(); @endphp
-                                @if($unreadCount > 0)
+                                <?php $unreadCount = auth()->user()->unreadNotifications->count(); ?>
+                                <?php if($unreadCount > 0): ?>
                                 <span style="position: absolute; top: -5px; right: -5px; background: #e11d48; color: white; font-size: 0.65rem; font-weight: bold; border-radius: 99px; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; line-height: 1;">
-                                    {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+                                    <?php echo e($unreadCount > 9 ? '9+' : $unreadCount); ?>
+
                                 </span>
-                                @endif
+                                <?php endif; ?>
                             </button>
                             
                             <div id="notif-dropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; width: 320px; background: white; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden; text-align: left;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
                                     <span style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">Notifications</span>
-                                    @if($unreadCount > 0)
-                                    <form method="POST" action="{{ route('notifications.mark-read') }}" style="margin: 0;">
-                                        @csrf
+                                    <?php if($unreadCount > 0): ?>
+                                    <form method="POST" action="<?php echo e(route('notifications.mark-read')); ?>" style="margin: 0;">
+                                        <?php echo csrf_field(); ?>
                                         <button type="submit" style="border: none; background: transparent; font-size: 0.75rem; color: #3b82f6; cursor: pointer; padding: 0;">Mark all read</button>
                                     </form>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                                 <div style="max-height: 300px; overflow-y: auto;">
-                                    @forelse(auth()->user()->notifications as $notification)
-                                    @php
+                                    <?php $__empty_1 = true; $__currentLoopData = auth()->user()->notifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                    <?php
                                         $notifUrl = '#';
                                         if (isset($notification->data['ticket_id']) && auth()->user()->isAdmin()) {
                                             $notifUrl = route('admin.tickets.show', $notification->data['ticket_id']);
@@ -113,20 +115,22 @@
                                             $notifUrl = route('agents.edit', $notification->data['agent_id']);
                                         }
                                         $finalUrl = route('notifications.read', ['id' => $notification->id, 'redirect' => $notifUrl]);
-                                    @endphp
-                                    <a href="{{ $finalUrl }}" style="display: block; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-decoration: none; background: {{ $notification->read_at ? '#ffffff' : '#f0f9ff' }}; transition: background 0.2s;">
-                                        <div style="font-size: 0.875rem; color: #1e293b; font-weight: {{ $notification->read_at ? '400' : '600' }}; line-height: 1.4;">
-                                            {{ $notification->data['message'] ?? 'New notification' }}
+                                    ?>
+                                    <a href="<?php echo e($finalUrl); ?>" style="display: block; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-decoration: none; background: <?php echo e($notification->read_at ? '#ffffff' : '#f0f9ff'); ?>; transition: background 0.2s;">
+                                        <div style="font-size: 0.875rem; color: #1e293b; font-weight: <?php echo e($notification->read_at ? '400' : '600'); ?>; line-height: 1.4;">
+                                            <?php echo e($notification->data['message'] ?? 'New notification'); ?>
+
                                         </div>
                                         <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">
-                                            {{ $notification->created_at->diffForHumans() }}
+                                            <?php echo e($notification->created_at->diffForHumans()); ?>
+
                                         </div>
                                     </a>
-                                    @empty
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <div style="padding: 16px; text-align: center; color: #64748b; font-size: 0.875rem;">
                                         No notifications.
                                     </div>
-                                    @endforelse
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -150,20 +154,20 @@
                                 }
                             });
                         </script>
-                        @endif
+                        <?php endif; ?>
 
-                        <div class="avatar">{{ strtoupper(substr(auth()->user()->name,0,1)) }}</div>
+                        <div class="avatar"><?php echo e(strtoupper(substr(auth()->user()->name,0,1))); ?></div>
                         <div>
-                            <div class="user-name">{{ auth()->user()->name }}</div>
-                            <div class="user-role">{{ auth()->user()->role?->name }}</div>
+                            <div class="user-name"><?php echo e(auth()->user()->name); ?></div>
+                            <div class="user-role"><?php echo e(auth()->user()->role?->name); ?></div>
                         </div>
-                        <form method="POST" action="{{ route('logout') }}">@csrf<button class="icon-btn" title="Logout">↪</button></form>
+                        <form method="POST" action="<?php echo e(route('logout')); ?>"><?php echo csrf_field(); ?><button class="icon-btn" title="Logout">↪</button></form>
                     </div>
                 </header>
                 <section class="content">
-                    @if(session('success'))<div class="flash success">✓ {{ session('success') }}</div>@endif
-                    @if($errors->any())<div class="flash error">{{ $errors->first() }}</div>@endif{{ $slot ?? '' }}@yield('content')</section>
-                <footer class="footer">© {{ now()->year }} Agent Business Support · Partnering your growth</footer>
+                    <?php if(session('success')): ?><div class="flash success">✓ <?php echo e(session('success')); ?></div><?php endif; ?>
+                    <?php if($errors->any()): ?><div class="flash error"><?php echo e($errors->first()); ?></div><?php endif; ?><?php echo e($slot ?? ''); ?><?php echo $__env->yieldContent('content'); ?></section>
+                <footer class="footer">© <?php echo e(now()->year); ?> Agent Business Support · Partnering your growth</footer>
             </main>
         </div>
         <script>
@@ -210,7 +214,7 @@
                 }
             }
         </style>
-    @endif
+    <?php endif; ?>
 </body>
 
-</html>
+</html><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/layouts/app.blade.php ENDPATH**/ ?>

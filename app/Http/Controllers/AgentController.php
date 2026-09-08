@@ -254,9 +254,18 @@ class AgentController extends Controller
             $agent
         );
 
+        // Additional validation for limit and commission fields
+        $request->validate([
+            'max_limit' => 'nullable|numeric|min:0|max:999999999999.99',
+            'commission_type' => 'nullable|in:percentage,fixed',
+            'commission_rate' => 'nullable|numeric|min:0|max:100',
+            'commission_fixed' => 'nullable|numeric|min:0|max:999999999999.99',
+        ]);
+
         DB::transaction(function () use (
             $agent,
-            $data
+            $data,
+            $request
         ) {
             $agent->update([
                 'name' => $data['name'],
@@ -272,9 +281,16 @@ class AgentController extends Controller
                 ),
             ]);
 
+            // Update user details including limit and commission settings
             $agent->detail()->updateOrCreate(
                 ['user_id' => $agent->id],
-                ['personal_email' => $data['personal_email'] ?? null]
+                [
+                    'personal_email' => $data['personal_email'] ?? null,
+                    'max_limit' => $request->max_limit ?? 500000.00,
+                    'commission_type' => $request->commission_type ?? 'percentage',
+                    'commission_rate' => $request->commission_rate ?? 0,
+                    'commission_fixed' => $request->commission_fixed ?? 0,
+                ]
             );
 
             /*

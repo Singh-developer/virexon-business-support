@@ -157,10 +157,14 @@
                         <span class="text-sm">Dashboard</span>
                     </a>
 
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <!-- <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
                         <div class="w-5 h-5 rounded-full border border-slate-400 flex items-center justify-center text-slate-600 font-bold text-[10px]">
                             $
                         </div>
+                        <span class="text-xs">Advance & Balance</span>
+                    </a> -->
+                    <a href="{{ route('advances.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                        <i class="fa-solid fa-wallet text-slate-500 w-4 text-center"></i>
                         <span class="text-xs">Advance & Balance</span>
                     </a>
 
@@ -192,12 +196,7 @@
                         <span class="text-xs">My Documents</span>
                     </a>
 
-                    <a href="{{ route('advances.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
-                        <i class="fa-solid fa-wallet text-slate-500 w-4 text-center"></i>
-                        <span class="text-xs">Advance & Balance</span>
-                    </a>
-
-                    <a href="#" class="flex items-center justify-between px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <!-- <a href="#" class="flex items-center justify-between px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
                         <div class="flex items-center space-x-3">
                             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -207,7 +206,7 @@
                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
-                    </a>
+                    </a> -->
 
                     <a href="#" class="flex items-center justify-between px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
                         <div class="flex items-center space-x-3">

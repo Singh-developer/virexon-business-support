@@ -35,7 +35,7 @@
         <?php endif; ?>
 
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div class="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">Net Commissions Earned</div>
                 <div class="text-3xl font-bold text-slate-800">₹<?php echo e(number_format($totalCommission, 2)); ?></div>
@@ -53,6 +53,40 @@
                     <?php else: ?>
                         ₹0.00
                     <?php endif; ?>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="text-slate-500 text-sm font-semibold uppercase tracking-wider mb-2">Max Transaction Limit</div>
+                <div class="text-3xl font-bold text-blue-600">₹<?php echo e(number_format($maxLimit, 2)); ?></div>
+                <div class="text-xs text-slate-400 mt-1">Set by admin</div>
+            </div>
+        </div>
+
+        
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm mb-8 overflow-hidden">
+            <div class="border-b border-slate-100 bg-slate-50 px-6 py-4">
+                <h2 class="font-bold text-slate-800">Your Commission Configuration</h2>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Commission Type</div>
+                    <div class="text-lg font-bold text-slate-800">
+                        <?php if($commissionType === 'fixed'): ?>
+                            Fixed Amount
+                        <?php else: ?>
+                            Percentage
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Commission Rate</div>
+                    <div class="text-lg font-bold text-green-600">
+                        <?php if($commissionType === 'fixed'): ?>
+                            ₹<?php echo e(number_format($commissionFixed, 2)); ?> per transaction
+                        <?php else: ?>
+                            <?php echo e(number_format($commissionRate, 4)); ?>%
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>

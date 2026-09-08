@@ -978,7 +978,7 @@
                     AGENT
                     <span>Business Support</span>
                 </div> -->
-                <img src="{{ asset('images/virexon-light.png')}}" alt="Virexon" style="max-width: 50%;" />
+                <img src="<?php echo e(asset('images/virexon-light.png')); ?>" alt="Virexon" style="max-width: 50%;" />
             </div>
 
             <ul class="nav-links" id="navLinks">
@@ -991,14 +991,14 @@
                 <li><a href="#">Contact Us</a></li>
 
                 <div class="nav-actions-mobile" style="display: none;">
-                    <a href="{{ route('login') }}" class="btn btn-outline" style="width: 100%;"><i class="fa-regular fa-user"></i> Login</a>
-                    <!-- <a href="{{ route('register.agent') }}" class="btn btn-outline" style="width: 100%;"><i class="fa-solid fa-lock"></i> Agent Portal</a> -->
+                    <a href="<?php echo e(route('login')); ?>" class="btn btn-outline" style="width: 100%;"><i class="fa-regular fa-user"></i> Login</a>
+                    <!-- <a href="<?php echo e(route('register.agent')); ?>" class="btn btn-outline" style="width: 100%;"><i class="fa-solid fa-lock"></i> Agent Portal</a> -->
                 </div>
             </ul>
 
             <div class="nav-actions">
-                <a href="{{ route('login') }}" class="btn btn-outline"><i class="fa-regular fa-user"></i> Login</a>
-                <!-- <a href="{{ route('register.agent') }}" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Agent Register</a> -->
+                <a href="<?php echo e(route('login')); ?>" class="btn btn-outline"><i class="fa-regular fa-user"></i> Login</a>
+                <!-- <a href="<?php echo e(route('register.agent')); ?>" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Agent Register</a> -->
             </div>
 
             <i class="fa-solid fa-bars menu-toggle" id="menuToggle"></i>
@@ -1269,7 +1269,7 @@
                             AGENT
                             <span>Support</span>
                         </div> -->
-                        <img src="{{ asset('images/virexon-light.png')}}" alt="Virexon" style="max-width: 30%;" />
+                        <img src="<?php echo e(asset('images/virexon-light.png')); ?>" alt="Virexon" style="max-width: 30%;" />
                     </div>
                     <p>Empowering agents nationwide with zero-interest financial backing. Achieve your sales targets, expand your reach, and secure your financial future with our seamless support network.</p>
                     <!-- <div class="social-icons">
@@ -1286,8 +1286,8 @@
                         <!-- <li><a href="#">About Us</a></li>
                         <li><a href="#">How it Works</a></li>
                         <li><a href="#">Eligibility Criteria</a></li> -->
-                        <li><a href="{{ route('login') }}">Apply for Advance</a></li>
-                        <li><a href="{{ route('login') }}">Login</a></li>
+                        <li><a href="<?php echo e(route('login')); ?>">Apply for Advance</a></li>
+                        <li><a href="<?php echo e(route('login')); ?>">Login</a></li>
                     </ul>
                 </div>
 
@@ -1349,4 +1349,4 @@
 
 </body>
 
-</html>
+</html><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/home.blade.php ENDPATH**/ ?>

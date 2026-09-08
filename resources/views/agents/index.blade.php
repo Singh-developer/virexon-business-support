@@ -78,6 +78,8 @@
                     <th>City</th>
                     <th>Business</th>
                     <th>Virtual Card</th>
+                    <th>Max Limit</th>
+                    <th>Commission</th>
                     <th>Status</th>
                     <th>App Status</th>
                     <th>Created At</th>
@@ -102,6 +104,23 @@
                         @else
                             Missing
                         @endif
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; color:#1e40af;">
+                            ₹{{ number_format($agent->detail->max_limit ?? 500000, 0) }}
+                        </span>
+                    </td>
+                    <td>
+                        @php
+                            $commType = $agent->detail->commission_type ?? 'percentage';
+                        @endphp
+                        <span style="font-size:12px; font-weight:700; color:#059669;">
+                            @if($commType === 'fixed')
+                                ₹{{ number_format($agent->detail->commission_fixed ?? 0, 0) }} fixed
+                            @else
+                                {{ number_format($agent->detail->commission_rate ?? 0, 2) }}%
+                            @endif
+                        </span>
                     </td>
                     <td><span class="badge {{ $agent->status==='active'?'success':'neutral' }}">{{ ucfirst($agent->status) }}</span></td>
                     <td>

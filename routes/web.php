@@ -12,7 +12,8 @@ use App\Http\Controllers\{
     TransactionController,
     WebhookController,
     SettingsController,
-    RegistrationController
+    RegistrationController,
+    AssertionLetterController
 };
 
 /*
@@ -218,6 +219,22 @@ Route::middleware('auth')->group(function () {
         )->except([
             'destroy'
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Role & User Management
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class)
+            ->names('admin.roles')
+            ->parameters(['roles' => 'role']);
+
+        Route::get('users', [\App\Http\Controllers\Admin\RoleController::class, 'users'])
+            ->name('admin.users.index');
+
+        Route::patch('users/{user}/role', [\App\Http\Controllers\Admin\RoleController::class, 'assignRole'])
+            ->name('admin.users.role');
     });
 
 
@@ -300,6 +317,57 @@ Route::middleware('auth')->group(function () {
         TransactionController::class,
         'index'
     ])->name('transactions.index');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Assertion Letters (Admin / Super Admin)
+    |--------------------------------------------------------------------------
+    |
+    | Live preview endpoint works for any authenticated user so the form's
+    | on-page JS can refresh while typing. Actual send / list / show / download
+    | are restricted to admin roles.
+    |
+    */
+
+    Route::post('/assertions/preview', [
+        AssertionLetterController::class,
+        'preview'
+    ])->name('assertions.preview');
+
+    Route::post('/assertions/download-pdf', [
+        AssertionLetterController::class,
+        'downloadPdf'
+    ])->name('assertions.download-pdf');
+
+    Route::middleware('role:super-admin,admin')->group(function () {
+
+        Route::get('/assertions', [
+            AssertionLetterController::class,
+            'index'
+        ])->name('assertions.index');
+
+        Route::get('/assertions/create', [
+            AssertionLetterController::class,
+            'create'
+        ])->name('assertions.create');
+
+        Route::post('/assertions', [
+            AssertionLetterController::class,
+            'store'
+        ])->name('assertions.store');
+
+        Route::get('/assertions/{assertion}', [
+            AssertionLetterController::class,
+            'show'
+        ])->name('assertions.show');
+
+        Route::get('/assertions/{assertion}/download', [
+            AssertionLetterController::class,
+            'download'
+        ])->name('assertions.download');
+
+    });
 
 
     /*

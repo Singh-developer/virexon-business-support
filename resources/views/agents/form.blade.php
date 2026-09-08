@@ -140,8 +140,111 @@
     </form>
 </div>
 
-
 @if($agent->exists)
+
+{{-- ====================================================================
+     LIMIT & COMMISSION SETTINGS
+==================================================================== --}}
+@php
+    $detail = $agent->detail;
+@endphp
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <h3>💰 Limit & Commission Settings</h3>
+            <p>Set the maximum transaction limit and commission rate for this agent. These settings control how much the agent can transact and earn.</p>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ route('agents.update', $agent) }}">
+        @csrf
+        @method('PUT')
+        
+        <div style="padding: 20px; border-top: 1px solid #f1f5f9;">
+            
+            {{-- Transaction Limit Section --}}
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                <div style="font-weight: 800; font-size: 12px; text-transform: uppercase; color: #475569; margin-bottom: 16px; letter-spacing: 0.05em;">
+                    📊 Transaction Limit
+                </div>
+                
+                <div class="form-grid">
+                    <label>
+                        Maximum Transaction Limit (₹)
+                        <input type="number" step="0.01" name="max_limit" 
+                               value="{{ old('max_limit', $detail->max_limit ?? 500000) }}" 
+                               min="0" max="999999999999.99"
+                               style="color:#1e293b"
+                               placeholder="e.g. 500000 for 5 Lakh">
+                        <small style="color: #64748b; font-weight: 400;">Default maximum is ₹5,00,000 (5 Lakh)</small>
+                    </label>
+                </div>
+            </div>
+
+            {{-- Commission Settings Section --}}
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+                <div style="font-weight: 800; font-size: 12px; text-transform: uppercase; color: #475569; margin-bottom: 16px; letter-spacing: 0.05em;">
+                    💵 Commission Settings
+                </div>
+                <div class="form-grid">
+                    <label>
+                        Commission Type
+                        <select name="commission_type" id="commission_type" style="color:#1e293b">
+                            <option value="percentage" @selected(old('commission_type', $detail->commission_type ?? 'percentage') === 'percentage')>Percentage (%)</option>
+                            <option value="fixed" @selected(old('commission_type', $detail->commission_type ?? 'percentage') === 'fixed')>Fixed Amount (₹)</option>
+                        </select>
+                    </label>
+                    <label id="commission_rate_label">
+                        Commission Rate (%)
+                        <input type="number" step="0.0001" name="commission_rate" id="commission_rate" value="{{ old('commission_rate', $detail->commission_rate ?? 0) }}" min="0" max="100" style="color:#1e293b" placeholder="e.g. 2.5">
+                    </label>
+                    <label id="commission_fixed_label" style="display: none;">
+                        Fixed Commission (₹)
+                        <input type="number" step="0.01" name="commission_fixed" id="commission_fixed" value="{{ old('commission_fixed', $detail->commission_fixed ?? 0) }}" min="0" style="color:#1e293b" placeholder="e.g. 100">
+                    </label>
+                </div>
+                <div style="margin-top: 16px; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #1e40af; margin-bottom: 8px;">Commission Preview (on Rs.10,000 transaction)</div>
+                    <div style="font-size: 14px; color: #1e293b;">
+                        @php
+                            $sampleAmount = 10000;
+                            $preview = 0;
+                            if (($detail->commission_type ?? 'percentage') === 'fixed') {
+                                $preview = $detail->commission_fixed ?? 0;
+                            } else {
+                                $preview = $sampleAmount * (($detail->commission_rate ?? 0) / 100);
+                            }
+                        @endphp
+                        Estimated Commission: <strong style="color: #059669;">Rs.{{ number_format($preview, 2) }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <span style="color: #64748b; font-size: 12px;">Changes apply immediately to the agent's account.</span>
+            <button type="submit" class="btn primary">Save Limit & Commission Settings</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const commissionType = document.getElementById('commission_type');
+    const rateLabel = document.getElementById('commission_rate_label');
+    const fixedLabel = document.getElementById('commission_fixed_label');
+    function toggleCommissionFields() {
+        if (commissionType.value === 'fixed') {
+            rateLabel.style.display = 'none';
+            fixedLabel.style.display = 'block';
+        } else {
+            rateLabel.style.display = 'block';
+            fixedLabel.style.display = 'none';
+        }
+    }
+    commissionType.addEventListener('change', toggleCommissionFields);
+    toggleCommissionFields();
+});
+</script>
 
 {{-- ====================================================================
      SECTION 2: APPLICATION STATUS
@@ -239,12 +342,30 @@
                     <strong>Wait!</strong> The agent has an active advance but hasn't selected a repayment method. Commission cannot be processed until they choose how to repay it.
                 </div>
             @else
+                @php
+                    $commType = $detail->commission_type ?? 'percentage';
+                    $commRate = $detail->commission_rate ?? 0;
+                    $commFixed = $detail->commission_fixed ?? 0;
+                @endphp
+                <div style="background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:#065f46;">
+                    <strong>Agent Commission:</strong>
+                    @if($commType === 'fixed')
+                        Fixed Rs.{{ number_format($commFixed, 2) }} / transaction
+                    @else
+                        {{ number_format($commRate, 4) }}% of transaction
+                    @endif
+                </div>
                 <form action="{{ route('admin.commissions.store', $agent->id) }}" method="POST" style="margin:0;">
                     @csrf
                     <div style="display:flex;flex-direction:column;gap:10px;">
                         <div>
-                            <label style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">Gross Commission Amount (₹)</label>
-                            <input type="number" step="0.01" name="gross_amount" required style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;">
+                            <label style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">Transaction Amount (₹)</label>
+                            <input type="number" step="0.01" name="transaction_amount" placeholder="Enter transaction amount..." style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;">
+                            <small style="color:#64748b;font-size:10px;">Commission auto-calculated from agent's rate.</small>
+                        </div>
+                        <div>
+                            <label style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">Or Override Gross Commission (₹)</label>
+                            <input type="number" step="0.01" name="gross_amount" placeholder="Override amount..." style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;">
                         </div>
                         <div>
                             <label style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:block;">Description / Note</label>
@@ -252,7 +373,7 @@
                         </div>
                         @if($activeAdvance)
                         <div style="background:#eff6ff;color:#1e40af;font-size:11px;padding:8px;border-radius:6px;">
-                            ℹ️ Advance deduction ({{ $activeAdvance->repayment_type === 'emi' ? 'EMI' : 'Full' }}) will be automatically calculated and subtracted from this gross amount.
+                            ℹ️ Advance deduction ({{ $activeAdvance->repayment_type === 'emi' ? 'EMI' : 'Full' }}) will be auto-calculated and subtracted.
                         </div>
                         @endif
                         <button type="submit" class="btn primary" style="width:100%;justify-content:center;background:#10b981;border-color:#10b981;">Process Payout</button>

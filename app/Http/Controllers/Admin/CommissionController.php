@@ -10,25 +10,56 @@ use Illuminate\Support\Facades\DB;
 
 class CommissionController extends Controller
 {
-    //
+    /**
+     * Store a new commission for the agent.
+     * If gross_amount is not provided, auto-calculate based on the agent's
+     * configured commission settings (rate/fixed) and the transaction_amount.
+     */
     public function store(Request $request, User $agent)
     {
         $request->validate([
-            'gross_amount' => 'required|numeric|min:0.01',
+            'gross_amount' => 'nullable|numeric|min:0.01',
+            'transaction_amount' => 'nullable|numeric|min:0.01',
             'description'  => 'nullable|string|max:255',
         ]);
 
-        DB::transaction(function () use ($request, $agent) {
-            $gross = $request->gross_amount;
+        // Load agent details (may be null)
+        $agent->loadMissing('detail');
+        $detail = $agent->detail;
+
+        $gross = 0;
+        $description = $request->description ?? 'Commission Payout';
+
+        // If gross amount not provided, calculate from agent's commission config
+        if (!$request->filled('gross_amount') && $request->filled('transaction_amount')) {
+            $transactionAmount = (float) $request->transaction_amount;
+            $commissionRate = (float) ($detail->commission_rate ?? 0);
+            $commissionFixed = (float) ($detail->commission_fixed ?? 0);
+            $commissionType = $detail->commission_type ?? 'percentage';
+
+            if ($commissionType === 'fixed') {
+                $gross = $commissionFixed;
+                $description = $description . ' (Rs.' . number_format($transactionAmount, 2) . ' @ Rs.' . number_format($commissionFixed, 2) . ' fixed)';
+            } else {
+                $gross = round($transactionAmount * ($commissionRate / 100), 2);
+                $description = $description . ' (Rs.' . number_format($transactionAmount, 2) . ' @ ' . number_format($commissionRate, 4) . '%)';
+            }
+        } else {
+            $gross = (float) $request->gross_amount;
+        }
+
+        if ($gross <= 0) {
+            return back()->with('error', 'Invalid commission amount. Please provide a valid gross amount or transaction amount with commission rate configured.');
+        }
+
+        DB::transaction(function () use ($agent, $gross, $description) {
             $deduction = 0;
 
             // Check for active advance
             $advance = $agent->advances()->where('status', 'active')->first();
             if ($advance) {
                 if ($advance->repayment_type === 'unselected') {
-                    // Force the agent to select repayment before admin can pay commission? 
-                    // Or don't deduct? Let's just don't deduct, or better, prevent commission payment until they select.
-                    // For now, let's just bypass deduction if unselected.
+                    // Don't deduct if unselected.
                 } elseif ($advance->repayment_type === 'one_time') {
                     // Deduct up to the gross amount
                     $deduction = min($gross, $advance->outstanding_amount);
@@ -51,7 +82,7 @@ class CommissionController extends Controller
                 'gross_amount' => $gross,
                 'advance_deduction' => $deduction,
                 'net_amount' => $gross - $deduction,
-                'description' => $request->description ?? 'Commission Payout',
+                'description' => $description,
             ]);
         });
 
