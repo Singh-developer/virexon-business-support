@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full w-full">
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>" class="h-full w-full">
 
 <head>
     <meta charset="utf-8">
@@ -25,17 +25,17 @@
         }
     </script>
 
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @endif
+    <?php if(file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot'))): ?>
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
+    <?php endif; ?>
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="<?php echo e(asset('css/style.css')); ?>">
 </head>
 
 <body class="bg-[#F4F6F8] text-slate-800 antialiased min-h-screen w-full flex flex-col selection:bg-blue-500 selection:text-white">
 
-    @include('partials.navbar')
+    <?php echo $__env->make('partials.navbar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
     <!-- MAIN APP CONTAINER (FULL SCREEN WIDTH) -->
     <div class="flex-1 flex w-full">
@@ -54,7 +54,7 @@
                 </a>
 
                 <!-- Advance & Balance -->
-                <a href="{{ route('advances.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+                <a href="<?php echo e(route('advances.index')); ?>" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
                     <div class="w-5 h-5 rounded-full border border-slate-400 flex items-center justify-center text-slate-600 font-bold text-[10px]">
                         $
                     </div>
@@ -78,7 +78,7 @@
                 </a> -->
 
                 <!-- Agent Registration -->
-                <a href="{{ route('register.agent') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+                <a href="<?php echo e(route('register.agent')); ?>" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
                     <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                     </svg>
@@ -97,7 +97,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </a> -->
-                <a href="{{ route('documents.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                <a href="<?php echo e(route('documents.index')); ?>" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
                     <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -139,9 +139,9 @@
                     <!-- User Details under Profile Section -->
                     <div id="desktop-profile-dropdown" class="px-6 py-2 ml-2 border-l-2 border-slate-100 hidden">
                         <div class="text-[11px] text-slate-500">Name</div>
-                        <div class="text-xs font-bold text-slate-700">{{ Auth::check() ? Auth::user()->name : 'N/A' }}</div>
+                        <div class="text-xs font-bold text-slate-700"><?php echo e(Auth::check() ? Auth::user()->name : 'N/A'); ?></div>
                         <div class="text-[11px] text-slate-500 mt-1.5">Agent ID</div>
-                        <div class="text-xs font-bold text-slate-700">{{ Auth::check() && Auth::user()->detail ? Auth::user()->detail->agent_id_number : 'N/A' }}</div>
+                        <div class="text-xs font-bold text-slate-700"><?php echo e(Auth::check() && Auth::user()->detail ? Auth::user()->detail->agent_id_number : 'N/A'); ?></div>
                     </div>
                 </div>
 
@@ -152,7 +152,7 @@
                     </svg>
                     <span class="text-xs">Support & Help</span>
                 </a> -->
-                <a href="{{ route('tickets.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                <a href="<?php echo e(route('tickets.index')); ?>" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
                     <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -160,8 +160,8 @@
                 </a>
 
                 <!-- Logout -->
-                <form method="POST" action="{{ route('logout') }}" class="w-full">
-                    @csrf
+                <form method="POST" action="<?php echo e(route('logout')); ?>" class="w-full">
+                    <?php echo csrf_field(); ?>
                     <button type="submit" class="flex items-center w-full space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-red-600 transition">
                         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -219,7 +219,7 @@
                     <!-- Left Greeting Text -->
                     <div class="lg:col-span-5 space-y-2">
                         <div class="text-[#d1d1d1] text-sm lg:text-base font-semibold">Welcome back</div>
-                        <h1 class="text-3xl lg:text-4xl font-extrabold text-white tracking-tight drop-shadow-md">{{ Auth::user()->name }}!</h1>
+                        <h1 class="text-3xl lg:text-4xl font-extrabold text-white tracking-tight drop-shadow-md"><?php echo e(Auth::user()->name); ?>!</h1>
                         <p class="text-[#d1d1d1] text-sm lg:text-base pt-1">Grow your business with our support.</p>
                     </div>
 
@@ -309,9 +309,7 @@
                     <div>
                         <div class="text-xs text-slate-500 font-medium">Advance Disbursed</div>
                         <div class="text-2xl font-extrabold text-[#1565C0]">₹0</div>
-                        {{--<div class="text-xs text-slate-500 pt-0.5">
-                            Date of Disbursement <span class="font-semibold text-slate-700">15 May 2024</span>
-                        </div>--}}
+                        
                     </div>
                 </div>
 
@@ -459,7 +457,7 @@
                         </div>
                         <div>
                             <div class="text-blue-800 font-semibold text-[11px]">Next Adjustment Date</div>
-                            {{--<div class="text-sm font-extrabold text-blue-950">01 June 2024</div>--}}
+                            
                         </div>
                     </div>
                 </div>
@@ -677,4 +675,4 @@
 
 </body>
 
-</html>
+</html><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/dashboard/dashboard.blade.php ENDPATH**/ ?>

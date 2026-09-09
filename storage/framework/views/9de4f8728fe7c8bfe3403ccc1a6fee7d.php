@@ -62,29 +62,29 @@
                         </div>
                         <div class="max-h-[300px] overflow-y-auto">
                             <?php if(Auth::check()): ?>
-                                <?php $__empty_1 = true; $__currentLoopData = Auth::user()->notifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                                    <?php
-                                        $notifUrl = '#';
-                                        if (isset($notification->data['ticket_id'])) {
-                                            $notifUrl = route('tickets.show', $notification->data['ticket_id']);
-                                        }
-                                        $finalUrl = route('notifications.read', ['id' => $notification->id, 'redirect' => $notifUrl]);
-                                    ?>
-                                    <a href="<?php echo e($finalUrl); ?>" class="block px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition <?php echo e($notification->read_at ? 'opacity-70' : 'bg-blue-50/30'); ?>">
-                                        <div class="text-sm text-slate-800 <?php echo e($notification->read_at ? '' : 'font-semibold'); ?> leading-tight mb-1">
-                                            <?php echo e($notification->data['message'] ?? 'New notification'); ?>
+                            <?php $__empty_1 = true; $__currentLoopData = Auth::user()->notifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <?php
+                            $notifUrl = '#';
+                            if (isset($notification->data['ticket_id'])) {
+                            $notifUrl = route('tickets.show', $notification->data['ticket_id']);
+                            }
+                            $finalUrl = route('notifications.read', ['id' => $notification->id, 'redirect' => $notifUrl]);
+                            ?>
+                            <a href="<?php echo e($finalUrl); ?>" class="block px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition <?php echo e($notification->read_at ? 'opacity-70' : 'bg-blue-50/30'); ?>">
+                                <div class="text-sm text-slate-800 <?php echo e($notification->read_at ? '' : 'font-semibold'); ?> leading-tight mb-1">
+                                    <?php echo e($notification->data['message'] ?? 'New notification'); ?>
 
-                                        </div>
-                                        <div class="text-[11px] text-slate-500 font-medium">
-                                            <?php echo e($notification->created_at->diffForHumans()); ?>
+                                </div>
+                                <div class="text-[11px] text-slate-500 font-medium">
+                                    <?php echo e($notification->created_at->diffForHumans()); ?>
 
-                                        </div>
-                                    </a>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                                    <div class="px-4 py-6 text-center text-slate-500 text-sm font-medium">
-                                        No notifications yet.
-                                    </div>
-                                <?php endif; ?>
+                                </div>
+                            </a>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                            <div class="px-4 py-6 text-center text-slate-500 text-sm font-medium">
+                                No notifications yet.
+                            </div>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -166,8 +166,10 @@
                         </div>
                         <span class="text-xs">Advance & Balance</span>
                     </a> -->
-                    <a href="<?php echo e(route('advances.index')); ?>" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
-                        <i class="fa-solid fa-wallet text-slate-500 w-4 text-center"></i>
+                    <a href="<?php echo e(route('advances.index')); ?>" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+                        <div class="w-5 h-5 rounded-full border border-slate-400 flex items-center justify-center text-slate-600 font-bold text-[10px]">
+                            $
+                        </div>
                         <span class="text-xs">Advance & Balance</span>
                     </a>
 
@@ -178,12 +180,12 @@
                         <span class="text-xs">Commission Adjustment</span>
                     </a>
 
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <!-- <a href="<?php echo e(route('advances.index')); ?>" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
                         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <span class="text-xs">Advance Ledger</span>
-                    </a>
+                    </a> -->
 
                     <a href="<?php echo e(route('register.agent')); ?>" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
                         <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,8 +341,8 @@
                     e.stopPropagation();
                     desktopProfileDropdown.classList.toggle('hidden');
                 });
-            } 
-            
+            }
+
             // Close dropdowns when clicking outside
             document.addEventListener('click', function(e) {
                 if (headerProfileDropdown && !headerProfileDropdown.classList.contains('hidden') && !headerProfileBtn.contains(e.target)) {

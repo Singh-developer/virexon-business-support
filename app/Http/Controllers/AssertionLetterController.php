@@ -23,7 +23,10 @@ class AssertionLetterController extends Controller
         $selectedAgent = null;
         if ($request->filled("agent_id")) { $selectedAgent = User::with("business", "detail")->find($request->agent_id); }
         elseif ($request->filled("user_id")) { $selectedAgent = User::with("business", "detail")->find($request->user_id); }
-        return view("assertions.create", ["agents" => $agents, "selectedAgent" => $selectedAgent]);
+        
+        $existingSignature = \App\Models\SystemSetting::getValue('last_signature_image');
+        
+        return view("assertions.create", ["agents" => $agents, "selectedAgent" => $selectedAgent, "existingSignature" => $existingSignature]);
     }
 
     public function preview(Request $request)
@@ -36,6 +39,11 @@ class AssertionLetterController extends Controller
             $signatureImageUrl = asset("storage/" . $path);
         } elseif ($request->filled("existing_signature_image")) {
             $signatureImageUrl = asset("storage/" . $request->input("existing_signature_image"));
+        } else {
+            $lastSignature = \App\Models\SystemSetting::getValue('last_signature_image');
+            if ($lastSignature) {
+                $signatureImageUrl = asset("storage/" . $lastSignature);
+            }
         }
         $pdfData = $this->buildPdfData($data, $agent, $signatureImageUrl);
         $pdf = Pdf::loadView("assertions.pdf", $pdfData)->setPaper("a4", "portrait");
@@ -66,6 +74,13 @@ class AssertionLetterController extends Controller
         if ($request->hasFile("signature_image")) {
             $signatureImagePath = $request->file("signature_image")->store("signature-images", "public");
             $signatureImageUrl = asset("storage/" . $signatureImagePath);
+            \App\Models\SystemSetting::setValue('last_signature_image', $signatureImagePath);
+        } else {
+            $lastSignature = \App\Models\SystemSetting::getValue('last_signature_image');
+            if ($lastSignature) {
+                $signatureImageUrl = asset("storage/" . $lastSignature);
+                $signatureImagePath = $lastSignature;
+            }
         }
         $pdfData = $this->buildPdfData($data, $agent, $signatureImageUrl);
         $pdf = Pdf::loadView("assertions.pdf", $pdfData)->setPaper("a4", "portrait");

@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
 
@@ -30,7 +28,7 @@
         <button class="btn secondary" onclick="document.getElementById('importModal').style.display='block'">
             <i class="fa-solid fa-file-import"></i> Import CSV
         </button>
-        <a class="btn primary" href="{{ route('agents.create') }}">+ New Agent</a>
+        <a class="btn primary" href="<?php echo e(route('agents.create')); ?>">+ New Agent</a>
     </div>
 </div>
 
@@ -87,61 +85,64 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($agents as $agent)
-                @php $appStatus = $agent->detail->application_status ?? 'pending'; @endphp
-                <tr data-status="{{ $agent->status }}" data-appstatus="{{ $appStatus }}" data-created="{{ $agent->created_at->format('Y-m-d') }}">
-                    <td>{{ $agent->id }}</td>
-                    <td><a class="link" href="{{ route('agents.show', $agent) }}"><strong>{{ $agent->name }}</strong></a></td>
-                    <td>{{ $agent->email }}</td>
-                    <td>{{ $agent->phone ?: ($agent->detail->mobile ?? '—') }}</td>
-                    <td>{{ $agent->detail->agent_id_number ?? '—' }}</td>
-                    <td>{{ $agent->detail->pan_number ?? '—' }}</td>
-                    <td>{{ $agent->detail->date_of_birth ?? '—' }}</td>
-                    <td>{{ $agent->detail->current_city ?? '—' }}</td>
-                    <td>{{ $agent->business?->name ?: '—' }}</td>
+                <?php $__currentLoopData = $agents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $agent): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php $appStatus = $agent->detail->application_status ?? 'pending'; ?>
+                <tr data-status="<?php echo e($agent->status); ?>" data-appstatus="<?php echo e($appStatus); ?>" data-created="<?php echo e($agent->created_at->format('Y-m-d')); ?>">
+                    <td><?php echo e($agent->id); ?></td>
+                    <td><a class="link" href="<?php echo e(route('agents.show', $agent)); ?>"><strong><?php echo e($agent->name); ?></strong></a></td>
+                    <td><?php echo e($agent->email); ?></td>
+                    <td><?php echo e($agent->phone ?: ($agent->detail->mobile ?? '—')); ?></td>
+                    <td><?php echo e($agent->detail->agent_id_number ?? '—'); ?></td>
+                    <td><?php echo e($agent->detail->pan_number ?? '—'); ?></td>
+                    <td><?php echo e($agent->detail->date_of_birth ?? '—'); ?></td>
+                    <td><?php echo e($agent->detail->current_city ?? '—'); ?></td>
+                    <td><?php echo e($agent->business?->name ?: '—'); ?></td>
                     <td>
-                        @if($agent->virtualCard)
-                            {{ $agent->virtualCard->reference }} ({{ ucfirst($agent->virtualCard->status->value) }})
-                        @else
+                        <?php if($agent->virtualCard): ?>
+                            <?php echo e($agent->virtualCard->reference); ?> (<?php echo e(ucfirst($agent->virtualCard->status->value)); ?>)
+                        <?php else: ?>
                             Missing
-                        @endif
+                        <?php endif; ?>
                     </td>
                     <td>
                         <span style="font-size:12px; font-weight:700; color:#1e40af;">
-                            ₹{{ number_format($agent->detail->max_limit ?? 500000, 0) }}
+                            ₹<?php echo e(number_format($agent->detail->max_limit ?? 500000, 0)); ?>
+
                         </span>
                     </td>
                     <td>
-                        @php
+                        <?php
                             $commType = $agent->detail->commission_type ?? 'percentage';
-                        @endphp
+                        ?>
                         <span style="font-size:12px; font-weight:700; color:#059669;">
-                            @if($commType === 'fixed')
-                                ₹{{ number_format($agent->detail->commission_fixed ?? 0, 0) }} fixed
-                            @else
-                                {{ number_format($agent->detail->commission_rate ?? 0, 2) }}%
-                            @endif
+                            <?php if($commType === 'fixed'): ?>
+                                ₹<?php echo e(number_format($agent->detail->commission_fixed ?? 0, 0)); ?> fixed
+                            <?php else: ?>
+                                <?php echo e(number_format($agent->detail->commission_rate ?? 0, 2)); ?>%
+                            <?php endif; ?>
                         </span>
                     </td>
-                    <td><span class="badge {{ $agent->status==='active'?'success':'neutral' }}">{{ ucfirst($agent->status) }}</span></td>
+                    <td><span class="badge <?php echo e($agent->status==='active'?'success':'neutral'); ?>"><?php echo e(ucfirst($agent->status)); ?></span></td>
                     <td>
-                        <span class="badge {{ $appStatus === 'approved' ? 'success' : ($appStatus === 'rejected' ? 'failed' : 'neutral') }}">
-                            {{ ucfirst($appStatus) }}
+                        <span class="badge <?php echo e($appStatus === 'approved' ? 'success' : ($appStatus === 'rejected' ? 'failed' : 'neutral')); ?>">
+                            <?php echo e(ucfirst($appStatus)); ?>
+
                         </span>
                     </td>
-                    <td>{{ $agent->created_at->format('Y-m-d') }}</td>
+                    <td><?php echo e($agent->created_at->format('Y-m-d')); ?></td>
                     <td class="flex items-center gap-2">
-                        <a class="btn tiny" href="{{ route('agents.edit', $agent) }}">Manage</a>
-                        <form method="POST" action="{{ route('agents.toggle-status', $agent) }}" style="display:inline;">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="btn tiny {{ $agent->status === 'active' ? 'secondary' : 'primary' }}" onclick="return confirm('Toggle login access for this agent?');">
-                                {{ $agent->status === 'active' ? 'Disable' : 'Enable' }}
+                        <a class="btn tiny" href="<?php echo e(route('agents.edit', $agent)); ?>">Manage</a>
+                        <form method="POST" action="<?php echo e(route('agents.toggle-status', $agent)); ?>" style="display:inline;">
+                            <?php echo csrf_field(); ?>
+                            <?php echo method_field('PATCH'); ?>
+                            <button type="submit" class="btn tiny <?php echo e($agent->status === 'active' ? 'secondary' : 'primary'); ?>" onclick="return confirm('Toggle login access for this agent?');">
+                                <?php echo e($agent->status === 'active' ? 'Disable' : 'Enable'); ?>
+
                             </button>
                         </form>
                     </td>
                 </tr>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </tbody>
         </table>
     </div>
@@ -154,10 +155,10 @@
         <p style="font-size:14px; color:#64748b; margin-bottom:20px; line-height: 1.5;">
             Upload a CSV file containing at least <code>name</code> and <code>email</code> columns.<br><br>
             Optional columns: <code>phone</code>, <code>agent_id_number</code>, <code>pan_number</code>, <code>status</code>.<br><br>
-            <a href="{{ route('agents.import.sample') }}" style="color: #3b82f6; text-decoration: underline; font-weight: 500;"><i class="fa-solid fa-download"></i> Download Sample CSV</a>
+            <a href="<?php echo e(route('agents.import.sample')); ?>" style="color: #3b82f6; text-decoration: underline; font-weight: 500;"><i class="fa-solid fa-download"></i> Download Sample CSV</a>
         </p>
-        <form method="POST" action="{{ route('agents.import') }}" enctype="multipart/form-data">
-            @csrf
+        <form method="POST" action="<?php echo e(route('agents.import')); ?>" enctype="multipart/form-data">
+            <?php echo csrf_field(); ?>
             <input type="file" name="csv_file" accept=".csv" required style="margin-bottom:20px; width:100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px;">
             <div style="display:flex; justify-content:flex-end; gap:12px;">
                 <button type="button" class="btn secondary" onclick="document.getElementById('importModal').style.display='none'">Cancel</button>
@@ -221,4 +222,5 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/agents/index.blade.php ENDPATH**/ ?>

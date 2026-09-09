@@ -4,73 +4,89 @@
 <meta charset="UTF-8">
 <title><?php echo e($title ?? 'Sanction Letter'); ?></title>
 <style>
-@page { margin: 30px; }
-body { font-family: "Helvetica", Arial, sans-serif; font-size: 11px; color: #000; line-height: 1.4; }
+@page {
+    size: A4 portrait;
+    margin: 15px 25px 35px 25px;
+}
+body {
+    font-family: "Helvetica", Arial, sans-serif;
+    font-size: 9.5px;
+    color: #000;
+    line-height: 1.35;
+    margin: 0;
+    padding: 0;
+}
 table { width: 100%; border-collapse: collapse; }
-.text-center { text-align: center; }
-.text-right { text-align: right; }
 .font-bold { font-weight: bold; }
 
 /* Header */
-.header-table { margin-bottom: 10px; border-bottom: 2px solid #0033a0; padding-bottom: 10px; }
-.logo-td { width: 40%; vertical-align: top; }
-.logo-td img { max-width: 180px; }
-.info-td { width: 60%; vertical-align: top; text-align: right; font-size: 10px; line-height: 1.5; color: #0033a0; font-weight: bold; }
-.info-icon { display: inline-block; width: 12px; margin-right: 4px; }
+.header-table { width: 100%; margin-bottom: 3px; border-bottom: 2px solid #0033a0; padding-bottom: 3px; }
+.header-table .logo-td { width: 20%; vertical-align: top; }
+.header-table .logo-td img { max-width: 80px; height: auto; }
+.header-table .info-td { width: 65%; vertical-align: top; text-align: right; font-size: 7.5px; line-height: 1.35; color: #0033a0; font-weight: bold; }
+.tagline { font-size: 6.5px; color: #666; margin-top: 1px; margin-bottom: 5px; }
 
 /* Title */
-.doc-title { background-color: #004593; color: white; text-align: center; font-size: 16px; font-weight: bold; padding: 6px 0; margin-bottom: 15px; border-radius: 4px; }
+.doc-title { background-color: #004593; color: white; text-align: center; font-size: 12px; font-weight: bold; padding: 4px 0; margin-bottom: 6px; border-radius: 3px; }
 
 /* Meta */
-.meta-table { margin-bottom: 15px; font-weight: bold; }
-.meta-table td { background-color: #e6f0fa; padding: 4px 8px; border-radius: 4px; }
+.meta-table { margin-bottom: 6px; font-weight: bold; }
+.meta-table td { background-color: #e6f0fa; padding: 2px 6px; font-size: 8.5px; }
 
 /* Address */
-.address-section { margin-bottom: 15px; line-height: 1.5; }
+.address-section { margin-bottom: 6px; line-height: 1.35; font-size: 9px; }
 
 /* Subject */
-.subject-box { background-color: #e6f0fa; padding: 5px 10px; font-weight: bold; color: #004593; margin-bottom: 15px; border-radius: 4px; }
+.subject-box { background-color: #e6f0fa; padding: 3px 8px; font-weight: bold; color: #004593; margin-bottom: 6px; border-radius: 3px; font-size: 9px; }
 
 /* Body Text */
-.body-text { margin-bottom: 15px; text-align: justify; }
+.body-text { margin-bottom: 8px; text-align: justify; font-size: 9.5px; }
 
 /* Particulars Table */
-.details-table { margin-bottom: 20px; border: 1px solid #b0c4de; }
-.details-table th { background-color: #004593; color: white; text-align: left; padding: 6px 10px; border: 1px solid #b0c4de; }
-.details-table td { padding: 5px 10px; border: 1px solid #b0c4de; background-color: #f0f8ff; }
+.details-table { margin-bottom: 8px; border: 1px solid #b0c4de; font-size: 8.5px; }
+.details-table th { background-color: #004593; color: white; text-align: left; padding: 3px 8px; border: 1px solid #b0c4de; }
+.details-table td { padding: 2.5px 8px; border: 1px solid #b0c4de; background-color: #f0f8ff; }
 .details-table tr:nth-child(even) td { background-color: #ffffff; }
 
 /* Terms */
-.terms-title { background-color: #004593; color: white; display: inline-block; padding: 5px 15px; font-weight: bold; border-top-right-radius: 15px; border-bottom-right-radius: 15px; margin-bottom: 10px; }
-.terms-table { width: 100%; margin-bottom: 15px; }
-.terms-table td { vertical-align: top; width: 50%; padding-right: 15px; }
-.term-item { margin-bottom: 10px; }
-.term-num { display: inline-block; background-color: #004593; color: white; width: 16px; height: 16px; text-align: center; border-radius: 50%; font-size: 10px; line-height: 16px; font-weight: bold; margin-right: 5px; vertical-align: top; }
-.term-content { display: inline-block; width: 90%; }
-.term-title { font-weight: bold; color: #004593; font-size: 10px; }
-.term-desc { font-size: 9px; text-align: justify; margin-top: 2px; }
-.term-desc ul { margin: 2px 0 0 15px; padding: 0; }
-.term-desc li { margin-bottom: 2px; }
+.terms-title { background-color: #004593; color: white; display: inline-block; padding: 3px 12px; font-weight: bold; border-top-right-radius: 10px; border-bottom-right-radius: 10px; margin-bottom: 5px; font-size: 9px; }
+.terms-table { width: 100%; margin-bottom: 6px; border-collapse: collapse; }
+.terms-table td { vertical-align: top; width: 50%; padding: 0 8px; }
+.term-item { margin-bottom: 5px; overflow: hidden; }
+.term-num { display: inline-block; background-color: #004593; color: white; width: 12px; height: 12px; text-align: center; border-radius: 50%; font-size: 7px; line-height: 12px; font-weight: bold; margin-right: 3px; float: left; }
+.term-content { overflow: hidden; }
+.term-title { font-weight: bold; color: #004593; font-size: 8px; }
+.term-desc { font-size: 7.5px; text-align: justify; margin-top: 1px; }
+.term-desc ul { margin: 1px 0 0 12px; padding: 0; }
+.term-desc li { margin-bottom: 1px; }
 
 /* Notes Box */
-.notes-box { background-color: #f0f8ff; border: 1px dashed #004593; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 10px; color: #004593; }
+.notes-box { background-color: #f0f8ff; border: 1px dashed #004593; padding: 4px 8px; border-radius: 3px; margin-bottom: 6px; font-size: 7.5px; color: #004593; }
 
 /* Appreciate */
-.appreciate-text { color: #004593; font-weight: bold; font-size: 10px; margin-bottom: 15px; }
+.appreciate-text { color: #004593; font-weight: bold; font-size: 8px; margin-bottom: 10px; }
 
 /* Signatures */
-.sig-table { width: 100%; font-size: 10px; }
-.sig-table td { vertical-align: top; width: 50%; }
-.sig-left { padding-right: 10px; }
-.sig-right { padding-left: 10px; border-left: 1px dashed #b0c4de; }
-.sig-header { background-color: #e6f0fa; padding: 4px 8px; font-weight: bold; color: #004593; margin-bottom: 10px; border-radius: 2px; }
-.sig-row { margin-bottom: 5px; }
-.sig-label { display: inline-block; width: 100px; font-weight: bold; }
-.sig-val { display: inline-block; border-bottom: 1px solid #000; width: 180px; height: 12px; }
-.sig-img { max-height: 40px; }
+.sig-table { width: 100%; font-size: 8px; }
+.sig-table td { vertical-align: top; width: 50%; padding-top: 3px; }
+.sig-left { padding-right: 8px; }
+.sig-right { padding-left: 8px; border-left: 1px dashed #b0c4de; }
+.sig-header { background-color: #e6f0fa; padding: 3px 6px; font-weight: bold; color: #004593; margin-bottom: 5px; border-radius: 2px; font-size: 8px; }
+.sig-row { margin-bottom: 3px; }
+.sig-label { display: inline-block; width: 70px; font-weight: bold; }
+.sig-val { display: inline-block; border-bottom: 1px solid #000; width: 140px; height: 9px; }
+.sig-img { max-height: 30px; }
 
-/* Bottom Footer */
-.bottom-footer { background-color: #004593; color: white; text-align: center; padding: 8px 0; font-size: 12px; font-weight: bold; letter-spacing: 2px; position: fixed; bottom: -30px; left: -30px; right: -30px; width: 110%; }
+/* Footer */
+.page-footer {
+    background-color: #004593;
+    color: white;
+    text-align: center;
+    padding: 6px 0;
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
 </style>
 </head>
 <body>
@@ -84,25 +100,23 @@ table { width: 100%; border-collapse: collapse; }
     if ($agent->detail?->current_pincode) $agentAddress .= ' - ' . $agent->detail->current_pincode;
 
     $advanceAmount = $agent->advances()->where('status', 'active')->first()?->total_amount ?? 0;
-    // Fallback to dynamic field if zero
     if ($advanceAmount == 0 && isset($dynamic_fields['approved_amount'])) {
         $advanceAmount = $dynamic_fields['approved_amount'];
     }
 ?>
 
-<!-- Header -->
+<!-- ===== HEADER ===== -->
 <table class="header-table">
     <tr>
         <td class="logo-td">
-            <h1 style="color:#004593;margin:0;font-size:24px;letter-spacing:2px;font-weight:900;">VIREXON</h1>
-            <div style="font-size:10px;color:#004593;font-weight:bold;margin-top:2px;">EASY ONLINE MARKETING</div>
-            <div style="font-size:9px;color:#666;margin-top:2px;">Grow Together | Build Bigger | Earn More</div>
+            <img src="<?php echo e(public_path('images/virexon-light.png')); ?>" alt="Virexon Logo">
+            <div class="tagline">Grow Together | Build Bigger | Earn More</div>
         </td>
         <td class="info-td">
-            <div>🌐 https://virexon.in</div>
-            <div>✉ info@virexon.in</div>
-            <div>📞 +91 7011641765</div>
-            <div>📍 Plot No - 6-10-3/5 plot no 25<br>Balanagar Hyderabad 500043<br>(Telangana) India</div>
+            <div>Web: https://virexon.in</div>
+            <div>Email: info@virexon.in</div>
+            <div>Phone: +91 7011641765</div>
+            <div>Address: Plot No - 6-10-3/5 plot no 25, Balanagar Hyderabad 500043, (Telangana) India</div>
         </td>
     </tr>
 </table>
@@ -113,8 +127,8 @@ table { width: 100%; border-collapse: collapse; }
 <!-- Meta Info -->
 <table class="meta-table">
     <tr>
-        <td style="width:70%;">Sanction Letter No. : <span style="font-weight:normal;"><?php echo e($letterNo); ?></span></td>
-        <td style="width:30%; text-align:right;">Date : <span style="font-weight:normal;"><?php echo e(now()->format('d/m/Y')); ?></span></td>
+        <td style="width:70%;">Sanction Letter No.: <span style="font-weight:normal;"><?php echo e($letterNo); ?></span></td>
+        <td style="width:30%; text-align:right;">Date: <span style="font-weight:normal;"><?php echo e(now()->format('d/m/Y')); ?></span></td>
     </tr>
 </table>
 
@@ -122,8 +136,8 @@ table { width: 100%; border-collapse: collapse; }
 <div class="address-section">
     <strong>To,</strong><br>
     <strong>Mr. <?php echo e($agent->name); ?></strong><br>
-    <strong>Agent ID:</strong> <span style="border-bottom:1px solid #ccc; padding-bottom:2px;"><?php echo e($agentIdStr); ?></span><br>
-    <strong>Address:</strong> <span style="border-bottom:1px solid #ccc; padding-bottom:2px;"><?php echo e($agentAddress); ?></span>
+    <strong>Agent ID:</strong> <span style="border-bottom:1px solid #ccc;"><?php echo e($agentIdStr); ?></span><br>
+    <strong>Address:</strong> <span style="border-bottom:1px solid #ccc;"><?php echo e($agentAddress); ?></span>
 </div>
 
 <!-- Subject -->
@@ -146,46 +160,16 @@ table { width: 100%; border-collapse: collapse; }
         </tr>
     </thead>
     <tbody>
-        <tr>
-            <td class="font-bold">Agent Name</td>
-            <td><?php echo e($agent->name); ?></td>
-        </tr>
-        <tr>
-            <td class="font-bold">Agent ID</td>
-            <td><?php echo e($agentIdStr); ?></td>
-        </tr>
-        <tr>
-            <td class="font-bold">Sanction Letter No.</td>
-            <td><?php echo e($letterNo); ?></td>
-        </tr>
-        <tr>
-            <td class="font-bold">Approved Advance Fund Amount</td>
-            <td style="font-weight:bold;">₹<?php echo e(is_numeric($advanceAmount) ? number_format($advanceAmount, 2) : $advanceAmount); ?></td>
-        </tr>
-        <tr>
-            <td class="font-bold">Nature of Support</td>
-            <td>Advance Fund / Financial Support</td>
-        </tr>
-        <tr>
-            <td class="font-bold">Interest</td>
-            <td>Nil</td>
-        </tr>
-        <tr>
-            <td class="font-bold">Disbursement Mode</td>
-            <td>Bank Account Transfer</td>
-        </tr>
-        <tr>
-            <td class="font-bold">Bank Account No.</td>
-            <td><?php echo e($agent->detail?->account_number ?? 'As registered in system'); ?></td>
-        </tr>
-        <tr>
-            <td class="font-bold">Sanction Date</td>
-            <td><?php echo e(now()->format('d/m/Y')); ?></td>
-        </tr>
-        <tr>
-            <td class="font-bold">Validity of Sanction</td>
-            <td>30 Days from Sanction Date</td>
-        </tr>
+        <tr><td class="font-bold">Agent Name</td><td><?php echo e($agent->name); ?></td></tr>
+        <tr><td class="font-bold">Agent ID</td><td><?php echo e($agentIdStr); ?></td></tr>
+        <tr><td class="font-bold">Sanction Letter No.</td><td><?php echo e($letterNo); ?></td></tr>
+        <tr><td class="font-bold">Approved Advance Fund Amount</td><td class="font-bold">₹<?php echo e(is_numeric($advanceAmount) ? number_format($advanceAmount, 2) : $advanceAmount); ?></td></tr>
+        <tr><td class="font-bold">Nature of Support</td><td>Advance Fund / Financial Support</td></tr>
+        <tr><td class="font-bold">Interest</td><td>Nil</td></tr>
+        <tr><td class="font-bold">Disbursement Mode</td><td>Bank Account Transfer</td></tr>
+        <tr><td class="font-bold">Bank Account No.</td><td><?php echo e($agent->detail?->account_number ?? 'As registered in system'); ?></td></tr>
+        <tr><td class="font-bold">Sanction Date</td><td><?php echo e(now()->format('d/m/Y')); ?></td></tr>
+        <tr><td class="font-bold">Validity of Sanction</td><td>30 Days from Sanction Date</td></tr>
     </tbody>
 </table>
 
@@ -194,7 +178,6 @@ table { width: 100%; border-collapse: collapse; }
 
 <table class="terms-table">
     <tr>
-        <!-- Left Column -->
         <td>
             <div class="term-item">
                 <span class="term-num">1</span>
@@ -218,7 +201,6 @@ table { width: 100%; border-collapse: collapse; }
                 </div>
             </div>
         </td>
-        <!-- Right Column -->
         <td>
             <div class="term-item">
                 <span class="term-num">4</span>
@@ -231,8 +213,7 @@ table { width: 100%; border-collapse: collapse; }
                 <span class="term-num">5</span>
                 <div class="term-content">
                     <div class="term-title">Conditions</div>
-                    <div class="term-desc">
-                        This sanction is subject to:
+                    <div class="term-desc">This sanction is subject to:
                         <ul>
                             <li>Successful completion of the Company's verification process.</li>
                             <li>Execution and acceptance of the applicable Advance Fund / Agent Agreement.</li>
@@ -259,7 +240,7 @@ table { width: 100%; border-collapse: collapse; }
 <div class="notes-box">
     <strong>Note:</strong> This letter should be read together with the applicable Agent Agreement, Advance Fund Agreement and Terms & Conditions. In case of any inconsistency, the executed agreement shall prevail.
     <?php if(!empty($notes)): ?>
-        <br><br><strong>Additional Notes:</strong><br><?php echo nl2br(e($notes)); ?>
+        <br><strong>Additional Notes:</strong> <?php echo nl2br(e($notes)); ?>
 
     <?php endif; ?>
 </div>
@@ -274,8 +255,7 @@ table { width: 100%; border-collapse: collapse; }
     <tr>
         <td class="sig-left">
             <div class="sig-header">For VIREXON (Easy Online Marketing)</div>
-            <div class="font-bold" style="margin-bottom:8px;">Authorized Signatory</div>
-            
+            <div class="font-bold" style="margin-bottom:5px;">Authorized Signatory</div>
             <div class="sig-row">
                 <span class="sig-label">Name</span> : <span class="font-bold"><?php echo e($signature_name ?? 'Admin'); ?></span>
             </div>
@@ -283,8 +263,8 @@ table { width: 100%; border-collapse: collapse; }
                 <span class="sig-label">Designation</span> : <span><?php echo e($signature_designation ?? 'Director'); ?></span>
             </div>
             <div class="sig-row">
-                <span class="sig-label" style="vertical-align:bottom;">Signature</span> : 
-                <span style="display:inline-block; vertical-align:bottom; border-bottom:1px solid #000; width:180px; text-align:center;">
+                <span class="sig-label" style="vertical-align:bottom;">Signature</span> :
+                <span style="display:inline-block; vertical-align:bottom; border-bottom:1px solid #000; width:130px; text-align:center;">
                     <?php if(!empty($signature_image_url)): ?>
                         <img src="<?php echo e($signature_image_url); ?>" class="sig-img" alt="signature">
                     <?php else: ?>
@@ -292,36 +272,35 @@ table { width: 100%; border-collapse: collapse; }
                     <?php endif; ?>
                 </span>
             </div>
-            <div class="sig-row" style="margin-top:10px;">
+            <div class="sig-row" style="margin-top:5px;">
                 <span class="sig-label">Company Seal</span> : <span class="sig-val"></span>
             </div>
         </td>
         <td class="sig-right">
             <div class="sig-header" style="background-color:transparent; border-bottom:1px solid #b0c4de;">AGENT ACKNOWLEDGEMENT</div>
-            <div style="margin-bottom:10px; line-height:1.5;">
+            <div style="margin-bottom:5px; line-height:1.35;">
                 I, <strong><?php echo e($agent->name); ?></strong>, Agent ID <strong><?php echo e($agentIdStr); ?></strong>, acknowledge receipt of this Advance Fund Sanction Letter and confirm that I have read and understood the applicable terms and conditions governing the sanctioned Advance Fund.
             </div>
-            
             <div class="sig-row">
-                <span class="sig-label" style="width:70px;">Agent Name</span> : <span class="sig-val" style="width:200px;text-align:center;"><strong><?php echo e($agent->name); ?></strong></span>
+                <span class="sig-label" style="width:60px;">Agent Name</span> : <span style="display:inline-block;border-bottom:1px solid #000;min-width:160px;text-align:center;font-weight:bold;"><?php echo e($agent->name); ?></span>
             </div>
             <div class="sig-row">
-                <span class="sig-label" style="width:70px;">Agent ID</span> : <span class="sig-val" style="width:200px;text-align:center;"><?php echo e($agentIdStr); ?></span>
+                <span class="sig-label" style="width:60px;">Agent ID</span> : <span style="display:inline-block;border-bottom:1px solid #000;min-width:160px;text-align:center;"><?php echo e($agentIdStr); ?></span>
             </div>
-            <div class="sig-row" style="margin-top:15px;">
-                <span class="sig-label" style="width:70px;">Signature</span> : <span class="sig-val" style="width:200px;"></span>
+            <div class="sig-row" style="margin-top:8px;">
+                <span class="sig-label" style="width:60px;">Signature</span> : <span class="sig-val" style="width:160px;"></span>
             </div>
-            <div class="sig-row" style="margin-top:10px;">
-                <span class="sig-label" style="width:70px;">Date</span> : <span class="sig-val" style="width:200px;text-align:center;"><?php echo e(now()->format('d/m/Y')); ?></span>
+            <div class="sig-row" style="margin-top:6px;">
+                <span class="sig-label" style="width:60px;">Date</span> : <span class="sig-val" style="width:160px;text-align:center;"><?php echo e(now()->format('d/m/Y')); ?></span>
             </div>
         </td>
     </tr>
 </table>
 
-<div class="bottom-footer">
+<!-- Footer -->
+<div class="page-footer">
     THANK YOU FOR BEING A PART OF VIREXON
 </div>
 
 </body>
-</html>
-<?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/assertions/pdf.blade.php ENDPATH**/ ?>
+</html><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/assertions/pdf.blade.php ENDPATH**/ ?>

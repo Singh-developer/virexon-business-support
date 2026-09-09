@@ -149,7 +149,15 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                                 <div class="sig-upload-text">Click or drag to upload<br><strong>PNG, JPG, SVG</strong></div>
                             </label>
                             <div style="flex:1" id="sigPreviewContainer">
+                                @if(!empty($existingSignature))
+                                <div id="sigPreview" style="display:block">
+                                    <img src="{{ asset('storage/' . $existingSignature) }}" alt="Signature preview">
+                                    <div style="font-size:11px;color:#10b981;margin-top:4px">✓ Previous signature will be used</div>
+                                </div>
+                                <input type="hidden" name="existing_signature_image" id="existingSigInput" value="{{ $existingSignature }}">
+                                @else
                                 <div id="sigPreview" style="display:none"></div>
+                                @endif
                                 <div class="sig-hint">Signature will appear in the PDF</div>
                             </div>
                         </div>
@@ -240,6 +248,8 @@ document.getElementById('dfList').addEventListener('click', function(e){
 sigImage.addEventListener('change', function(){
     var file = this.files[0];
     if(!file) return;
+    var existingSigInput = document.getElementById('existingSigInput');
+    if(existingSigInput) existingSigInput.value = '';
     var reader = new FileReader();
     reader.onload = function(e){
         sigPreview.style.display = 'block';
