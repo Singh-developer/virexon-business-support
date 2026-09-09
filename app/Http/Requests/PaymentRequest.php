@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Business;
+use App\Models\PaymentGateway;
 use App\Models\VirtualCard;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -15,6 +16,8 @@ class PaymentRequest extends FormRequest
 
     public function rules(): array
     {
+        $activeGatewaySlugs = PaymentGateway::where('status', true)->pluck('slug')->toArray();
+
         return [
             'business_id' => [
                 'required',
@@ -34,7 +37,12 @@ class PaymentRequest extends FormRequest
 
             'gateway' => [
                 'required',
-                'in:razorpay,paytm,mock',
+                'in:mock,' . implode(',', $activeGatewaySlugs),
+            ],
+
+            'payment_type' => [
+                'nullable',
+                'in:spending,repayment',
             ],
         ];
     }

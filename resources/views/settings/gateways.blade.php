@@ -88,12 +88,21 @@
                         <input type="text" name="credentials[sandbox_api_secret]" value="{{ $gateway->credentials['sandbox_api_secret'] ?? '' }}" placeholder="Leave blank to keep unchanged">
                     </label>
                     <label>
+                        Sandbox Website Name
+                        <input type="text" name="credentials[sandbox_website]" value="{{ $gateway->credentials['sandbox_website'] ?? '' }}" placeholder="e.g. WEBSTAGING (Paytm) or website name">
+                    </label>
+                    <label>
                         Production API Key / Merchant ID
                         <input type="text" name="credentials[production_api_key]" value="{{ $gateway->credentials['production_api_key'] ?? '' }}" placeholder="Leave blank to keep unchanged">
                     </label>
                     <label>
                         Production Secret Key
                         <input type="text" name="credentials[production_api_secret]" value="{{ $gateway->credentials['production_api_secret'] ?? '' }}" placeholder="Leave blank to keep unchanged">
+                    </label>
+                    <label>
+                        Production Website Name
+                        <input type="text" name="credentials[production_website]" value="{{ $gateway->credentials['production_website'] ?? '' }}" placeholder="e.g. DEFAULT (Paytm) or website name">
+                        <small style="color: #8a97a9;">Paytm: Find this in your Paytm Dashboard under Merchant Settings. Common values: DEFAULT, WEBSTAGING.</small>
                     </label>
                 </div>
             </form>

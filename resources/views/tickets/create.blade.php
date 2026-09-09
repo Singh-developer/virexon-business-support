@@ -1,17 +1,6 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full w-full">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Create Ticket - Agent Business Support</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-slate-50 text-slate-800 font-['Plus_Jakarta_Sans'] h-full flex flex-col">
+@extends('layouts.app')
 
-    @include('partials.navbar')
-
+@section('content')
     <main class="flex-grow max-w-3xl mx-auto w-full px-4 sm:px-6 py-8">
         
         <div class="mb-6">
@@ -65,7 +54,4 @@
         </div>
 
     </main>
-
-</body>
-</html>
-
+@endsection

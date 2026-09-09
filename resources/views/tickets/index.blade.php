@@ -1,26 +1,15 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full w-full">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Support Tickets - Agent Business Support</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-slate-50 text-slate-800 font-['Plus_Jakarta_Sans'] h-full flex flex-col">
+@extends('layouts.app')
 
-    @include('partials.navbar')
-
+@section('content')
     <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         
-        <div class="flex justify-between items-center mb-8">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Support Tickets</h1>
-                <p class="text-slate-500 mt-1">Manage your support requests and issues</p>
+                <p class="text-slate-500 mt-1 text-sm sm:text-base">Manage your support requests and issues</p>
             </div>
-            <a href="{{ route('tickets.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-sm flex items-center gap-2">
-                <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">New Ticket</span>
+            <a href="{{ route('tickets.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-2 shrink-0">
+                <i class="fa-solid fa-plus"></i> <span>New Ticket</span>
             </a>
         </div>
 
@@ -81,7 +70,4 @@
             @endif
         </div>
     </main>
-
-</body>
-</html>
-
+@endsection

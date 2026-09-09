@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <title><?php echo e(config('app.name','Agent Business Support')); ?> <?php if(isset($title)): ?> · <?php echo e($title); ?> <?php endif; ?></title><?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css','resources/js/app.js']); ?>
 </head>
 
@@ -25,19 +26,18 @@
             }
         }
     </script>
-    <div class="bg-[#F4F6F8] text-slate-800 antialiased min-h-screen w-full flex flex-col font-sans">
+    <div class="bg-[#F4F6F8] text-slate-800 antialiased min-h-screen w-full font-sans">
         <?php echo $__env->make('partials.navbar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-        <div class="flex-1 flex w-full justify-center">
-            <main class="flex-1 p-4 lg:p-6 space-y-6 max-w-7xl">
-                <section class="content" style="background: transparent; box-shadow: none; border: none; padding: 0;">
-                    <?php if(session('success')): ?><div class="flash success">✓ <?php echo e(session('success')); ?></div><?php endif; ?>
-                    <?php if($errors->any()): ?><div class="flash error"><?php echo e($errors->first()); ?></div><?php endif; ?>
-                    <?php echo e($slot ?? ''); ?>
+        <?php echo $__env->make('partials.agent-sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+        <main class="lg:ml-72 p-4 lg:p-6 pt-[70px] lg:pt-6 space-y-6">
+            <section class="content" style="background: transparent; box-shadow: none; border: none;padding-top: 2rem;">
+                <?php if(session('success')): ?><div class="flash success">✓ <?php echo e(session('success')); ?></div><?php endif; ?>
+                <?php if($errors->any()): ?><div class="flash error"><?php echo e($errors->first()); ?></div><?php endif; ?>
+                <?php echo e($slot ?? ''); ?>
 
-                    <?php echo $__env->yieldContent('content'); ?>
-                </section>
-            </main>
-        </div>
+                <?php echo $__env->yieldContent('content'); ?>
+            </section>
+        </main>
     </div>
     <?php else: ?>
     <!-- Admin Layout Wrapper -->
@@ -95,7 +95,7 @@
                             <?php endif; ?>
                         </button>
 
-                        <div id="notif-dropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; width: 320px; background: white; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden; text-align: left;">
+                        <div id="notif-dropdown" style="display: none; position: fixed; left: 16px; right: 16px; margin-top: 60px; background: white; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden; text-align: left;" class="sm-fixed-notif">
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
                                 <span style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">Notifications</span>
                                 <?php if($unreadCount > 0): ?>
@@ -155,6 +155,29 @@
                                 dropdown.style.display = 'none';
                             }
                         });
+
+                        // Responsive: switch between fixed (mobile) and absolute (desktop)
+                        function updateNotifPosition() {
+                            const dropdown = document.getElementById('notif-dropdown');
+                            if (!dropdown) return;
+                            if (window.innerWidth >= 640) {
+                                dropdown.style.position = 'absolute';
+                                dropdown.style.left = 'auto';
+                                dropdown.style.right = '0';
+                                dropdown.style.top = '100%';
+                                dropdown.style.marginTop = '8px';
+                                dropdown.style.width = '320px';
+                            } else {
+                                dropdown.style.position = 'fixed';
+                                dropdown.style.left = '16px';
+                                dropdown.style.right = '16px';
+                                dropdown.style.top = '';
+                                dropdown.style.marginTop = '60px';
+                                dropdown.style.width = 'auto';
+                            }
+                        }
+                        updateNotifPosition();
+                        window.addEventListener('resize', updateNotifPosition);
                     </script>
                     <?php endif; ?>
 

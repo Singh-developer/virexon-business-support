@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PaymentRequest;
-use App\Models\{Business, Payment, VirtualCard};
+use App\Models\{Business, Payment, PaymentGateway, VirtualCard};
 use App\Services\{PaymentService, PaymentGatewayManager};
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -51,6 +51,14 @@ class PaymentController
                 )
             )
             ->when(
+                $request->filled('payment_type'),
+                fn($query) =>
+                $query->where(
+                    'payment_type',
+                    $request->payment_type
+                )
+            )
+            ->when(
                 $request->filled('q'),
                 function ($query) use ($request) {
 
@@ -84,17 +92,69 @@ class PaymentController
         $u = $r->user();
         if ($u->isAgent()) {
             abort_unless($u->virtualCard, 403, 'Agent does not have a virtual card assigned.');
-            $businesses = $u->business ? collect([$u->business]) : collect();
+            $business = $u->business;
+            if ($business) {
+                $business->load('cards');
+            }
+            $businesses = $business ? collect([$business]) : collect();
         } else {
             $businesses = Business::with('cards')->where('status', 'active')->get();
         }
-        return view('payments.form', ['businesses' => $businesses, 'agentCard' => $u->isAgent() ? $u->virtualCard : null]);
+
+        $activeGateways = PaymentGateway::where('status', true)->get();
+
+        return view('payments.form', [
+            'businesses' => $businesses,
+            'agentCard' => $u->isAgent() ? $u->virtualCard : null,
+            'activeGateways' => $activeGateways,
+        ]);
     }
     public function store(PaymentRequest $r, PaymentService $service)
     {
         $d = $r->validated();
-        $p = $service->create($r->user()->id, (int)$d['business_id'], (int)$d['card_id'], (float)$d['amount'], $d['gateway']);
-        return redirect()->route('payments.show', $p)->with('success', $p->gateway === 'mock' ? 'Mock payment created. Use the sandbox action to complete it.' : 'Payment initiated. Complete gateway checkout using configured credentials.');
+        $paymentType = $d['payment_type'] ?? 'spending';
+        $p = $service->create(
+            $r->user()->id,
+            (int) $d['business_id'],
+            (int) $d['card_id'],
+            (float) $d['amount'],
+            $d['gateway'],
+            $paymentType
+        );
+
+        if ($p->status->value === 'failed') {
+            return redirect()->route('payments.show', $p)->with(
+                'error',
+                'Payment failed: ' . ($p->gateway_response['error'] ?? 'Gateway returned an error. Please try again.')
+            );
+        }
+
+        if ($p->gateway === 'paytm' && isset($p->gateway_response['txn_token'])) {
+            $gw = PaymentGateway::where('slug', 'paytm')->first();
+            $credentials = $gw->credentials ?? [];
+            $env = $gw->environment ?? 'sandbox';
+            $isProduction = ($env === 'production');
+
+            $checkoutUrl = $isProduction
+                ? 'https://securegw.paytm.in/theia/oneclick/'
+                : 'https://securegw-stage.paytm.in/theia/oneclick/';
+
+            return view('payments.paytm-checkout', [
+                'checkoutUrl' => $checkoutUrl,
+                'mid' => $credentials["{$env}_api_key"] ?? '',
+                'orderId' => $p->reference,
+                'txnToken' => $p->gateway_response['txn_token'],
+                'callbackUrl' => config('services.paytm.callback_url', url('/payments/paytm/callback')),
+                'website' => $credentials["{$env}_website"] ?? 'DEFAULT',
+            ]);
+        }
+
+        return redirect()->route('payments.show', $p)->with(
+            'success',
+            $p->gateway === 'mock'
+                ? 'Payment created. Use the sandbox action to complete it.'
+                : 'Payment initiated. Complete gateway checkout using configured credentials.'
+        );
     }
     /* public function show(Request $r, Payment $payment)
     {

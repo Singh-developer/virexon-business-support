@@ -88,173 +88,26 @@ $statusValue = $card->status instanceof \BackedEnum
 
 
 {{-- ================================================================
-     CARD VISUAL
-================================================================ --}}
+     CARD VISUAL (click to reveal PAN + CVV)
+=============================================================== --}}
 
-<div class="card-visual">
-
-    <div class="card-top">
-
-        <div class="card-brand">
-            VIRTUAL
-        </div>
-
-        <div class="card-type">
-            CARD
-        </div>
-
-    </div>
-
-    <div
-        id="card-pan-display"
-        class="card-number">
-        {{ $card->maskedPan() }}
-    </div>
-
+<div class="card-visual" id="card-visual" style="cursor: pointer; position: relative;" title="Click to reveal card details">
+    <div class="chip"></div>
+    <div class="card-number" id="card-number">{{ $card->maskedPan() }}</div>
     <div class="card-bottom">
-
-        <div>
-
-            <div class="card-label">
-                CARD HOLDER
-            </div>
-
-            <div class="card-holder">
-                {{ strtoupper($card->cardholder_name) }}
-            </div>
-
+        <span>{{ strtoupper($card->cardholder_name) }}</span>
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <span id="card-cvv-badge" style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-size: 10px; letter-spacing: 1px; cursor: pointer;" title="Click to reveal CVV">CVV: •••</span>
+            <span>EXP {{ $card->expiry_date->format('m/y') }}</span>
         </div>
-
-        <div>
-
-            <div class="card-label">
-                EXPIRES
-            </div>
-
-            <div class="card-expiry">
-
-                {{ $card->expiry_date->format('m/y') }}
-
-            </div>
-
-        </div>
-
     </div>
-
-</div>
-
-
-{{-- ================================================================
-     PAN CONTROLS
-================================================================ --}}
-
-<div class="panel">
-
-    <div class="panel-head">
-
-        <div>
-
-            <h3>
-                Card Information
-            </h3>
-
-            <p>
-                Sandbox card data only.
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <div class="card-information-grid">
-
-        <div class="info-item">
-
-            <span class="info-label">
-                Card Holder
-            </span>
-
-            <strong>
-                {{ $card->cardholder_name }}
-            </strong>
-
-        </div>
-
-
-        <div class="info-item">
-
-            <span class="info-label">
-                Expiry
-            </span>
-
-            <strong>
-                {{ $card->expiry_date->format('m / Y') }}
-            </strong>
-
-        </div>
-
-
-        <div class="info-item">
-
-            <span class="info-label">
-                Card Number
-            </span>
-
-            <strong
-                id="card-pan-text"
-                class="mono">
-                {{ $card->maskedPan() }}
-            </strong>
-
-        </div>
-
-
-        <div class="info-item">
-
-            <span class="info-label">
-                CVV
-            </span>
-
-            <strong class="mono">
-                •••
-            </strong>
-
-            <small>
-                CVV is provided by the issuer/provider and is not
-                permanently stored by this application.
-            </small>
-
-        </div>
-
-    </div>
-
-
-    <div class="form-actions">
-
-        <button
-            type="button"
-            id="reveal-pan-button"
-            class="btn primary">
-            Show Full Card Number
-        </button>
-
-        <button
-            type="button"
-            id="copy-pan-button"
-            class="btn secondary"
-            style="display:none;">
-            Copy Card Number
-        </button>
-
-    </div>
-
+    <div id="card-toggle-hint" style="position: absolute; top: 12px; right: 16px; font-size: 9px; letter-spacing: 1px; opacity: 0.6; text-transform: uppercase;">tap to reveal</div>
 </div>
 
 
 {{-- ================================================================
      LIMITS
-================================================================ --}}
+=============================================================== --}}
 
 <div class="stats-grid three">
 
@@ -372,132 +225,78 @@ $statusValue = $card->status instanceof \BackedEnum
 
 
 <script>
-    const revealButton =
-        document.getElementById('reveal-pan-button');
+(function() {
+    var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var revealPanUrl = '{{ route("cards.reveal-pan", $card) }}';
+    var revealCvvUrl = '{{ route("cards.reveal-cvv", $card) }}';
+    var maskedPan = @json($card->maskedPan());
 
-    const copyButton =
-        document.getElementById('copy-pan-button');
+    var cardVisual = document.getElementById('card-visual');
+    var cardNumberEl = document.getElementById('card-number');
+    var cvvBadge = document.getElementById('card-cvv-badge');
+    var hint = document.getElementById('card-toggle-hint');
+    var panRevealed = false;
+    var cvvRevealed = false;
 
-    const panDisplay =
-        document.getElementById('card-pan-display');
-
-    const panText =
-        document.getElementById('card-pan-text');
-
-
-    let fullPan = null;
-
-
-    revealButton?.addEventListener('click', async function() {
-
-        revealButton.disabled = true;
-
-        revealButton.innerText =
-            'Loading...';
-
-        try {
-
-            const response = await fetch(
-                @json(route('cards.reveal-pan', $card)), {
-                    method: 'POST',
-
-                    headers: {
-                        'X-CSRF-TOKEN': @json(csrf_token()),
-
-                        'Accept': 'application/json',
-                    },
-                }
-            );
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    'Unable to reveal card number.'
-                );
-
-            }
-
-
-            const data =
-                await response.json();
-
-
-            fullPan =
-                data.formatted;
-
-
-            panDisplay.innerText =
-                data.formatted;
-
-
-            panText.innerText =
-                data.formatted;
-
-
-            revealButton.innerText =
-                'Card Number Visible';
-
-
-            copyButton.style.display =
-                'inline-flex';
-
-
-        } catch (error) {
-
-            console.error(error);
-
-            alert(
-                'Unable to reveal the card number.'
-            );
-
-            revealButton.disabled =
-                false;
-
-            revealButton.innerText =
-                'Show Full Card Number';
-        }
-
-    });
-
-
-    copyButton?.addEventListener('click', async function() {
-
-        if (!fullPan) {
+    function togglePan(e) {
+        if (e) e.stopPropagation();
+        if (panRevealed) {
+            cardNumberEl.textContent = maskedPan;
+            hint.textContent = 'tap to reveal';
+            panRevealed = false;
             return;
         }
+        hint.textContent = 'loading...';
+        fetch(revealPanUrl, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
+            credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            cardNumberEl.textContent = data.formatted || data.pan;
+            hint.textContent = 'tap to hide';
+            panRevealed = true;
+        })
+        .catch(function() {
+            hint.textContent = 'error - retry';
+            setTimeout(function() { hint.textContent = 'tap to reveal'; }, 2000);
+        });
+    }
 
-        try {
-
-            await navigator.clipboard.writeText(
-                fullPan
-            );
-
-            copyButton.innerText =
-                'Copied';
-
-            setTimeout(() => {
-
-                copyButton.innerText =
-                    'Copy Card Number';
-
-            }, 1800);
-
-        } catch (error) {
-
-            alert(
-                'Unable to copy card number.'
-            );
-
+    function toggleCvv(e) {
+        e.stopPropagation();
+        if (cvvRevealed) {
+            cvvBadge.textContent = 'CVV: \u2022\u2022\u2022';
+            cvvRevealed = false;
+            return;
         }
+        cvvBadge.textContent = 'CVV: ...';
+        fetch(revealCvvUrl, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
+            credentials: 'same-origin'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            cvvBadge.textContent = 'CVV: ' + data.cvv;
+            cvvRevealed = true;
+        })
+        .catch(function() {
+            cvvBadge.textContent = 'CVV: error';
+            setTimeout(function() { cvvBadge.textContent = 'CVV: \u2022\u2022\u2022'; }, 2000);
+        });
+    }
 
-    });
+    cardVisual.addEventListener('click', togglePan);
+    cvvBadge.addEventListener('click', toggleCvv);
+})();
 </script>
 @endif
 
 {{-- ====================================================================
      NO CARD NOTICE
-==================================================================== --}}
+===================================================================== --}}
 @if(!$card)
 <div class="panel">
     <div class="panel-head">
@@ -512,7 +311,7 @@ $statusValue = $card->status instanceof \BackedEnum
 
 {{-- ====================================================================
      APPLICATION STATUS (Admin Only)
-==================================================================== --}}
+===================================================================== --}}
 @if(!$isAgent)
 <div class="panel">
     <div class="panel-head">
@@ -538,7 +337,7 @@ $statusValue = $card->status instanceof \BackedEnum
 
 {{-- ====================================================================
      FULL AGENT DETAILS (Admin read-only view)
-==================================================================== --}}
+===================================================================== --}}
 <div class="panel">
     <div class="panel-head">
         <div>

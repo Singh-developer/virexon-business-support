@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\{
     AuthController,
     DashboardController,
+    AgentDashboardController,
     BusinessController,
     AgentController,
     CardController,
@@ -77,7 +78,7 @@ Route::middleware('auth')->group(function () {
         if (auth()->user()->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
-        return view('dashboard.dashboard');
+        return app(AgentDashboardController::class)();
     })->name('dashboard');
 
     Route::get('/admin/dashboard', DashboardController::class)
@@ -209,6 +210,8 @@ Route::middleware('auth')->group(function () {
 
         Route::patch('agents/{agent}/application-status', [App\Http\Controllers\AgentController::class, 'updateApplicationStatus'])->name('agents.application-status');
         
+        Route::patch('agents/{agent}/limit-commission', [App\Http\Controllers\AgentController::class, 'updateLimitCommission'])->name('agents.update-limit-commission');
+        
         // Advances & Commissions
         Route::post('agents/{agent}/advances', [App\Http\Controllers\Admin\AdvanceController::class, 'store'])->name('admin.advances.store');
         Route::post('agents/{agent}/commissions', [App\Http\Controllers\Admin\CommissionController::class, 'store'])->name('admin.commissions.store');
@@ -276,6 +279,11 @@ Route::middleware('auth')->group(function () {
         CardController::class,
         'revealPan'
     ])->name('cards.reveal-pan');
+
+    Route::post('/cards/{card}/reveal-cvv', [
+        CardController::class,
+        'revealCvv'
+    ])->name('cards.reveal-cvv');
 
 
     /*
@@ -442,7 +450,7 @@ Route::post('/webhooks/{gateway}', [
 |--------------------------------------------------------------------------
 */
 
-Route::post('/payments/paytm/callback', [
+Route::match(['get', 'post'], '/payments/paytm/callback', [
     PaymentController::class,
     'paytmCallback'
 ])->name('payments.paytm.callback');

@@ -382,6 +382,73 @@ class AgentController extends Controller
         return back()->with('success', "Agent application has been marked as {$statusLabel}.");
     }
 
+    public function updateLimitCommission(Request $request, User $agent)
+    {
+        abort_unless($agent->isAgent(), 404);
+
+        $data = $request->validate([
+            'max_limit' => 'nullable|numeric|min:0|max:999999999999.99',
+            'commission_type' => 'required|in:percentage,fixed',
+            'commission_rate' => 'nullable|numeric|min:0|max:100',
+            'commission_fixed' => 'nullable|numeric|min:0|max:999999999999.99',
+            'action' => 'required|in:save,save_and_card',
+        ]);
+
+        $maxLimit = $data['max_limit'] ?? 500000.00;
+
+        $agent->detail()->updateOrCreate(
+            ['user_id' => $agent->id],
+            [
+                'max_limit' => $maxLimit,
+                'commission_type' => $data['commission_type'] ?? 'percentage',
+                'commission_rate' => $data['commission_rate'] ?? 0,
+                'commission_fixed' => $data['commission_fixed'] ?? 0,
+            ]
+        );
+
+        // Sync virtual card limits if card exists
+        if ($agent->virtualCard) {
+            $agent->virtualCard->update([
+                'card_limit' => $maxLimit,
+                'daily_limit' => $maxLimit,
+                'monthly_limit' => $maxLimit * 10,
+                'per_transaction_limit' => $maxLimit,
+            ]);
+        }
+
+        $message = 'Limit & Commission settings updated successfully.';
+
+        // Create virtual card if requested and agent doesn't have one
+        if ($data['action'] === 'save_and_card') {
+            if ($agent->virtualCard) {
+                $message .= ' Agent already has a virtual card.';
+            } else {
+                $provider = app(\App\Services\MockVirtualCardProvider::class);
+                $providerCard = $provider->createCard($agent->name);
+                $reference = 'VC-' . now()->format('ymd') . '-' . strtoupper(str()->random(8));
+
+                \App\Models\VirtualCard::create([
+                    'business_id' => $agent->business_id,
+                    'agent_id' => $agent->id,
+                    'reference' => $reference,
+                    'encrypted_pan' => encrypt($providerCard['pan']),
+                    'last4' => $providerCard['last4'],
+                    'provider_card_id' => $providerCard['provider_card_id'],
+                    'cardholder_name' => $providerCard['cardholder_name'],
+                    'status' => 'active',
+                    'card_limit' => $maxLimit,
+                    'daily_limit' => $maxLimit,
+                    'monthly_limit' => $maxLimit * 10,
+                    'current_usage' => 0,
+                ]);
+
+                $message .= ' Virtual card created successfully.';
+            }
+        }
+
+        return back()->with('success', $message);
+    }
+
     private function validated(
         Request $request,
         ?User $agent = null

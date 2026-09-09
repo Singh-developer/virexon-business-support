@@ -34,6 +34,10 @@
     .detail-value.empty { color: #cbd5e1; font-style: italic; font-weight: 400; }
     .agent-section-head { grid-column: 1 / -1; background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #64748b; }
     @media(max-width:600px){ .agent-detail-grid { grid-template-columns: 1fr; } .agent-detail-grid .detail-item { border-right: none !important; } }
+    .settings-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .settings-card:last-child { margin-bottom: 0; }
+    .settings-card-title { font-weight: 800; font-size: 12px; text-transform: uppercase; color: #475569; margin-bottom: 16px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px; }
+    .info-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; margin-top: 16px; font-size: 12px; color: #1e40af; font-weight: 600; }
 </style>
 
 @php
@@ -44,7 +48,7 @@
 {{-- ====================================================================
      SECTION 1: ACCOUNT EDIT FORM
 ==================================================================== --}}
-<div class="panel form-panel">
+<div class="panel">
     <div class="panel-head">
         <div>
             <h3>Account Details</h3>
@@ -151,77 +155,88 @@
 <div class="panel">
     <div class="panel-head">
         <div>
-            <h3>💰 Limit & Commission Settings</h3>
+            <h3>Limit & Commission Settings</h3>
             <p>Set the maximum transaction limit and commission rate for this agent. These settings control how much the agent can transact and earn.</p>
         </div>
     </div>
 
-    <form method="POST" action="{{ route('agents.update', $agent) }}">
+    <form method="POST" action="{{ route('agents.update-limit-commission', $agent) }}">
         @csrf
-        @method('PUT')
+        @method('PATCH')
         
-        <div style="padding: 20px; border-top: 1px solid #f1f5f9;">
-            
-            {{-- Transaction Limit Section --}}
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
-                <div style="font-weight: 800; font-size: 12px; text-transform: uppercase; color: #475569; margin-bottom: 16px; letter-spacing: 0.05em;">
-                    📊 Transaction Limit
-                </div>
-                
-                <div class="form-grid">
-                    <label>
-                        Maximum Transaction Limit (₹)
-                        <input type="number" step="0.01" name="max_limit" 
-                               value="{{ old('max_limit', $detail->max_limit ?? 500000) }}" 
-                               min="0" max="999999999999.99"
-                               style="color:#1e293b"
-                               placeholder="e.g. 500000 for 5 Lakh">
-                        <small style="color: #64748b; font-weight: 400;">Default maximum is ₹5,00,000 (5 Lakh)</small>
-                    </label>
-                </div>
+        {{-- Transaction Limit Section --}}
+        <div class="settings-card">
+            <div class="settings-card-title">
+                📊 Transaction Limit
             </div>
-
-            {{-- Commission Settings Section --}}
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
-                <div style="font-weight: 800; font-size: 12px; text-transform: uppercase; color: #475569; margin-bottom: 16px; letter-spacing: 0.05em;">
-                    💵 Commission Settings
-                </div>
-                <div class="form-grid">
-                    <label>
-                        Commission Type
-                        <select name="commission_type" id="commission_type" style="color:#1e293b">
-                            <option value="percentage" @selected(old('commission_type', $detail->commission_type ?? 'percentage') === 'percentage')>Percentage (%)</option>
-                            <option value="fixed" @selected(old('commission_type', $detail->commission_type ?? 'percentage') === 'fixed')>Fixed Amount (₹)</option>
-                        </select>
-                    </label>
-                    <label id="commission_rate_label">
-                        Commission Rate (%)
-                        <input type="number" step="0.0001" name="commission_rate" id="commission_rate" value="{{ old('commission_rate', $detail->commission_rate ?? 0) }}" min="0" max="100" style="color:#1e293b" placeholder="e.g. 2.5">
-                    </label>
-                    <label id="commission_fixed_label" style="display: none;">
-                        Fixed Commission (₹)
-                        <input type="number" step="0.01" name="commission_fixed" id="commission_fixed" value="{{ old('commission_fixed', $detail->commission_fixed ?? 0) }}" min="0" style="color:#1e293b" placeholder="e.g. 100">
-                    </label>
-                </div>
-                <div style="margin-top: 16px; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
-                    <div style="font-size: 12px; font-weight: 700; color: #1e40af; margin-bottom: 8px;">Commission Preview (on Rs.10,000 transaction)</div>
-                    <div style="font-size: 14px; color: #1e293b;">
-                        @php
-                            $sampleAmount = 10000;
-                            $preview = 0;
-                            if (($detail->commission_type ?? 'percentage') === 'fixed') {
-                                $preview = $detail->commission_fixed ?? 0;
-                            } else {
-                                $preview = $sampleAmount * (($detail->commission_rate ?? 0) / 100);
-                            }
-                        @endphp
-                        Estimated Commission: <strong style="color: #059669;">Rs.{{ number_format($preview, 2) }}</strong>
-                    </div>
-                </div>
+            
+            <div class="form-grid">
+                <label>
+                    Maximum Transaction Limit (₹)
+                    <input type="number" step="0.01" name="max_limit" 
+                           value="{{ old('max_limit', $detail->max_limit ?? 500000) }}" 
+                           min="0" max="999999999999.99"
+                           style="color:#1e293b"
+                           placeholder="e.g. 500000 for 5 Lakh">
+                    <small style="color: #64748b; font-weight: 400;">Default maximum is ₹5,00,000 (5 Lakh)</small>
+                </label>
             </div>
         </div>
+
+        {{-- Commission Settings Section --}}
+        <div class="settings-card">
+            <div class="settings-card-title">
+                💵 Commission Settings
+            </div>
+            <div class="form-grid">
+                <label>
+                    Commission Type
+                    <select name="commission_type" id="commission_type" style="color:#1e293b">
+                        <option value="percentage" @selected(old('commission_type', $detail->commission_type ?? 'percentage') === 'percentage')>Percentage (%)</option>
+                        <option value="fixed" @selected(old('commission_type', $detail->commission_type ?? 'percentage') === 'fixed')>Fixed Amount (₹)</option>
+                    </select>
+                </label>
+                <label id="commission_rate_label">
+                    Commission Rate (%)
+                    <input type="number" step="0.0001" name="commission_rate" id="commission_rate" value="{{ old('commission_rate', $detail->commission_rate ?? 0) }}" min="0" max="100" style="color:#1e293b" placeholder="e.g. 2.5">
+                </label>
+                <label id="commission_fixed_label" style="display: none;">
+                    Fixed Commission (₹)
+                    <input type="number" step="0.01" name="commission_fixed" id="commission_fixed" value="{{ old('commission_fixed', $detail->commission_fixed ?? 0) }}" min="0" style="color:#1e293b" placeholder="e.g. 100">
+                </label>
+            </div>
+            <div class="info-banner">
+                <div style="font-weight: 700; margin-bottom: 6px;">Commission Preview (on ₹10,000 transaction)</div>
+                @php
+                    $sampleAmount = 10000;
+                    $preview = 0;
+                    if (($detail->commission_type ?? 'percentage') === 'fixed') {
+                        $preview = $detail->commission_fixed ?? 0;
+                    } else {
+                        $preview = $sampleAmount * (($detail->commission_rate ?? 0) / 100);
+                    }
+                @endphp
+                <div style="margin-top: 4px;">Estimated Commission: <strong style="color: #059669;">₹{{ number_format($preview, 2) }}</strong></div>
+            </div>
+        </div>
+
         <div class="form-actions">
-            <span style="color: #64748b; font-size: 12px;">Changes apply immediately to the agent's account.</span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="color: #64748b; font-size: 12px;">Changes apply immediately to the agent's account.</span>
+                <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                    @if($agent->virtualCard)
+                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 6px 10px;">
+                        🃏 Card: {{ $agent->virtualCard->last4 ?: $agent->virtualCard->reference }}
+                    </span>
+                    @endif
+                    <select name="action" style="border:1px solid #d1d5db; border-radius:8px; padding:8px 12px; font-size:12px; font-weight:600; color:#1e293b; background:#fff;">
+                        <option value="save">Save Only</option>
+                        @if(!$agent->virtualCard)
+                        <option value="save_and_card">Save & Create Virtual Card</option>
+                        @endif
+                    </select>
+                </div>
+            </div>
             <button type="submit" class="btn primary">Save Limit & Commission Settings</button>
         </div>
     </form>
@@ -296,11 +311,11 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:20px;padding:20px;border-top:1px solid #f1f5f9;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:20px;border-top:1px solid #f1f5f9; padding-top: 20px;">
         
         {{-- Advance Box --}}
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
-            <div style="font-weight:800;font-size:12px;text-transform:uppercase;color:#475569;margin-bottom:12px;letter-spacing:0.05em;">Issue Advance</div>
+        <div class="settings-card" style="margin-bottom:0;">
+            <div class="settings-card-title">Issue Advance</div>
             
             @if($activeAdvance)
                 <div style="background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:12px;">
@@ -334,8 +349,8 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         {{-- Commission Box --}}
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;">
-            <div style="font-weight:800;font-size:12px;text-transform:uppercase;color:#475569;margin-bottom:12px;letter-spacing:0.05em;">Pay Commission</div>
+        <div class="settings-card" style="margin-bottom:0;">
+            <div class="settings-card-title">Pay Commission</div>
             
             @if($activeAdvance && $activeAdvance->repayment_type === 'unselected')
                 <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:12px;color:#991b1b;font-size:13px;">
@@ -350,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="background:#fff;border:1px solid #d1fae5;border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:#065f46;">
                     <strong>Agent Commission:</strong>
                     @if($commType === 'fixed')
-                        Fixed Rs.{{ number_format($commFixed, 2) }} / transaction
+                        Fixed ₹{{ number_format($commFixed, 2) }} / transaction
                     @else
                         {{ number_format($commRate, 4) }}% of transaction
                     @endif

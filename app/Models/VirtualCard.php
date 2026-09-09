@@ -16,6 +16,7 @@ class VirtualCard extends Model
         'agent_id',
         'reference',
         'encrypted_pan',
+        'encrypted_cvv',
         'last4',
         'provider_card_id',
         'cardholder_name',
@@ -43,6 +44,7 @@ class VirtualCard extends Model
 
     protected $hidden = [
         'encrypted_pan',
+        'encrypted_cvv',
     ];
 
     public function business()
@@ -91,6 +93,18 @@ class VirtualCard extends Model
         return decrypt($this->encrypted_pan);
     }
 
+    /**
+     * Return the decrypted CVV.
+     */
+    public function revealCvv(): string
+    {
+        if (! $this->encrypted_cvv) {
+            throw new RuntimeException('CVV is not available.');
+        }
+
+        return decrypt($this->encrypted_cvv);
+    }
+
     public function maskedPan(): string
     {
         if (! $this->last4) {
@@ -98,6 +112,11 @@ class VirtualCard extends Model
         }
 
         return '•••• •••• •••• ' . $this->last4;
+    }
+
+    public function maskedCvv(): string
+    {
+        return '•••';
     }
 
     public function formattedPan(): ?string

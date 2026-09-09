@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name','Agent Business Support') }} @isset($title) · {{ $title }} @endisset</title>@vite(['resources/css/app.css','resources/js/app.js'])
 </head>
 
@@ -25,18 +26,17 @@
             }
         }
     </script>
-    <div class="bg-[#F4F6F8] text-slate-800 antialiased min-h-screen w-full flex flex-col font-sans">
+    <div class="bg-[#F4F6F8] text-slate-800 antialiased min-h-screen w-full font-sans">
         @include('partials.navbar')
-        <div class="flex-1 flex w-full justify-center">
-            <main class="flex-1 p-4 lg:p-6 space-y-6 max-w-7xl">
-                <section class="content" style="background: transparent; box-shadow: none; border: none; padding: 0;">
-                    @if(session('success'))<div class="flash success">✓ {{ session('success') }}</div>@endif
-                    @if($errors->any())<div class="flash error">{{ $errors->first() }}</div>@endif
-                    {{ $slot ?? '' }}
-                    @yield('content')
-                </section>
-            </main>
-        </div>
+        @include('partials.agent-sidebar')
+        <main class="lg:ml-72 p-4 lg:p-6 pt-[70px] lg:pt-6 space-y-6">
+            <section class="content" style="background: transparent; box-shadow: none; border: none;padding-top: 2rem;">
+                @if(session('success'))<div class="flash success">✓ {{ session('success') }}</div>@endif
+                @if($errors->any())<div class="flash error">{{ $errors->first() }}</div>@endif
+                {{ $slot ?? '' }}
+                @yield('content')
+            </section>
+        </main>
     </div>
     @else
     <!-- Admin Layout Wrapper -->
@@ -93,7 +93,7 @@
                             @endif
                         </button>
 
-                        <div id="notif-dropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; width: 320px; background: white; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden; text-align: left;">
+                        <div id="notif-dropdown" style="display: none; position: fixed; left: 16px; right: 16px; margin-top: 60px; background: white; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; z-index: 50; overflow: hidden; text-align: left;" class="sm-fixed-notif">
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
                                 <span style="font-weight: 600; font-size: 0.875rem; color: #1e293b;">Notifications</span>
                                 @if($unreadCount > 0)
@@ -151,6 +151,29 @@
                                 dropdown.style.display = 'none';
                             }
                         });
+
+                        // Responsive: switch between fixed (mobile) and absolute (desktop)
+                        function updateNotifPosition() {
+                            const dropdown = document.getElementById('notif-dropdown');
+                            if (!dropdown) return;
+                            if (window.innerWidth >= 640) {
+                                dropdown.style.position = 'absolute';
+                                dropdown.style.left = 'auto';
+                                dropdown.style.right = '0';
+                                dropdown.style.top = '100%';
+                                dropdown.style.marginTop = '8px';
+                                dropdown.style.width = '320px';
+                            } else {
+                                dropdown.style.position = 'fixed';
+                                dropdown.style.left = '16px';
+                                dropdown.style.right = '16px';
+                                dropdown.style.top = '';
+                                dropdown.style.marginTop = '60px';
+                                dropdown.style.width = 'auto';
+                            }
+                        }
+                        updateNotifPosition();
+                        window.addEventListener('resize', updateNotifPosition);
                     </script>
                     @endif
 

@@ -55,6 +55,7 @@
                             value="{{ $agent->id }}"
                             data-business="{{ $agent->business_id }}"
                             data-name="{{ $agent->name }}"
+                            data-limit="{{ $agent->detail?->max_limit ?? 500000 }}"
                         >
 
                             {{ $agent->name }}
@@ -259,6 +260,18 @@
     const cardholderInput =
         document.querySelector('#cardholder_name');
 
+    const cardLimitInput =
+        document.querySelector('input[name="card_limit"]');
+
+    const dailyLimitInput =
+        document.querySelector('input[name="daily_limit"]');
+
+    const monthlyLimitInput =
+        document.querySelector('input[name="monthly_limit"]');
+
+    const perTransactionInput =
+        document.querySelector('input[name="per_transaction_limit"]');
+
 
     function syncAgent()
     {
@@ -276,6 +289,24 @@
 
         cardholderInput.value =
             option.dataset.name || '';
+
+        const limit = parseFloat(option.dataset.limit) || 500000;
+
+        if (cardLimitInput && !cardLimitInput.value) {
+            cardLimitInput.value = limit;
+        }
+
+        if (dailyLimitInput && !dailyLimitInput.value) {
+            dailyLimitInput.value = limit;
+        }
+
+        if (monthlyLimitInput && !monthlyLimitInput.value) {
+            monthlyLimitInput.value = limit * 10;
+        }
+
+        if (perTransactionInput && !perTransactionInput.value) {
+            perTransactionInput.value = limit;
+        }
     }
 
 

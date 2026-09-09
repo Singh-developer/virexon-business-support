@@ -1,16 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advance & Balance — Agent Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F4F6F8; }</style>
-</head>
-<body class="text-slate-800 antialiased min-h-screen">
-    <?php echo $__env->make('partials.navbar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php $__env->startSection('content'); ?>
 
     <div class="max-w-7xl mx-auto px-4 lg:px-6 py-8 transition-all">
         
@@ -205,7 +193,7 @@
         </div>
 
     </div>
-</body>
-</html>
+<?php $__env->stopSection(); ?>
 
-<?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/advances/index.blade.php ENDPATH**/ ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/advances/index.blade.php ENDPATH**/ ?>

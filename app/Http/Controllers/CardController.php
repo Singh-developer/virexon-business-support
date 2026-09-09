@@ -75,7 +75,7 @@ class CardController extends Controller
     public function create()
     {
         $agents = User::query()
-            ->with(['business', 'virtualCard'])
+            ->with(['business', 'virtualCard', 'detail'])
             ->whereHas(
                 'role',
                 fn ($query) => $query->where('slug', 'agent')
@@ -85,13 +85,16 @@ class CardController extends Controller
             ->orderBy('name')
             ->get();
 
+        $firstAgent = $agents->first();
+        $defaultLimit = $firstAgent?->detail?->max_limit ?? 500000;
+
         return view('cards.form', [
             'card' => new VirtualCard([
                 'status' => 'active',
-                'card_limit' => 100000,
-                'daily_limit' => 20000,
-                'monthly_limit' => 80000,
-                'per_transaction_limit' => 20000,
+                'card_limit' => $defaultLimit,
+                'daily_limit' => $defaultLimit,
+                'monthly_limit' => $defaultLimit * 10,
+                'per_transaction_limit' => $defaultLimit,
             ]),
             'businesses' => Business::where('status', 'active')
                 ->orderBy('name')
@@ -180,6 +183,13 @@ class CardController extends Controller
                     $providerCard['pan']
                 ),
 
+                /*
+                 * CVV is encrypted at rest.
+                 */
+                'encrypted_cvv' => encrypt(
+                    $providerCard['cvv']
+                ),
+
                 'last4' => $providerCard['last4'],
 
                 'provider_card_id' =>
@@ -230,20 +240,13 @@ class CardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | IMPORTANT
-        |--------------------------------------------------------------------------
-        | CVV is intentionally NOT written to the database.
-        |
-        | We send it to the Admin one time immediately after creation.
+        | CVV is now encrypted and stored in the database.
+        | Admin can view it from the card show page.
         |--------------------------------------------------------------------------
         */
         return redirect()
             ->route('cards.show', $card)
-            ->with('card_created', true)
-            ->with(
-                'generated_cvv',
-                $providerCard['cvv']
-            );
+            ->with('card_created', true);
     }
 
     public function updateStatus(
@@ -333,6 +336,37 @@ class CardController extends Controller
                 ' ',
                 str_split($pan, 4)
             ),
+        ]);
+    }
+
+    /**
+     * Reveal CVV.
+     *
+     * Agent can reveal ONLY their own card.
+     * Admin can reveal cards because Admin manages cards.
+     */
+    public function revealCvv(
+        Request $request,
+        VirtualCard $card
+    ) {
+        $user = $request->user();
+
+        if ($user->isAgent()) {
+            abort_unless(
+                (int) $card->agent_id === (int) $user->id,
+                403
+            );
+        }
+
+        abort_unless(
+            $user->isAdmin() || $user->isAgent(),
+            403
+        );
+
+        $cvv = $card->revealCvv();
+
+        return response()->json([
+            'cvv' => $cvv,
         ]);
     }
 }

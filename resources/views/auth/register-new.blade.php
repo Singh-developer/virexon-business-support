@@ -1,29 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Support Advance Application Form</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .form-section-title { color: #1e3a8a; font-weight: 600; font-size: 1.125rem; display: flex; align-items: center; margin-bottom: 1rem; }
-        .form-section-title span.number { background-color: #1e3a8a; color: white; width: 24px; height: 24px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 0.875rem; margin-right: 0.75rem; }
-        .form-input { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none; transition: border-color 0.2s; }
-        .form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
-        .form-label { font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem; display: block; }
-        .form-label span.req { color: #ef4444; }
-        .sidebar-card { background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 1.25rem; }
-        .sidebar-title { font-weight: 600; font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; }
-        .sidebar-list li { font-size: 0.875rem; color: #475569; margin-bottom: 0.5rem; display: flex; align-items: flex-start; }
-        .sidebar-list li i { margin-top: 0.25rem; margin-right: 0.5rem; color: #22c55e; }
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-800">
-    @include('partials.navbar')
+@extends('layouts.app')
 
+@section('content')
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .form-section-title { color: #1e3a8a; font-weight: 600; font-size: 1.125rem; display: flex; align-items: center; margin-bottom: 1rem; }
+    .form-section-title span.number { background-color: #1e3a8a; color: white; width: 24px; height: 24px; display: inline-flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 0.875rem; margin-right: 0.75rem; }
+    .form-input { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+    .form-label { font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem; display: block; }
+    .form-label span.req { color: #ef4444; }
+    .sidebar-card { background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .sidebar-title { font-weight: 600; font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; }
+    .sidebar-list li { font-size: 0.875rem; color: #475569; margin-bottom: 0.5rem; display: flex; align-items: flex-start; }
+    .sidebar-list li i { margin-top: 0.25rem; margin-right: 0.5rem; color: #22c55e; }
+</style>
     <div class="max-w-7xl mx-auto px-4 py-8">
         @if(session('success'))
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6">
@@ -544,5 +535,4 @@
             });
         }
     </script>
-</body>
-</html>
+@endsection

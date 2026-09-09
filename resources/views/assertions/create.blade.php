@@ -1,6 +1,8 @@
 @extends('layouts.app')
 @section('content')
 <style>
+.al-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:24px;align-items:start}
+@media(max-width:1100px){.al-grid{grid-template-columns:1fr}}
 .al-grid{display:flex;flex-direction:column;gap:24px;align-items:stretch;}
 .al-form label{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px}
 .al-form input,.al-form select,.al-form textarea{width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;color:#1e293b;background:#fff;font-family:inherit;transition:border-color .15s,box-shadow .15s}
@@ -55,6 +57,26 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
             @csrf
             <input type="hidden" id="dynamicFieldsJson" name="dynamic_fields" value="">
 
+            <div class="al-section-title">1. Recipient</div>
+            <div class="field">
+                <label for="user_id">Select Agent</label>
+                <select id="user_id" name="user_id" required>
+                    <option value="">— Choose an agent —</option>
+                    @foreach($agents as $agent)
+                    <option value="{{ $agent->id }}"
+                        data-email="{{ $agent->email }}"
+                        data-pemail="{{ $agent->detail?->personal_email ?? '' }}"
+                        data-business="{{ $agent->business?->name ?? '' }}"
+                        {{ ($selectedAgent?->id ?? old('user_id')) == $agent->id ? 'selected' : '' }}>
+                        {{ $agent->name }} — {{ $agent->email }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div id="recipientInfo" class="recipient-info" style="display:none">
+                <div><strong>Will be sent to:</strong> <span id="rcpEmail">—</span></div>
+                <div style="margin-top:4px"><strong>Business:</strong> <span id="rcpBusiness">—</span></div>
+            </div>
             <div class="form-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
                 
                 <!-- Column 1: Recipient & Content -->
@@ -80,6 +102,35 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                         <div style="margin-top:4px"><strong>Business:</strong> <span id="rcpBusiness">—</span></div>
                     </div>
 
+            <div class="al-section-title">2. Letter Content</div>
+            <div class="field">
+                <label for="title">Document Title</label>
+                <input id="title" name="title" type="text" required maxlength="200" value="{{ old('title', 'Assertion Letter') }}">
+            </div>
+            <div class="field">
+                <label for="subject">Email Subject</label>
+                <input id="subject" name="subject" type="text" required maxlength="255" value="{{ old('subject', 'Your Assertion Letter from Agent Business Support') }}">
+            </div>
+            <div class="field">
+                <label for="greeting">Greeting / Salutation</label>
+                <input id="greeting" name="greeting" type="text" required value="{{ old('greeting', 'Dear Sir/Madam,') }}">
+            </div>
+            <div class="field">
+                <label for="body">Body of the Letter</label>
+                <textarea id="body" name="body" required rows="8" placeholder="Write the letter body here. Use [[field_name]] for dynamic values.">{{ old('body', '') }}</textarea>
+                <div class="hint">Use <code>[[field_name]]</code> syntax for dynamic fields. e.g. <code>[[agent_name]]</code>, <code>[[joining_date]]</code></div>
+            </div>
+            <div class="field">
+                <label for="notes">Notes (Optional)</label>
+                <textarea id="notes" name="notes" rows="4" placeholder="Appears after Terms & Conditions...">{{ old('notes', '') }}</textarea>
+            </div>
+
+            <div class="al-section-title">3. Dynamic Fields <span style="font-weight:400;color:#1557d6;font-size:10px">(Add / Edit / Delete)</span></div>
+            <div id="dynamicFieldsContainer">
+                <div class="df-row" style="margin-bottom:8px">
+                    <span style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Field Key</span>
+                    <span style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Value</span>
+                    <span></span>
                     <div class="al-section-title">2. Letter Content</div>
                     <div class="field">
                         <label for="title">Document Title</label>
@@ -94,9 +145,20 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                         <input id="greeting" name="greeting" type="text" required value="{{ old('greeting', 'Dear Sir/Madam,') }}">
                     </div>
                 </div>
+                <div id="dfList"></div>
+                <button type="button" class="df-add-btn" id="addDfBtn">+ Add Field</button>
+            </div>
 
+            <div class="al-section-title">4. Closing &amp; Signatory</div>
+            <div class="field">
+                <label for="closing">Closing Line</label>
+                <input id="closing" name="closing" type="text" required value="{{ old('closing', 'Yours sincerely,') }}">
+            </div>
+            <div class="row-3">
                 <!-- Column 2: Body, Notes & Dynamic Fields -->
                 <div>
+                    <label for="signature_name">Name</label>
+                    <input id="signature_name" name="signature_name" type="text" required maxlength="180" value="{{ old('signature_name', auth()->user()->name) }}">
                     <div class="field" style="margin-top: 36px;">
                         <label for="body">Body of the Letter</label>
                         <textarea id="body" name="body" required rows="6" placeholder="Write the letter body here. Use [[field_name]] for dynamic values.">{{ old('body', '') }}</textarea>
@@ -121,6 +183,26 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
 
                 <!-- Column 3: Closing & Signatory -->
                 <div>
+                    <label for="signature_designation">Designation</label>
+                    <input id="signature_designation" name="signature_designation" type="text" maxlength="180" value="{{ old('signature_designation', 'Director') }}">
+                </div>
+                <div>
+                    <label for="signature_company">Company</label>
+                    <input id="signature_company" name="signature_company" type="text" maxlength="180" value="{{ old('signature_company', 'Agent Business Support') }}">
+                </div>
+            </div>
+
+            <div class="field" style="margin-top:14px">
+                <label>Upload Signature Image</label>
+                <div class="sig-upload-wrap">
+                    <label class="sig-upload-box" id="sigUploadBox">
+                        <input type="file" name="signature_image" id="sigImage" accept="image/png,image/jpeg,image/svg+xml">
+                        <div class="sig-upload-icon">✍️</div>
+                        <div class="sig-upload-text">Click or drag to upload<br><strong>PNG, JPG, SVG</strong></div>
+                    </label>
+                    <div style="flex:1" id="sigPreviewContainer">
+                        <div id="sigPreview" style="display:none"></div>
+                        <div class="sig-hint">Signature will appear in the PDF</div>
                     <div class="al-section-title">4. Closing &amp; Signatory</div>
                     <div class="field">
                         <label for="closing">Closing Line</label>
@@ -165,6 +247,7 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                 </div>
             </div>
 
+            <div class="action-bar">
             <div class="action-bar" style="justify-content: flex-end; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
                 <button type="button" id="downloadBtn" class="btn secondary">⬇ Download PDF</button>
                 <button type="submit" class="btn primary">✉ Generate &amp; Email to Agent</button>
@@ -172,12 +255,14 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
         </form>
     </div>
 
+    <div>
     <!-- PDF Live Preview spanning full width below the form -->
     <div style="margin-top: 20px;">
         <div class="preview-toolbar">
             <div class="indicator" id="previewIndicator"><span class="dot"></span> Live PDF Preview</div>
             <div style="font-size:12px;color:#64748b" id="previewStatus">Waiting...</div>
         </div>
+        <div class="preview-wrap">
         <div class="preview-wrap" style="height: 800px;">
             <iframe id="previewFrame" src="about:blank" style="width:100%;height:100%;border:0;border-radius:4px;background:#f8fafc"></iframe>
         </div>
