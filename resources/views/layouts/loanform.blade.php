@@ -6,7 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'Agent Business Support') }}</title>
+
+    <link rel="icon" type="image/png" href="{{ asset('images/virexon-light.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/virexon-light.png') }}">
+    <meta property="og:title" content="{{ config('app.name', 'Agent Business Support') }}">
+    <meta property="og:description" content="Agent Business Support - Partnering your growth">
+    <meta property="og:image" content="{{ asset('images/virexon-light.png') }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ config('app.name', 'Agent Business Support') }}">
+    <meta name="twitter:image" content="{{ asset('images/virexon-light.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">

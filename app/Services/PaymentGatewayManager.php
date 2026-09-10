@@ -16,7 +16,7 @@ class PaymentGatewayManager
 
         $gateway = PaymentGateway::where('slug', $name)->first();
 
-        $credentials = $gateway->credentials ?? [];
+        $credentials = (array) ($gateway->credentials ?? []);
         $environment = $gateway->environment ?? 'sandbox';
 
         return match ($name) {

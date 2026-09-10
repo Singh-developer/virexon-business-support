@@ -28,19 +28,19 @@
 </div>
 <div class="panel" style="padding:24px">
     <div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:.08em;margin-bottom:16px">Letter Preview</div>
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;max-height:500px;overflow:auto">
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;max-height:600px;overflow:auto">
         <div style="font-size:22px;font-weight:900;color:#062b66;letter-spacing:2px;margin-bottom:4px">AGENT BUSINESS SUPPORT</div>
         <div style="font-size:10px;color:#1557d6;letter-spacing:3px;font-weight:700;margin-bottom:20px">PARTNERING YOUR GROWTH</div>
-        <div style="font-size:18px;font-weight:800;color:#062b66;text-align:center;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">{{ $letter->title }}</div>
+        <div style="font-size:18px;font-weight:800;color:#062b66;text-align:center;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">{!! $resolvedTitle !!}</div>
         <div style="text-align:center;font-size:11px;color:#64748b;margin-bottom:20px">Date: {{ $letter->sent_at?->format('d F Y') ?? now()->format('d F Y') }}</div>
         <div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px">
             <div><strong>Agent:</strong> {{ $letter->user->name }}</div>
             <div><strong>Email:</strong> {{ $letter->user->email }}</div>
             @if($letter->business)<div><strong>Business:</strong> {{ $letter->business->name }}</div>@endif
         </div>
-        <div style="font-weight:700;color:#062b66;margin-bottom:12px">{{ $letter->greeting }}</div>
-        <div style="white-space:pre-wrap;margin-bottom:20px;line-height:1.7">{{ $letter->body }}</div>
-        <div style="margin-top:20px">{{ $letter->closing }}</div>
+        <div style="font-weight:700;color:#062b66;margin-bottom:12px">{!! $resolvedGreeting !!}</div>
+        <div style="white-space:pre-wrap;margin-bottom:20px;line-height:1.7">{!! $resolvedBody !!}</div>
+        <div style="margin-top:20px">{!! $resolvedClosing !!}</div>
         <div style="margin-top:30px;border-top:1px solid #e2e8f0;padding-top:12px">
             <div style="font-weight:800;color:#062b66">{{ $letter->signature_name }}</div>
             @if($letter->signature_designation)<div style="color:#1557d6;font-weight:600;font-size:12px">{{ $letter->signature_designation }}</div>@endif

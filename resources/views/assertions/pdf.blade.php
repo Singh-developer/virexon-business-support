@@ -6,7 +6,7 @@
 <style>
 @page {
     size: A4 portrait;
-    margin: 15px 25px 35px 25px;
+    margin: 15px 25px 10px 25px;
 }
 body {
     font-family: "Helvetica", Arial, sans-serif;
@@ -23,7 +23,7 @@ table { width: 100%; border-collapse: collapse; }
 .header-table { width: 100%; margin-bottom: 3px; border-bottom: 2px solid #0033a0; padding-bottom: 3px; }
 .header-table .logo-td { width: 20%; vertical-align: top; }
 .header-table .logo-td img { max-width: 80px; height: auto; }
-.header-table .info-td { width: 65%; vertical-align: top; text-align: right; font-size: 7.5px; line-height: 1.35; color: #0033a0; font-weight: bold; }
+.header-table .info-td { width: 65%; vertical-align: top; text-align: right; font-size: 12px; line-height: 1.35; color: #0033a0; font-weight: bold; }
 .tagline { font-size: 6.5px; color: #666; margin-top: 1px; margin-bottom: 5px; }
 
 /* Title */
@@ -122,7 +122,7 @@ table { width: 100%; border-collapse: collapse; }
 </table>
 
 <!-- Title -->
-<div class="doc-title">ADVANCE FUND SANCTION LETTER</div>
+<div class="doc-title">{{ strtoupper($title ?? 'ADVANCE FUND SANCTION LETTER') }}</div>
 
 <!-- Meta Info -->
 <table class="meta-table">
@@ -142,13 +142,12 @@ table { width: 100%; border-collapse: collapse; }
 
 <!-- Subject -->
 <div class="subject-box">
-    Subject: Sanction of Advance Fund / Financial Support
+    {{ $subject ?? 'Subject: Sanction of Advance Fund / Financial Support' }}
 </div>
 
 <!-- Body text -->
 <div class="body-text">
-    Dear Mr. <strong>{{ $agent->name }}</strong>,<br><br>
-    With reference to your application/request for financial support and subject to the terms and conditions of the applicable <strong>Agent Agreement / Advance Fund Agreement</strong>, we are pleased to inform you that the Company has approved the following Advance Fund in your favour:
+    {!! nl2br($body ?? '') !!}
 </div>
 
 <!-- Details Table -->
@@ -170,11 +169,17 @@ table { width: 100%; border-collapse: collapse; }
         <tr><td class="font-bold">Bank Account No.</td><td>{{ $agent->detail?->account_number ?? 'As registered in system' }}</td></tr>
         <tr><td class="font-bold">Sanction Date</td><td>{{ now()->format('d/m/Y') }}</td></tr>
         <tr><td class="font-bold">Validity of Sanction</td><td>30 Days from Sanction Date</td></tr>
+        @if(!empty($dynamic_fields) && is_array($dynamic_fields))
+            @foreach($dynamic_fields as $fieldKey => $fieldValue)
+            <tr><td class="font-bold">{{ ucwords(str_replace('_', ' ', $fieldKey)) }}</td><td>{{ $fieldValue }}</td></tr>
+            @endforeach
+        @endif
     </tbody>
 </table>
 
 <!-- Terms and Conditions -->
-<div class="terms-title">Terms & Conditions</div>
+<!-- <div class="terms-title">Terms & Conditions</div> -->
+<div class="terms-title">Informations</div>
 
 <table class="terms-table">
     <tr>
@@ -249,6 +254,9 @@ table { width: 100%; border-collapse: collapse; }
     We appreciate your association with VIREXON and look forward to your continued contribution as a working agent.
 </div>
 
+<!-- Closing -->
+<div style="margin-bottom: 12px; font-size: 9.5px;">{!! nl2br(e($closing ?? 'Yours sincerely,')) !!}</div>
+
 <!-- Signatures -->
 <table class="sig-table">
     <tr>
@@ -278,7 +286,7 @@ table { width: 100%; border-collapse: collapse; }
         <td class="sig-right">
             <div class="sig-header" style="background-color:transparent; border-bottom:1px solid #b0c4de;">AGENT ACKNOWLEDGEMENT</div>
             <div style="margin-bottom:5px; line-height:1.35;">
-                I, <strong>{{ $agent->name }}</strong>, Agent ID <strong>{{ $agentIdStr }}</strong>, acknowledge receipt of this Advance Fund Sanction Letter and confirm that I have read and understood the applicable terms and conditions governing the sanctioned Advance Fund.
+                I, <strong style="text-decoration: underline">{{ $agent->name }}</strong>, Agent ID <strong style="text-decoration: underline">{{ $agentIdStr }}</strong>, acknowledge receipt of this Advance Fund Sanction Letter and confirm that I have read and understood the applicable terms and conditions governing the sanctioned Advance Fund.
             </div>
             <div class="sig-row">
                 <span class="sig-label" style="width:60px;">Agent Name</span> : <span style="display:inline-block;border-bottom:1px solid #000;min-width:160px;text-align:center;font-weight:bold;"></span>

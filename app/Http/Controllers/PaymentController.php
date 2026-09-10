@@ -129,24 +129,39 @@ class PaymentController
             );
         }
 
-        if ($p->gateway === 'paytm' && isset($p->gateway_response['txn_token'])) {
-            $gw = PaymentGateway::where('slug', 'paytm')->first();
-            $credentials = $gw->credentials ?? [];
-            $env = $gw->environment ?? 'sandbox';
-            $isProduction = ($env === 'production');
+        if ($p->gateway === 'paytm') {
+            $checkoutType = $p->gateway_response['checkout_type'] ?? null;
 
-            $checkoutUrl = $isProduction
-                ? 'https://securegw.paytm.in/theia/oneclick/'
-                : 'https://securegw-stage.paytm.in/theia/oneclick/';
+            if ($checkoutType === 'standard' && isset($p->gateway_response['checksum'])) {
+                $environment = $p->gateway_response['environment'] ?? 'production';
 
-            return view('payments.paytm-checkout', [
-                'checkoutUrl' => $checkoutUrl,
-                'mid' => $credentials["{$env}_api_key"] ?? '',
-                'orderId' => $p->reference,
-                'txnToken' => $p->gateway_response['txn_token'],
-                'callbackUrl' => config('services.paytm.callback_url', url('/payments/paytm/callback')),
-                'website' => $credentials["{$env}_website"] ?? 'DEFAULT',
-            ]);
+                return view('payments.paytm-checkout', [
+                    'environment' => $environment,
+                    'params' => $p->gateway_response['params'],
+                    'checksum' => $p->gateway_response['checksum'],
+                ]);
+            }
+
+            if (isset($p->gateway_response['txn_token'])) {
+                $gw = PaymentGateway::where('slug', 'paytm')->first();
+                $credentials = $gw->credentials ?? [];
+                $env = $gw->environment ?? 'sandbox';
+                $isProduction = ($env === 'production');
+
+                $checkoutUrl = $isProduction
+                    ? 'https://secure.paytmpayments.com/theia/oneclick/'
+                    : 'https://securestage.paytmpayments.com/theia/oneclick/';
+
+                return view('payments.paytm-checkout', [
+                    'checkoutUrl' => $checkoutUrl,
+                    'environment' => $isProduction ? 'production' : 'staging',
+                    'mid' => $credentials["{$env}_api_key"] ?? '',
+                    'orderId' => $p->reference,
+                    'txnToken' => $p->gateway_response['txn_token'],
+                    'callbackUrl' => config('services.paytm.callback_url', url('/payments/paytm/callback')),
+                    'website' => $credentials["{$env}_website"] ?? 'DEFAULT',
+                ]);
+            }
         }
 
         return redirect()->route('payments.show', $p)->with(

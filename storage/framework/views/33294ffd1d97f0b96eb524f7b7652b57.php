@@ -82,32 +82,24 @@
                 </label>
             <?php endif; ?>
 
-            <?php if(auth()->user()->isAgent()): ?>
-                <input type="hidden" name="gateway" value="mock">
-                <label>
-                    Gateway
-                    <input type="text" value="Mock Sandbox (Internal)" readonly>
-                    <small>Agent repayments use the internal sandbox. Admin can initiate real gateway payments.</small>
-                </label>
-            <?php else: ?>
-                <label>
-                    Gateway
-                    <select name="gateway" required>
-                        <?php $__empty_1 = true; $__currentLoopData = $activeGateways; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gw): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                            <option value="<?php echo e($gw->slug); ?>" <?php if($loop->first): echo 'selected'; endif; ?>><?php echo e($gw->name); ?></option>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                            <option value="mock" selected>Mock Sandbox</option>
-                        <?php endif; ?>
-                    </select>
-                </label>
-            <?php endif; ?>
+            <label>
+                Gateway
+                <select name="gateway" required>
+                    <?php $__empty_1 = true; $__currentLoopData = $activeGateways; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gw): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <option value="<?php echo e($gw->slug); ?>"><?php echo e($gw->name); ?></option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                        <option value="mock" selected>Mock Sandbox</option>
+                    <?php endif; ?>
+                    <option value="mock">Mock Sandbox (Testing)</option>
+                </select>
+            </label>
         </div>
 
         <?php if(auth()->user()->isAgent()): ?>
             <div class="notice">
                 <strong>Repayment Flow</strong><br>
-                Your payment will be processed through the selected gateway.
-                Once successful, your outstanding balance will be reduced accordingly.
+                Select a gateway and enter the amount to pay your outstanding balance.
+                For live gateways, you'll be redirected to the payment provider's secure checkout page.
             </div>
         <?php else: ?>
             <div class="notice">

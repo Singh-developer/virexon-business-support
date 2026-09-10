@@ -14,7 +14,8 @@ use App\Http\Controllers\{
     WebhookController,
     SettingsController,
     RegistrationController,
-    AssertionLetterController
+    AssertionLetterController,
+    PaytmPaymentController,
 };
 
 /*
@@ -454,6 +455,16 @@ Route::match(['get', 'post'], '/payments/paytm/callback', [
     PaymentController::class,
     'paytmCallback'
 ])->name('payments.paytm.callback');
+
+/*
+|--------------------------------------------------------------------------
+| Paytm Payment Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/paytm-checkout', [PaytmPaymentController::class, 'showCheckoutForm'])->name('paytm.checkout');
+Route::post('/paytm-pay', [PaytmPaymentController::class, 'initiatePayment'])->name('paytm.pay');
+Route::post('/paytm-callback', [PaytmPaymentController::class, 'handleCallback'])->name('paytm.callback');
 
 /*
 |--------------------------------------------------------------------------

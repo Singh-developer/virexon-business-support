@@ -5,7 +5,19 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-    <title><?php echo e(config('app.name','Agent Business Support')); ?> <?php if(isset($title)): ?> · <?php echo e($title); ?> <?php endif; ?></title><?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css','resources/js/app.js']); ?>
+    <title><?php echo e(config('app.name','Agent Business Support')); ?> <?php if(isset($title)): ?> · <?php echo e($title); ?> <?php endif; ?></title>
+
+    <link rel="icon" type="image/png" href="<?php echo e(asset('images/virexon-light.png')); ?>">
+    <link rel="apple-touch-icon" href="<?php echo e(asset('images/virexon-light.png')); ?>">
+    <meta property="og:title" content="<?php echo e(config('app.name','Agent Business Support')); ?> <?php if(isset($title)): ?> · <?php echo e($title); ?> <?php endif; ?>">
+    <meta property="og:description" content="Agent Business Support - Partnering your growth">
+    <meta property="og:image" content="<?php echo e(asset('images/virexon-light.png')); ?>">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo e(config('app.name','Agent Business Support')); ?> <?php if(isset($title)): ?> · <?php echo e($title); ?> <?php endif; ?>">
+    <meta name="twitter:image" content="<?php echo e(asset('images/virexon-light.png')); ?>">
+
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css','resources/js/app.js']); ?>
 </head>
 
 <body>
@@ -68,7 +80,7 @@
                 <?php if(auth()->user()->isAdmin()): ?>
                 <a class="nav-item <?php echo e(request()->routeIs('settings.gateways', 'settings.payment-mode') ? 'active' : ''); ?>" href="<?php echo e(route('settings.gateways')); ?>">⚙ <span>Platform Settings</span></a>
                 <a class="nav-item <?php echo e(request()->routeIs('admin.roles.*') ? 'active' : ''); ?>" href="<?php echo e(route('admin.roles.index')); ?>">🛡 <span>Roles</span></a>
-                <a class="nav-item <?php echo e(request()->routeIs('admin.users.index') ? 'active' : ''); ?>" href="<?php echo e(route('admin.users.index')); ?>">👥 <span>Users</span></a>
+                <a class="nav-item <?php echo e(request()->routeIs('admin.users.index') ? 'active' : ''); ?>" href="<?php echo e(route('admin.users.index')); ?>"><span style="filter: grayscale(1) brightness(0) invert(1);">👥</span> <span>Users</span></a>
                 <?php endif; ?>
             </div>
             <div class="sidebar-footer">
@@ -195,37 +207,58 @@
             <footer class="footer">© <?php echo e(now()->year); ?> Agent Business Support · Partnering your growth</footer>
         </main>
     </div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const mobileMenu = document.querySelector('.mobile-menu');
             const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
 
             if (mobileMenu && sidebar) {
                 mobileMenu.addEventListener('click', function(e) {
                     e.stopPropagation();
                     sidebar.classList.toggle('mobile-open');
+                    overlay.classList.toggle('active');
                 });
 
-                document.addEventListener('click', function(e) {
-                    if (sidebar.classList.contains('mobile-open') && !sidebar.contains(e.target)) {
+                if (overlay) {
+                    overlay.addEventListener('click', function() {
                         sidebar.classList.remove('mobile-open');
+                        overlay.classList.remove('active');
+                    });
+                }
+
+                document.addEventListener('click', function(e) {
+                    if (sidebar.classList.contains('mobile-open') && !sidebar.contains(e.target) && e.target !== mobileMenu) {
+                        sidebar.classList.remove('mobile-open');
+                        overlay.classList.remove('active');
                     }
                 });
             }
         });
     </script>
     <style>
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
         @media (max-width: 760px) {
             .sidebar.mobile-open {
                 display: flex !important;
                 position: fixed;
                 top: 0;
                 left: 0;
-                height: auto;
-                max-height: max-content;
+                height: 100vh;
+                max-height: 100vh;
                 overflow-y: auto;
                 z-index: 9999;
-                width: 250px;
+                width: 260px;
                 box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
             }
 

@@ -6,6 +6,6 @@ return [
     'gateways' => [
         'mock' => ['enabled' => true],
         'razorpay' => ['enabled' => (bool) env('RAZORPAY_KEY_ID')],
-        'paytm' => ['enabled' => (bool) env('PAYTM_MID')],
+        'paytm' => ['enabled' => (bool) env('PAYTM_MERCHANT_ID')],
     ],
 ];

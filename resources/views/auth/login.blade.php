@@ -4,7 +4,19 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Login · Agent Business Support</title>@vite(['resources/css/app.css','resources/js/app.js'])
+    <title>Login · Agent Business Support</title>
+
+    <link rel="icon" type="image/png" href="{{ asset('images/virexon-light.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/virexon-light.png') }}">
+    <meta property="og:title" content="Login · Agent Business Support">
+    <meta property="og:description" content="Agent Business Support - Partnering your growth">
+    <meta property="og:image" content="{{ asset('images/virexon-light.png') }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Login · Agent Business Support">
+    <meta name="twitter:image" content="{{ asset('images/virexon-light.png') }}">
+
+    @vite(['resources/css/app.css','resources/js/app.js'])
 </head>
 
 <body class="login-page">

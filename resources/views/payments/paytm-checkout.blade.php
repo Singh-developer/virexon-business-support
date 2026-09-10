@@ -18,16 +18,29 @@
         <p style="font-size:12px;color:#999;">Please do not close this window.</p>
     </div>
 
-    <form method="POST" action="{{ $checkoutUrl }}" id="paytm-checkout-form">
-        <input type="hidden" name="mid" value="{{ $mid }}">
-        <input type="hidden" name="orderId" value="{{ $orderId }}">
-        <input type="hidden" name="txnToken" value="{{ $txnToken }}">
-        <input type="hidden" name="callbackUrl" value="{{ $callbackUrl }}">
-        <input type="hidden" name="website" value="{{ $website }}">
-    </form>
+    @if(isset($checksum) && isset($params))
+        <form method="POST" action="{{ $environment === 'production'
+            ? 'https://secure.paytmpayments.com/theia/api/v1/showCheckoutPage'
+            : 'https://securestage.paytmpayments.com/theia/api/v1/showCheckoutPage' }}?mid={{ $params['MID'] }}&orderId={{ $params['ORDER_ID'] }}" id="paytm-checkout-form">
+            @foreach($params as $key => $value)
+                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+            @endforeach
+            <input type="hidden" name="CHECKSUMHASH" value="{{ $checksum }}">
+        </form>
+    @elseif(isset($txnToken))
+        <form method="POST" action="{{ $environment === 'production'
+            ? 'https://secure.paytmpayments.com/theia/api/v1/showPaymentPage'
+            : 'https://securestage.paytmpayments.com/theia/api/v1/showPaymentPage' }}?mid={{ $mid }}&orderId={{ $orderId }}" id="paytm-checkout-form">
+            <input type="hidden" name="mid" value="{{ $mid }}">
+            <input type="hidden" name="orderId" value="{{ $orderId }}">
+            <input type="hidden" name="txnToken" value="{{ $txnToken }}">
+            <input type="hidden" name="callbackUrl" value="{{ $callbackUrl }}">
+            <input type="hidden" name="website" value="{{ $website }}">
+        </form>
+    @endif
 
     <script>
-        document.getElementById('paytm-checkout-form').submit();
+        setTimeout(function(){ document.getElementById('paytm-checkout-form').submit(); }, 1500);
     </script>
 </body>
 </html>

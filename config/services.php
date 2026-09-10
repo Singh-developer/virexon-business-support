@@ -28,35 +28,15 @@ return [
 
     'paytm' => [
 
-        'test_mid' => env(
-            'PAYTM_TEST_MID'
-        ),
-
-        'test_merchant_key' => env(
-            'PAYTM_TEST_MERCHANT_KEY'
-        ),
-
-        'test_website' => env(
-            'PAYTM_TEST_WEBSITE',
-            'WEBSTAGING'
-        ),
-
-        'live_mid' => env(
-            'PAYTM_LIVE_MID'
-        ),
-
-        'live_merchant_key' => env(
-            'PAYTM_LIVE_MERCHANT_KEY'
-        ),
-
-        'live_website' => env(
-            'PAYTM_LIVE_WEBSITE',
-            'DEFAULT'
-        ),
-
+        'environment' => env('PAYTM_ENVIRONMENT', 'staging'),
+        'mid'         => env('PAYTM_MERCHANT_ID') ?: (env('PAYTM_ENVIRONMENT') === 'production' ? env('PAYTM_LIVE_MID') : env('PAYTM_TEST_MID')),
+        'key'         => env('PAYTM_MERCHANT_KEY') ?: (env('PAYTM_ENVIRONMENT') === 'production' ? env('PAYTM_LIVE_MERCHANT_KEY') : env('PAYTM_TEST_MERCHANT_KEY')),
+        'website'     => env('PAYTM_WEBSITE') ?: (env('PAYTM_ENVIRONMENT') === 'production' ? env('PAYTM_LIVE_WEBSITE', 'DEFAULT') : env('PAYTM_TEST_WEBSITE', 'WEBSTAGING')),
+        'channel'     => env('PAYTM_CHANNEL_ID', 'WEB'),
+        'industry'    => env('PAYTM_INDUSTRY_TYPE_ID', 'Retail'),
         'callback_url' => env(
             'PAYTM_CALLBACK_URL',
-            env('APP_URL', 'http://127.0.0.1:8000') . '/payments/paytm/callback'
+            env('APP_URL', 'http://127.0.0.1:8000') . '/paytm-callback'
         ),
 
     ],

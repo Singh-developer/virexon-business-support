@@ -128,7 +128,49 @@ class AssertionLetterController extends Controller
     public function show(AssertionLetter $assertion)
     {
         $assertion->load(["user.business", "user.detail", "business"]);
-        return view("assertions.show", ["letter" => $assertion]);
+        $agent = $assertion->user;
+
+        $letterNo = 'VIREXON/AF/' . date('Y') . '/' . str_pad($agent->id ?? 0, 4, '0', STR_PAD_LEFT);
+        $agentAddress = $agent->detail?->current_address ?? '';
+        if ($agent->detail?->current_city) $agentAddress .= ', ' . $agent->detail->current_city;
+        if ($agent->detail?->current_state) $agentAddress .= ', ' . $agent->detail->current_state;
+        if ($agent->detail?->current_pincode) $agentAddress .= ' - ' . $agent->detail->current_pincode;
+
+        $advanceAmount = $agent->advances()->where('status', 'active')->first()?->total_amount ?? 0;
+        if ($advanceAmount == 0 && isset($assertion->dynamic_fields['approved_amount'])) {
+            $advanceAmount = $assertion->dynamic_fields['approved_amount'];
+        }
+
+        $availableKeys = [
+            '[[agent_name]]'          => $agent->name ?? '',
+            '[[agent_email]]'         => $agent->email ?? '',
+            '[[agent_id]]'            => $agent->detail?->agent_id_number ?? '',
+            '[[agent_address]]'       => $agentAddress,
+            '[[business_name]]'       => $agent->business?->name ?? '',
+            '[[letter_no]]'           => $letterNo,
+            '[[approved_amount]]'     => is_numeric($advanceAmount) ? number_format($advanceAmount, 2) : $advanceAmount,
+            '[[sanction_date]]'       => now()->format('d/m/Y'),
+            '[[document_title]]'      => $assertion->title ?? '',
+            '[[email_subject]]'       => $assertion->subject ?? '',
+            '[[signature_name]]'      => $assertion->signature_name ?? '',
+            '[[signature_designation]]' => $assertion->signature_designation ?? '',
+            '[[signature_company]]'   => $assertion->signature_company ?? '',
+        ];
+
+        $replaceTokens = function ($text) use ($availableKeys, $assertion) {
+            $allKeys = array_merge($availableKeys, $assertion->dynamic_fields ?? []);
+            $text = str_replace(array_keys($allKeys), array_values($allKeys), $text ?? '');
+            $text = preg_replace('/\[\[bold:(.*?)\]\]/', '<strong>$1</strong>', $text);
+            $text = str_replace('\n', "\n", $text);
+            return $text;
+        };
+
+        $resolvedTitle = $replaceTokens($assertion->title);
+        $resolvedBody = $replaceTokens($assertion->body);
+        $resolvedGreeting = $replaceTokens($assertion->greeting);
+        $resolvedClosing = $replaceTokens($assertion->closing);
+
+        return view("assertions.show", ["letter" => $assertion, "resolvedTitle" => $resolvedTitle, "resolvedBody" => $resolvedBody, "resolvedGreeting" => $resolvedGreeting, "resolvedClosing" => $resolvedClosing]);
     }
 
     public function download(AssertionLetter $assertion)
@@ -187,11 +229,50 @@ class AssertionLetterController extends Controller
                 }
             }
         }
+
+        $letterNo = 'VIREXON/AF/' . date('Y') . '/' . str_pad($agent->id ?? 0, 4, '0', STR_PAD_LEFT);
+        $agentAddress = $agent->detail?->current_address ?? '';
+        if ($agent->detail?->current_city) $agentAddress .= ', ' . $agent->detail->current_city;
+        if ($agent->detail?->current_state) $agentAddress .= ', ' . $agent->detail->current_state;
+        if ($agent->detail?->current_pincode) $agentAddress .= ' - ' . $agent->detail->current_pincode;
+
+        $advanceAmount = $agent->advances()->where('status', 'active')->first()?->total_amount ?? 0;
+        if ($advanceAmount == 0 && isset($dynamicFields['approved_amount'])) {
+            $advanceAmount = $dynamicFields['approved_amount'];
+        }
+
+        $availableKeys = [
+            '[[agent_name]]'          => $agent->name ?? '',
+            '[[agent_email]]'         => $agent->email ?? '',
+            '[[agent_id]]'            => $agent->detail?->agent_id_number ?? '',
+            '[[agent_address]]'       => $agentAddress,
+            '[[business_name]]'       => $agent->business?->name ?? '',
+            '[[letter_no]]'           => $letterNo,
+            '[[approved_amount]]'     => is_numeric($advanceAmount) ? number_format($advanceAmount, 2) : $advanceAmount,
+            '[[sanction_date]]'       => now()->format('d/m/Y'),
+            '[[document_title]]'      => $data["title"] ?? '',
+            '[[email_subject]]'       => $data["subject"] ?? '',
+            '[[signature_name]]'      => $data["signature_name"] ?? '',
+            '[[signature_designation]]' => $data["signature_designation"] ?? '',
+            '[[signature_company]]'   => $data["signature_company"] ?? '',
+        ];
+
+        $replaceTokens = function ($text) use ($availableKeys, $dynamicFields) {
+            $allKeys = array_merge($availableKeys, $dynamicFields);
+            $text = str_replace(array_keys($allKeys), array_values($allKeys), $text ?? '');
+            $text = preg_replace('/\[\[bold:(.*?)\]\]/', '<strong>$1</strong>', $text);
+            $text = str_replace('\n', "\n", $text);
+            return $text;
+        };
+
         return [
-            "title" => $data["title"], "subject" => $data["subject"],
-            "greeting" => $data["greeting"], "body" => $data["body"],
-            "notes" => $data["notes"] ?? null,
-            "dynamic_fields" => $dynamicFields, "closing" => $data["closing"],
+            "title" => $replaceTokens($data["title"]),
+            "subject" => $replaceTokens($data["subject"]),
+            "greeting" => $replaceTokens($data["greeting"]),
+            "body" => $replaceTokens($data["body"]),
+            "notes" => $replaceTokens($data["notes"] ?? null),
+            "dynamic_fields" => $dynamicFields,
+            "closing" => $replaceTokens($data["closing"]),
             "signature_name" => $data["signature_name"],
             "signature_designation" => $data["signature_designation"] ?? null,
             "signature_company" => $data["signature_company"] ?? null,

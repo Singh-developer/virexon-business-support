@@ -18,15 +18,17 @@ class PaytmGateway implements PaymentGatewayInterface
         array $credentials = [],
         string $environment = 'sandbox'
     ) {
+        $envConfig = config('services.paytm', []);
+
         if ($environment === 'production') {
-            $this->mid = (string) ($credentials['production_api_key'] ?? $credentials['mid'] ?? '');
-            $this->key = (string) ($credentials['production_api_secret'] ?? $credentials['merchant_key'] ?? '');
-            $this->website = (string) ($credentials['production_website'] ?? $credentials['website'] ?? 'DEFAULT');
+            $this->mid = trim((string) ($credentials['production_api_key'] ?? $credentials['live_key_id'] ?? $credentials['mid'] ?? $envConfig['mid'] ?? ''));
+            $this->key = trim(urldecode((string) ($credentials['production_api_secret'] ?? $credentials['live_key_secret'] ?? $credentials['merchant_key'] ?? $envConfig['key'] ?? '')));
+            $this->website = trim((string) ($credentials['production_website'] ?? $credentials['website'] ?? $envConfig['website'] ?? 'DEFAULT'));
             $this->env = 'production';
         } else {
-            $this->mid = (string) ($credentials['sandbox_api_key'] ?? $credentials['mid'] ?? '');
-            $this->key = (string) ($credentials['sandbox_api_secret'] ?? $credentials['merchant_key'] ?? '');
-            $this->website = (string) ($credentials['sandbox_website'] ?? $credentials['website'] ?? 'WEBSTAGING');
+            $this->mid = trim((string) ($credentials['sandbox_api_key'] ?? $credentials['sandbox_key_id'] ?? $credentials['mid'] ?? $envConfig['mid'] ?? ''));
+            $this->key = trim(urldecode((string) ($credentials['sandbox_api_secret'] ?? $credentials['sandbox_key_secret'] ?? $credentials['merchant_key'] ?? $envConfig['key'] ?? '')));
+            $this->website = trim((string) ($credentials['sandbox_website'] ?? $credentials['website'] ?? $envConfig['website'] ?? 'WEBSTAGING'));
             $this->env = 'staging';
         }
     }
@@ -34,8 +36,8 @@ class PaytmGateway implements PaymentGatewayInterface
     private function baseUrl(): string
     {
         return $this->env === 'production'
-            ? 'https://securegw.paytm.in'
-            : 'https://securegw-stage.paytm.in';
+            ? 'https://secure.paytmpayments.com'
+            : 'https://securestage.paytmpayments.com';
     }
 
     public function createPayment(array $data): array
@@ -55,83 +57,48 @@ class PaytmGateway implements PaymentGatewayInterface
             throw new RuntimeException('Paytm credentials are not configured. Please check MID and Merchant Key in Platform Settings.');
         }
 
+        $placeholders = ['YOUR_MID', 'YOUR_KEY', 'your_mid', 'your_key', 'xxxxx', ''];
+        if (in_array(trim($this->mid), $placeholders, true) || in_array(trim($this->key), $placeholders, true)) {
+            Log::error('PaytmGateway: Credentials are placeholder values', [
+                'mid' => $this->mid,
+                'env' => $this->env,
+            ]);
+            throw new RuntimeException('Paytm credentials contain placeholder values. Please enter your actual MID and Merchant Key in Platform Settings.');
+        }
+
         $callbackUrl = config('services.paytm.callback_url', url('/payments/paytm/callback'));
-
-        $body = [
-            'requestType' => 'Payment',
-            'mid' => $this->mid,
-            'websiteName' => $this->website,
-            'orderId' => $data['reference'],
-            'txnAmount' => [
-                'value' => number_format($data['amount'], 2, '.', ''),
-                'currency' => $data['currency'] ?? 'INR',
-            ],
-            'userInfo' => [
-                'custId' => 'user_' . $data['user_id'],
-            ],
-            'callbackUrl' => $callbackUrl,
-        ];
-
-        Log::info('PaytmGateway: Request body built', [
-            'mid' => $this->mid,
-            'websiteName' => $this->website,
-            'orderId' => $data['reference'],
-            'amount' => $data['amount'],
-            'callbackUrl' => $callbackUrl,
-        ]);
-
-        $bodyJson = json_encode($body, JSON_UNESCAPED_SLASHES);
-
-        $signature = PaytmChecksum::generateSignature($bodyJson, $this->key);
+        $amount = number_format($data['amount'], 2, '.', '');
 
         $params = [
-            'body' => $body,
-            'head' => [
-                'signature' => $signature,
-            ],
+            'MID' => $this->mid,
+            'ORDER_ID' => $data['reference'],
+            'CUST_ID' => 'user_' . $data['user_id'],
+            'TXN_AMOUNT' => $amount,
+            'CHANNEL_ID' => config('services.paytm.channel', 'WEB'),
+            'WEBSITE' => $this->website,
+            'CALLBACK_URL' => $callbackUrl,
+            'INDUSTRY_TYPE_ID' => config('services.paytm.industry', 'Retail'),
         ];
 
-        $url = $this->baseUrl() . '/theia/api/v1/initiateTransaction?mid=' .
-            urlencode($this->mid) .
-            '&orderId=' . urlencode($data['reference']);
+        $checksum = PaytmChecksum::generateSignature($params, $this->key);
 
-        Log::info('PaytmGateway: Sending request', [
-            'url' => $url,
-            'body_json' => $bodyJson,
+        Log::info('PaytmGateway: Standard Checkout params built', [
+            'mid' => $this->mid,
+            'orderId' => $data['reference'],
+            'amount' => $amount,
+            'website' => $this->website,
+            'checksum_length' => strlen($checksum),
         ]);
-
-        $response = Http::timeout(30)->asJson()->post($url, $params);
-
-        $json = $response->json();
-
-        Log::info('PaytmGateway: Response', [
-            'status' => $response->status(),
-            'body' => $json,
-        ]);
-
-        if ($response->failed()) {
-            throw new RuntimeException(
-                'Paytm API error: ' . ($json['body']['resultInfo']['resultMsg'] ?? 'HTTP ' . $response->status())
-            );
-        }
-
-        $resultInfo = $json['body']['resultInfo'] ?? [];
-        $resultCode = $resultInfo['resultCode'] ?? '';
-        $resultStatus = $resultInfo['resultStatus'] ?? '';
-
-        if ($resultCode !== '01' && $resultStatus !== 'S') {
-            throw new RuntimeException(
-                'Paytm error: ' . ($resultInfo['resultMsg'] ?? 'Unknown error') .
-                ' [Code: ' . $resultCode . ']'
-            );
-        }
 
         return [
             'status' => 'created',
             'order_id' => $data['reference'],
             'payment_id' => null,
-            'txn_token' => $json['body']['txnToken'] ?? null,
-            'raw' => $json,
+            'txn_token' => null,
+            'checkout_type' => 'standard',
+            'checksum' => $checksum,
+            'params' => $params,
+            'environment' => $this->env === 'production' ? 'production' : 'staging',
         ];
     }
 
@@ -171,23 +138,28 @@ class PaytmGateway implements PaymentGatewayInterface
             'orderId' => $orderId,
         ];
 
+        $bodyJson = json_encode($body, JSON_UNESCAPED_SLASHES);
+
         $signature = PaytmChecksum::generateSignature(
-            json_encode($body, JSON_UNESCAPED_SLASHES),
+            $bodyJson,
             $this->key
         );
 
-        $params = [
+        $fullPayload = json_encode([
             'body' => $body,
             'head' => [
                 'signature' => $signature,
             ],
-        ];
+        ], JSON_UNESCAPED_SLASHES);
 
         $url = $this->baseUrl() . '/merchant/status/api/v1/getPaymentStatus?mid=' .
             urlencode($this->mid) .
             '&orderId=' . urlencode($orderId);
 
-        $response = Http::timeout(30)->asJson()->post($url, $params);
+        $response = Http::timeout(30)
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->withBody($fullPayload, 'application/json')
+            ->post($url);
         $json = $response->json();
 
         $resultInfo = $json['body']['resultInfo'] ?? [];
