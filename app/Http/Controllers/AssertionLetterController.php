@@ -46,7 +46,7 @@ class AssertionLetterController extends Controller
             }
         }
         $pdfData = $this->buildPdfData($data, $agent, $signatureImageUrl);
-        $pdf = Pdf::loadView("assertions.pdf", $pdfData)->setPaper("a4", "portrait");
+        $pdf = Pdf::loadView("assertions.pdf", $pdfData)->setPaper("letter", "portrait");
         $binary = $pdf->output();
         return response()->json(["pdf" => "data:application/pdf;base64," . base64_encode($binary)]);
     }
@@ -61,7 +61,7 @@ class AssertionLetterController extends Controller
             $signatureImageUrl = asset("storage/" . $path);
         }
         $pdfData = $this->buildPdfData($data, $agent, $signatureImageUrl);
-        $pdf = Pdf::loadView("assertions.pdf", $pdfData)->setPaper("a4", "portrait");
+        $pdf = Pdf::loadView("assertions.pdf", $pdfData)->setPaper("letter", "portrait");
         return $pdf->stream("assertion-letter-" . now()->format("Ymd-His") . ".pdf");
     }
 
@@ -83,7 +83,7 @@ class AssertionLetterController extends Controller
             }
         }
         $pdfData = $this->buildPdfData($data, $agent, $signatureImageUrl);
-        $pdf = Pdf::loadView("assertions.pdf", $pdfData)->setPaper("a4", "portrait");
+        $pdf = Pdf::loadView("assertions.pdf", $pdfData)->setPaper("letter", "portrait");
         $filename = "assertion-letter-" . $agent->id . "-" . now()->format("Ymd-His") . ".pdf";
         $relativePath = "assertion-letters/" . $filename;
         Storage::disk("public")->put($relativePath, $pdf->output());
@@ -190,7 +190,7 @@ class AssertionLetterController extends Controller
             "signature_designation" => $assertion->signature_designation,
             "signature_company" => $assertion->signature_company,
             "signature_image_url" => $sigUrl, "agent" => $assertion->user,
-        ])->setPaper("a4", "portrait");
+        ])->setPaper("letter", "portrait");
         return $pdf->stream("assertion-letter-" . $assertion->id . ".pdf");
     }
 

@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Change from JSON to TEXT to allow encrypted strings
         DB::statement('ALTER TABLE payment_gateways MODIFY credentials TEXT NULL');
     }
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement('ALTER TABLE payment_gateways MODIFY credentials JSON NULL');
     }
 };

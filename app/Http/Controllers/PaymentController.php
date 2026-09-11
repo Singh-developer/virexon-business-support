@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PaymentRequest;
-use App\Models\{Business, Payment, PaymentGateway, VirtualCard};
+use App\Models\{Business, Payment, PaymentGateway};
 use App\Services\{PaymentService, PaymentGatewayManager};
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PaymentController
@@ -132,6 +133,17 @@ class PaymentController
         if ($p->gateway === 'paytm') {
             $checkoutType = $p->gateway_response['checkout_type'] ?? null;
 
+            if (isset($p->gateway_response['txn_token'])) {
+                $environment = $p->gateway_response['environment'] ?? 'staging';
+
+                return view('payments.paytm-checkout', [
+                    'environment' => $environment,
+                    'mid' => $p->gateway_response['params']['mid'] ?? '',
+                    'orderId' => $p->reference,
+                    'txnToken' => $p->gateway_response['txn_token'],
+                ]);
+            }
+
             if ($checkoutType === 'standard' && isset($p->gateway_response['checksum'])) {
                 $environment = $p->gateway_response['environment'] ?? 'production';
 
@@ -139,27 +151,6 @@ class PaymentController
                     'environment' => $environment,
                     'params' => $p->gateway_response['params'],
                     'checksum' => $p->gateway_response['checksum'],
-                ]);
-            }
-
-            if (isset($p->gateway_response['txn_token'])) {
-                $gw = PaymentGateway::where('slug', 'paytm')->first();
-                $credentials = $gw->credentials ?? [];
-                $env = $gw->environment ?? 'sandbox';
-                $isProduction = ($env === 'production');
-
-                $checkoutUrl = $isProduction
-                    ? 'https://secure.paytmpayments.com/theia/oneclick/'
-                    : 'https://securestage.paytmpayments.com/theia/oneclick/';
-
-                return view('payments.paytm-checkout', [
-                    'checkoutUrl' => $checkoutUrl,
-                    'environment' => $isProduction ? 'production' : 'staging',
-                    'mid' => $credentials["{$env}_api_key"] ?? '',
-                    'orderId' => $p->reference,
-                    'txnToken' => $p->gateway_response['txn_token'],
-                    'callbackUrl' => config('services.paytm.callback_url', url('/payments/paytm/callback')),
-                    'website' => $credentials["{$env}_website"] ?? 'DEFAULT',
                 ]);
             }
         }
@@ -215,9 +206,43 @@ class PaymentController
         $ref = $params['ORDERID'] ?? null;
         if (!$ref) return response('Missing order ID', 400);
         $payment = Payment::where('reference', $ref)->firstOrFail();
-        $result = app(PaymentGatewayManager::class)->driver('paytm')->verifyPayment(['params' => $params, 'expected_amount' => $payment->amount]);
-        if ($result['status'] === 'successful') $service->markSuccessful($payment, $result['payment_id'], $result['raw']);
-        elseif ($result['status'] === 'failed') $service->markFailed($payment, $result['raw']);
-        return redirect()->route('payments.show', $payment);
+
+        try {
+            $gateway = app(PaymentGatewayManager::class)->driver('paytm');
+
+            $result = $gateway->verifyPayment(['params' => $params, 'expected_amount' => $payment->amount]);
+
+            $status = $gateway->getPaymentStatus($payment->reference);
+
+            Log::info('PaymentController: paytm callback processed', [
+                'reference' => $payment->reference,
+                'callback_status' => $result['status'],
+                'gateway_status' => $status['status'],
+                'gateway_payment_id' => $status['payment_id'],
+            ]);
+
+            if ($status['status'] === 'successful') {
+                $service->markSuccessful($payment, $status['payment_id'], $status['raw']);
+                return redirect()->route('payments.show', $payment)->with('success', 'Payment completed successfully.');
+            }
+
+            if ($status['status'] === 'failed') {
+                $service->markFailed($payment, $status['raw']);
+                return redirect()->route('payments.show', $payment)->with('error', 'Payment failed.');
+            }
+
+            $service->markPending($payment, $status['raw']);
+
+            return redirect()->route('payments.show', $payment)->with('warning', 'Payment is pending confirmation from Paytm.');
+        } catch (\Exception $e) {
+            Log::error('PaymentController: paytm callback could not be verified', [
+                'reference' => $payment->reference,
+                'error' => $e->getMessage(),
+            ]);
+
+            $service->markPending($payment, ['error' => $e->getMessage()]);
+
+            return redirect()->route('payments.show', $payment)->with('warning', 'Payment is pending verification. It will be confirmed by status checks.');
+        }
     }
 }

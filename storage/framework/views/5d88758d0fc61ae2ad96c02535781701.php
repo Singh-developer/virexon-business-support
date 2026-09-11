@@ -1,5 +1,4 @@
-@extends('layouts.app')
-@section('content')
+<?php $__env->startSection('content'); ?>
 <style>
 .al-grid{display:flex;flex-direction:column;gap:24px;align-items:stretch;}
 .al-form label{display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px}
@@ -46,13 +45,13 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
         <h1>Compose New Letter</h1>
         <p style="color:#64748b;font-size:14px;margin-top:5px">Select an agent, fill the form, and see the actual PDF preview on the right — updated in real time.</p>
     </div>
-    <a class="btn secondary" href="{{ route('assertions.index') }}">← All Letters</a>
+    <a class="btn secondary" href="<?php echo e(route('assertions.index')); ?>">← All Letters</a>
 </div>
 
 <div class="al-grid">
     <div class="al-form">
-        <form id="assertionForm" method="POST" action="{{ route('assertions.store') }}" enctype="multipart/form-data">
-            @csrf
+        <form id="assertionForm" method="POST" action="<?php echo e(route('assertions.store')); ?>" enctype="multipart/form-data">
+            <?php echo csrf_field(); ?>
             <input type="hidden" id="dynamicFieldsJson" name="dynamic_fields" value="">
 
             <div class="form-grid" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;">
@@ -64,15 +63,16 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                         <label for="user_id">Select Agent</label>
                         <select id="user_id" name="user_id" required>
                             <option value="">— Choose an agent —</option>
-                            @foreach($agents as $agent)
-                            <option value="{{ $agent->id }}"
-                                data-email="{{ $agent->email }}"
-                                data-pemail="{{ $agent->detail?->personal_email ?? '' }}"
-                                data-business="{{ $agent->business?->name ?? '' }}"
-                                {{ ($selectedAgent?->id ?? old('user_id')) == $agent->id ? 'selected' : '' }}>
-                                {{ $agent->name }} — {{ $agent->email }}
+                            <?php $__currentLoopData = $agents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $agent): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($agent->id); ?>"
+                                data-email="<?php echo e($agent->email); ?>"
+                                data-pemail="<?php echo e($agent->detail?->personal_email ?? ''); ?>"
+                                data-business="<?php echo e($agent->business?->name ?? ''); ?>"
+                                <?php echo e(($selectedAgent?->id ?? old('user_id')) == $agent->id ? 'selected' : ''); ?>>
+                                <?php echo e($agent->name); ?> — <?php echo e($agent->email); ?>
+
                             </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
                     <div id="recipientInfo" class="recipient-info" style="display:none">
@@ -83,15 +83,15 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                     <div class="al-section-title">2. Letter Content</div>
                     <div class="field">
                         <label for="title">Document Title</label>
-                        <input id="title" name="title" type="text" required maxlength="200" value="{{ old('title', 'Sanction Letter A/F') }}">
+                        <input id="title" name="title" type="text" required maxlength="200" value="<?php echo e(old('title', 'Sanction Letter A/F')); ?>">
                     </div>
                     <div class="field">
                         <label for="subject">Email Subject</label>
-                        <input id="subject" name="subject" type="text" required maxlength="255" value="{{ old('subject', 'Your Advance Fund Sanction Letter from Virexon') }}">
+                        <input id="subject" name="subject" type="text" required maxlength="255" value="<?php echo e(old('subject', 'Your Advance Fund Sanction Letter from Virexon')); ?>">
                     </div>
                     <div class="field">
                         <label for="greeting">Greeting / Salutation</label>
-                        <input id="greeting" name="greeting" type="text" required value="{{ old('greeting', 'Dear Sir/Madam,') }}">
+                        <input id="greeting" name="greeting" type="text" required value="<?php echo e(old('greeting', 'Dear Sir/Madam,')); ?>">
                     </div>
                 </div>
 
@@ -99,7 +99,7 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                 <div>
                     <div class="field">
                         <label for="body">Body of the Letter</label>
-                        <textarea id="body" name="body" required rows="6" placeholder="Write the letter body here. Use [[field_name]] for dynamic values.">{{ old('body', 'With reference to your application/request for financial support and subject to the terms and conditions of the applicable [[bold:Agent Agreement / Advance Fund Agreement]], we are pleased to inform you that the Company has approved the following Advance Fund in your favour:') }}</textarea>
+                        <textarea id="body" name="body" required rows="6" placeholder="Write the letter body here. Use [[field_name]] for dynamic values."><?php echo e(old('body', 'With reference to your application/request for financial support and subject to the terms and conditions of the applicable [[bold:Agent Agreement / Advance Fund Agreement]], we are pleased to inform you that the Company has approved the following Advance Fund in your favour:')); ?></textarea>
                         <div class="hint">
                             Use <code>[[field_name]]</code> syntax for dynamic fields. e.g. <code>[[agent_name]]</code>
                             <br><br>
@@ -123,22 +123,11 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                     </div>
                     <div class="field">
                         <label for="notes">Notes (Optional)</label>
-                        <textarea id="notes" name="notes" rows="3" placeholder="Appears after Terms & Conditions...">{{ old('notes', '') }}</textarea>
+                        <textarea id="notes" name="notes" rows="3" placeholder="Appears after Terms & Conditions..."><?php echo e(old('notes', '')); ?></textarea>
                     </div>
 
-                    {{-- DYNAMIC FIELDS SECTION (HIDDEN — fields now auto-resolved from agent data) --}}
-                    {{--
-                    <div class="al-section-title">3. Dynamic Fields <span style="font-weight:400;color:#1557d6;font-size:10px">(Add / Edit / Delete)</span></div>
-                    <div id="dynamicFieldsContainer">
-                        <div class="df-row" style="margin-bottom:8px">
-                            <span style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Field Key</span>
-                            <span style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Value</span>
-                            <span></span>
-                        </div>
-                        <div id="dfList"></div>
-                        <button type="button" class="df-add-btn" id="addDfBtn">+ Add Field</button>
-                    </div>
-                    --}}
+                    
+                    
                 </div>
 
                 <!-- Column 3: Closing & Signatory -->
@@ -146,20 +135,20 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                     <div class="al-section-title">4. Closing &amp; Signatory</div>
                     <div class="field">
                         <label for="closing">Closing Line</label>
-                        <input id="closing" name="closing" type="text" required value="{{ old('closing', 'Yours sincerely,') }}">
+                        <input id="closing" name="closing" type="text" required value="<?php echo e(old('closing', 'Yours sincerely,')); ?>">
                     </div>
                     
                     <div class="field">
                         <label for="signature_name">Name</label>
-                        <input id="signature_name" name="signature_name" type="text" required maxlength="180" value="{{ old('signature_name', auth()->user()->name) }}">
+                        <input id="signature_name" name="signature_name" type="text" required maxlength="180" value="<?php echo e(old('signature_name', auth()->user()->name)); ?>">
                     </div>
                     <div class="field">
                         <label for="signature_designation">Designation</label>
-                        <input id="signature_designation" name="signature_designation" type="text" maxlength="180" value="{{ old('signature_designation', 'Director') }}">
+                        <input id="signature_designation" name="signature_designation" type="text" maxlength="180" value="<?php echo e(old('signature_designation', 'Director')); ?>">
                     </div>
                     <div class="field">
                         <label for="signature_company">Company</label>
-                        <input id="signature_company" name="signature_company" type="text" maxlength="180" value="{{ old('signature_company', 'Virexon (Easy Online Marketing)') }}">
+                        <input id="signature_company" name="signature_company" type="text" maxlength="180" value="<?php echo e(old('signature_company', 'Virexon (Easy Online Marketing)')); ?>">
                     </div>
                     
                     <div class="field" style="margin-top:14px">
@@ -171,15 +160,15 @@ iframe#previewFrame{border-radius:4px;border:0;flex:1;min-height:0;background:#f
                                 <div class="sig-upload-text">Click or drag to upload<br><strong>PNG, JPG, SVG</strong></div>
                             </label>
                             <div style="flex:1" id="sigPreviewContainer">
-                                @if(!empty($existingSignature))
+                                <?php if(!empty($existingSignature)): ?>
                                 <div id="sigPreview" style="display:block">
-                                    <img src="{{ asset('storage/' . $existingSignature) }}" alt="Signature preview">
+                                    <img src="<?php echo e(asset('storage/' . $existingSignature)); ?>" alt="Signature preview">
                                     <div style="font-size:11px;color:#10b981;margin-top:4px">✓ Previous signature will be used</div>
                                 </div>
-                                <input type="hidden" name="existing_signature_image" id="existingSigInput" value="{{ $existingSignature }}">
-                                @else
+                                <input type="hidden" name="existing_signature_image" id="existingSigInput" value="<?php echo e($existingSignature); ?>">
+                                <?php else: ?>
                                 <div id="sigPreview" style="display:none"></div>
-                                @endif
+                                <?php endif; ?>
                                 <div class="sig-hint">Signature will appear in the PDF</div>
                             </div>
                         </div>
@@ -319,7 +308,7 @@ function refreshPreview(){
     indicator.classList.add('updating');
     statusEl.textContent = 'Generating PDF...';
     var formData = gatherFormData();
-    fetch("{{ route('assertions.preview') }}", {
+    fetch("<?php echo e(route('assertions.preview')); ?>", {
         method:'POST',
         headers:{'X-CSRF-TOKEN':document.querySelector('input[name=_token]').value,'X-Requested-With':'XMLHttpRequest','Accept':'application/json'},
         body: formData
@@ -347,11 +336,12 @@ if(userSelect.value) refreshPreview();
 downloadBtn.addEventListener('click', function(){
     if(!userSelect.value){ alert('Please select an agent first.'); return; }
     var orig = form.action;
-    form.action = "{{ route('assertions.download-pdf') }}";
+    form.action = "<?php echo e(route('assertions.download-pdf')); ?>";
     form.target = '_blank';
     form.submit();
     setTimeout(function(){ form.action = orig; form.target = '_self'; }, 100);
 });
 })();
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/assertions/create.blade.php ENDPATH**/ ?>

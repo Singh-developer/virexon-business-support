@@ -214,7 +214,9 @@ class PaymentService
             |--------------------------------------------------------------------------
             */
             if ($locked->isRepayment()) {
-                $card->decrement('current_usage', (float) $locked->amount);
+                $card->update([
+                    'current_usage' => max(0.0, (float) $card->current_usage - (float) $locked->amount),
+                ]);
             } else {
                 $card->increment('current_usage', (float) $locked->amount);
             }
@@ -227,9 +229,29 @@ class PaymentService
         Payment $payment,
         array $response = []
     ): void {
-        $payment->update([
-            'status' => PaymentStatus::FAILED,
-            'gateway_response' => $response,
-        ]);
+        Payment::query()
+            ->whereKey($payment->id)
+            ->where('status', '!=', PaymentStatus::SUCCESSFUL->value)
+            ->update([
+                'status' => PaymentStatus::FAILED,
+                'gateway_response' => $response,
+            ]);
+    }
+
+    public function markPending(
+        Payment $payment,
+        array $response = []
+    ): void {
+        Payment::query()
+            ->whereKey($payment->id)
+            ->where('status', '!=', PaymentStatus::SUCCESSFUL->value)
+            ->update([
+                'status' => PaymentStatus::PENDING,
+                'gateway_response' => [
+                    'pending_since' => now()->toDateTimeString(),
+                    'reason' => 'Awaiting gateway confirmation',
+                    'detail' => $response,
+                ],
+            ]);
     }
 }

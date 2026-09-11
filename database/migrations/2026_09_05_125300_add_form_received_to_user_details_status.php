@@ -9,12 +9,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Add 'form_received' to user_details.application_status
         DB::statement("ALTER TABLE user_details MODIFY COLUMN application_status ENUM('pending','form_received','approved','rejected') NOT NULL DEFAULT 'pending'");
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement("ALTER TABLE user_details MODIFY COLUMN application_status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending'");
     }
 };

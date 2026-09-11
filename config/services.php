@@ -35,8 +35,7 @@ return [
         'channel'     => env('PAYTM_CHANNEL_ID', 'WEB'),
         'industry'    => env('PAYTM_INDUSTRY_TYPE_ID', 'Retail'),
         'callback_url' => env(
-            'PAYTM_CALLBACK_URL',
-            env('APP_URL', 'http://127.0.0.1:8000') . '/paytm-callback'
+            'PAYTM_CALLBACK_URL'
         ),
 
     ],

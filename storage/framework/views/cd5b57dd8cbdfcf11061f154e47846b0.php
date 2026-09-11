@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>{{ $title ?? 'SANCTION LETTER A/F' }}</title>
+<title><?php echo e($title ?? 'SANCTION LETTER A/F'); ?></title>
 <style>
 @page {
     size: Letter portrait;
@@ -97,7 +97,7 @@ table { border-collapse: collapse; }
 </head>
 <body>
 
-@php
+<?php
     $letterNo = 'VIREXON/AF/' . date('Y') . '/' . str_pad($agent->id ?? 0, 4, '0', STR_PAD_LEFT);
     $agentIdStr = $agent->detail?->agent_id_number ?? '';
     $agentAddress = $agent->detail?->current_address ?? '';
@@ -126,7 +126,7 @@ table { border-collapse: collapse; }
 
     $greetingLine = $greeting ?? 'Dear Sir/Madam,';
     $introBody = $body ?? 'With reference to your application/request for financial support and subject to the terms and conditions of the applicable Agent Agreement/ Advance Fund Agreement, we are pleased to inform you that the Company has approved the following Advance Fund in your favors:';
-@endphp
+?>
 
 <div class="page-footer">Page&nbsp;2/2</div>
 
@@ -136,7 +136,7 @@ table { border-collapse: collapse; }
     <table class="hdr">
         <tr>
             <td class="hdr-logo">
-                <img src="{{ public_path('images/virexon-letter-logo.png') }}" alt="Virexon Logo">
+                <img src="<?php echo e(public_path('images/virexon-letter-logo.png')); ?>" alt="Virexon Logo">
             </td>
             <td class="hdr-info">
                 <div class="box">
@@ -151,26 +151,26 @@ table { border-collapse: collapse; }
 
     <div class="body-wrap">
 
-        <div class="doc-title">{{ strtoupper($title ?? 'SANCTION LETTER A/F') }}</div>
+        <div class="doc-title"><?php echo e(strtoupper($title ?? 'SANCTION LETTER A/F')); ?></div>
         <div class="title-line"></div>
 
         <table class="ref-row">
             <tr>
                 <td>Reference No: -</td>
-                <td class="right">Date :- {{ now()->format('d/m/Y') }}</td>
+                <td class="right">Date :- <?php echo e(now()->format('d/m/Y')); ?></td>
             </tr>
         </table>
 
         <div class="recipient">
-            <div><strong>MR. {{ $agent->name }}</strong></div>
-            <div>S/o/D/o/W/o @if($guardian) {{ $guardian }} @endif</div>
-            <div>Agent ID – {{ $agentIdStr }}</div>
-            <div>Address - {{ $agentAddress }}</div>
+            <div><strong>MR. <?php echo e($agent->name); ?></strong></div>
+            <div>S/o/D/o/W/o <?php if($guardian): ?> <?php echo e($guardian); ?> <?php endif; ?></div>
+            <div>Agent ID – <?php echo e($agentIdStr); ?></div>
+            <div>Address - <?php echo e($agentAddress); ?></div>
         </div>
 
-        <div class="salutation">{!! $greetingLine !!}</div>
+        <div class="salutation"><?php echo $greetingLine; ?></div>
 
-        <div class="intro">{!! nl2br($introBody) !!}</div>
+        <div class="intro"><?php echo nl2br($introBody); ?></div>
 
         <table class="details-table">
             <thead>
@@ -180,16 +180,16 @@ table { border-collapse: collapse; }
                 </tr>
             </thead>
             <tbody>
-                <tr class="alt"><td class="font-bold"><strong>Agent Name</strong></td><td class="det">{{ $agent->name }}</td></tr>
-                <tr><td class="font-bold"><strong>Agent ID</strong></td><td class="det">{{ $agentIdStr }}</td></tr>
-                <tr class="alt"><td class="font-bold"><strong>Sanction Letter No.</strong></td><td class="det">{{ $letterNo }}</td></tr>
-                <tr><td class="font-bold"><strong>Approved A/F Amount</strong></td><td class="det amt">{{ $amountText }}</td></tr>
-                <tr class="alt"><td class="font-bold"><strong>Disbursement Mode</strong></td><td class="det">{{ $disbursementMode }}</td></tr>
-                <tr><td class="font-bold"><strong>Process Fee</strong></td><td class="det">{{ $processFee }}</td></tr>
-                <tr class="alt"><td class="font-bold"><strong>Tenure</strong></td><td class="det">{{ $tenure }}</td></tr>
-                <tr><td class="font-bold"><strong>Monthly Principal Settlement</strong></td><td class="det">{{ $monthlyPrincipal }}</td></tr>
-                <tr class="alt"><td class="font-bold"><strong>Monthly Portal &amp; Service Charges</strong></td><td class="det">{{ $monthlyCharges }}</td></tr>
-                <tr><td class="font-bold"><strong>Total Monthly Settlement</strong></td><td class="det amt">{{ $totalMonthly }}</td></tr>
+                <tr class="alt"><td class="font-bold"><strong>Agent Name</strong></td><td class="det"><?php echo e($agent->name); ?></td></tr>
+                <tr><td class="font-bold"><strong>Agent ID</strong></td><td class="det"><?php echo e($agentIdStr); ?></td></tr>
+                <tr class="alt"><td class="font-bold"><strong>Sanction Letter No.</strong></td><td class="det"><?php echo e($letterNo); ?></td></tr>
+                <tr><td class="font-bold"><strong>Approved A/F Amount</strong></td><td class="det amt"><?php echo e($amountText); ?></td></tr>
+                <tr class="alt"><td class="font-bold"><strong>Disbursement Mode</strong></td><td class="det"><?php echo e($disbursementMode); ?></td></tr>
+                <tr><td class="font-bold"><strong>Process Fee</strong></td><td class="det"><?php echo e($processFee); ?></td></tr>
+                <tr class="alt"><td class="font-bold"><strong>Tenure</strong></td><td class="det"><?php echo e($tenure); ?></td></tr>
+                <tr><td class="font-bold"><strong>Monthly Principal Settlement</strong></td><td class="det"><?php echo e($monthlyPrincipal); ?></td></tr>
+                <tr class="alt"><td class="font-bold"><strong>Monthly Portal &amp; Service Charges</strong></td><td class="det"><?php echo e($monthlyCharges); ?></td></tr>
+                <tr><td class="font-bold"><strong>Total Monthly Settlement</strong></td><td class="det amt"><?php echo e($totalMonthly); ?></td></tr>
             </tbody>
         </table>
 
@@ -220,7 +220,7 @@ table { border-collapse: collapse; }
 <table class="hdr">
     <tr>
         <td class="hdr-logo">
-            <img src="{{ public_path('images/virexon-letter-logo.png') }}" alt="Virexon Logo">
+            <img src="<?php echo e(public_path('images/virexon-letter-logo.png')); ?>" alt="Virexon Logo">
         </td>
         <td class="hdr-info">
             <div class="box">
@@ -301,7 +301,7 @@ table { border-collapse: collapse; }
     <div class="lg">Signature</div>
     <div class="btm">
         <span class="lft">Signature Stamp</span>
-        <span class="rgt">(Name)&nbsp;&nbsp;Agent ID ({{ $agentIdStr }})</span>
+        <span class="rgt">(Name)&nbsp;&nbsp;Agent ID (<?php echo e($agentIdStr); ?>)</span>
     </div>
 </div>
 
@@ -309,3 +309,4 @@ table { border-collapse: collapse; }
 
 </body>
 </html>
+<?php /**PATH E:\xampp\htdocs\laravel\agent-business-support\resources\views/assertions/pdf.blade.php ENDPATH**/ ?>

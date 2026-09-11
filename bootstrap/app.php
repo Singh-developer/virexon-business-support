@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
-        $middleware->validateCsrfTokens(except: ['paytm-callback']);
+        $middleware->validateCsrfTokens(except: ['paytm-callback', 'payments/paytm/callback']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Keep Laravel's default exception handling.
