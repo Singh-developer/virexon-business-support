@@ -55,6 +55,11 @@ class User extends Authenticatable
         return $this->hasMany(AgentDocument::class);
     }
 
+    public function sanctionLetters()
+    {
+        return $this->hasMany(SanctionLetter::class, 'user_id');
+    }
+
     public function advances()
     {
         return $this->hasMany(Advance::class);

@@ -14,6 +14,26 @@
     .sidebar-title { font-weight: 600; font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; }
     .sidebar-list li { font-size: 0.875rem; color: #475569; margin-bottom: 0.5rem; display: flex; align-items: flex-start; }
     .sidebar-list li i { margin-top: 0.25rem; margin-right: 0.5rem; color: #22c55e; }
+    /* ---- Mobile stepper (phone only; desktop unchanged) ---- */
+    #agent-reg-form .mstep-head, #agent-reg-form .mstep-nav { display: none; }
+    @media (max-width: 767.98px) {
+        #agent-reg-form.mstep-js .mstep-head { display: block; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.875rem 1rem; margin-bottom: 1rem; }
+        #agent-reg-form.mstep-js .js-mstep { display: none; }
+        #agent-reg-form.mstep-js .js-mstep.mstep-current { display: block; margin-bottom: 1rem; padding: 1rem; }
+        #agent-reg-form.mstep-js .mstep-nav { display: flex; gap: 0.75rem; position: sticky; bottom: 0; background: #ffffff; padding: 0.75rem 0.25rem calc(0.75rem + env(safe-area-inset-bottom)); border-top: 1px solid #e2e8f0; margin-top: 0.5rem; z-index: 10; }
+        .mstep-count { font-size: 0.75rem; font-weight: 600; color: #64748b; }
+        .mstep-title { font-size: 1rem; font-weight: 700; color: #1e3a8a; margin-top: 0.125rem; }
+        .mstep-bar { height: 6px; background: #e2e8f0; border-radius: 999px; margin-top: 0.625rem; overflow: hidden; }
+        .mstep-bar > span { display: block; height: 100%; width: 0; background: #1e3a8a; border-radius: 999px; transition: width 0.25s ease; }
+        .mstep-dots { display: flex; gap: 6px; margin: 0.625rem 0 0; padding: 0; list-style: none; }
+        .mstep-dots li { flex: 1; height: 4px; border-radius: 999px; background: #cbd5e1; }
+        .mstep-dots li.done { background: #22c55e; }
+        .mstep-dots li.now { background: #1e3a8a; }
+        .mstep-btn { flex: 1; padding: 0.7rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 600; }
+        .mstep-back { border: 1px solid #cbd5e1; color: #334155; background: #fff; }
+        .mstep-next { background: #1e3a8a; color: #fff; border: 1px solid #1e3a8a; }
+        .mstep-btn[hidden] { display: none; }
+    }
 </style>
     <div class="max-w-7xl mx-auto px-4 py-8">
         @if(session('success'))
@@ -37,12 +57,12 @@
                 <div class="flex justify-between items-start mb-8">
                     <div>
                         <h1 class="text-2xl font-bold text-slate-800 mb-1">Business Support Advance Application Form</h1>
-                        <p class="text-green-600 font-medium text-sm">Apply for Interest-Free Business Support Advance up to ₹5,00,000</p>
+                        <p class="text-green-600 font-medium text-sm">Apply for business support advance fund upto 5,00,000</p>
                     </div>
-                    <div class="hidden sm:flex items-center gap-2 bg-green-50 text-green-700 border border-green-200 rounded-full px-4 py-1.5 text-sm font-semibold">
+                    <!-- <div class="hidden sm:flex items-center gap-2 bg-green-50 text-green-700 border border-green-200 rounded-full px-4 py-1.5 text-sm font-semibold">
                         <span class="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">%</span>
                         0% Interest<br>60 Months Tenure
-                    </div>
+                    </div> -->
                 </div>
 
                 @if(isset($alreadySubmitted) && $alreadySubmitted)
@@ -133,11 +153,18 @@
                         @endif
                     </div>
                 @else
-                <form method="POST" action="{{ route('register.agent.store') }}">
+                <form method="POST" action="{{ route('register.agent.store') }}" id="agent-reg-form">
                     @csrf
 
+                    <div class="mstep-head" id="mstep-head">
+                        <div class="mstep-count">Step <span id="mstep-cur">1</span> of <span id="mstep-total">7</span></div>
+                        <div class="mstep-title" id="mstep-title">Personal Information</div>
+                        <div class="mstep-bar"><span id="mstep-fill"></span></div>
+                        <ol class="mstep-dots" id="mstep-dots"></ol>
+                    </div>
+
                     <!-- 1. Personal Information -->
-                    <div class="mb-8 border border-gray-100 rounded-lg p-5">
+                    <div class="mb-8 border border-gray-100 rounded-lg p-5 js-mstep" data-mstep-title="Personal Information">
                         <h2 class="form-section-title"><span class="number">1</span> Personal Information</h2>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div>
@@ -197,7 +224,7 @@
                     </div>
 
                     <!-- 2. Address Information -->
-                    <div class="mb-8 border border-gray-100 rounded-lg p-5">
+                    <div class="mb-8 border border-gray-100 rounded-lg p-5 js-mstep" data-mstep-title="Address Information">
                         <h2 class="form-section-title"><span class="number">2</span> Address Information</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                             <div>
@@ -226,7 +253,7 @@
                     </div>
 
                     <!-- 3. Bank Details -->
-                    <div class="mb-8 border border-gray-100 rounded-lg p-5">
+                    <div class="mb-8 border border-gray-100 rounded-lg p-5 js-mstep" data-mstep-title="Bank Details">
                         <h2 class="form-section-title"><span class="number">3</span> Bank Details (For Disbursement)</h2>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div>
@@ -261,7 +288,7 @@
                     </div>
 
                     <!-- 4. Advance Details -->
-                    <div class="mb-8 border border-gray-100 rounded-lg p-5">
+                    <div class="mb-8 border border-gray-100 rounded-lg p-5 js-mstep" data-mstep-title="Advance Details">
                         <h2 class="form-section-title"><span class="number">4</span> Advance Details</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
@@ -281,7 +308,7 @@
                     </div>
 
                     <!-- 5. Reference Person Details -->
-                    <div class="mb-8 border border-gray-100 rounded-lg p-5">
+                    <div class="mb-8 border border-gray-100 rounded-lg p-5 js-mstep" data-mstep-title="Reference Person Detail">
                         <div class="flex justify-between items-center mb-5">
                             <h2 class="form-section-title !mb-0"><span class="number">5</span> Reference Person Detail</h2>
                             <button type="button" id="add-reference-btn" onclick="addReference()" class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold hover:bg-green-200"><i class="fa-solid fa-plus mr-1"></i> Add Reference</button>
@@ -308,7 +335,7 @@
                     </div>
 
                     <!-- 6. OTP Verification -->
-                    <div class="mb-8 border border-gray-100 rounded-lg p-5">
+                    <div class="mb-8 border border-gray-100 rounded-lg p-5 js-mstep" data-mstep-title="Email OTP Verification">
                         <h2 class="form-section-title"><span class="number">6</span> Email OTP Verification</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
@@ -323,7 +350,7 @@
                     </div>
 
                     <!-- Declaration & Submit -->
-                    <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-4 border-t border-gray-200">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-4 border-t border-gray-200 js-mstep" data-mstep-title="Review & Submit">
                         <label class="flex items-start gap-3 text-xs text-gray-600 max-w-xl cursor-pointer">
                             <input type="checkbox" required class="mt-1">
                             <span>I hereby declare that all the information provided above is true, correct and complete to the best of my knowledge. I have read and understood the <a href="{{ route('terms') }}" target="_blank" class="text-blue-600 hover:underline">terms and conditions</a> of Business Support Advance.</span>
@@ -332,6 +359,11 @@
                             <button type="reset" class="px-6 py-2 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 flex items-center gap-2"><i class="fa-solid fa-rotate-right"></i> Reset</button>
                             <button type="submit" class="px-6 py-2 bg-[#1e3a8a] text-white rounded text-sm font-medium hover:bg-blue-900 flex items-center gap-2"><i class="fa-regular fa-paper-plane"></i> Submit Application</button>
                         </div>
+                    </div>
+
+                    <div class="mstep-nav">
+                        <button type="button" id="mstep-back" class="mstep-btn mstep-back">&larr; Back</button>
+                        <button type="button" id="mstep-next" class="mstep-btn mstep-next">Next &rarr;</button>
                     </div>
 
                 </form>
@@ -348,7 +380,7 @@
                         <li><i class="fa-solid fa-circle-check"></i> Tenure: Up to 60 Months</li>
                         <li><i class="fa-solid fa-circle-check"></i> Disbursement: Direct Bank Transfer</li>
                         <li><i class="fa-solid fa-circle-check"></i> Adjustment: Through Future Commissions</li>
-                        <li><i class="fa-solid fa-circle-check"></i> Only selected working agents are eligible (Up to 10% of active agent base)</li>
+                        <!-- <li><i class="fa-solid fa-circle-check"></i> Only selected working agents are eligible (Up to 10% of active agent base)</li> -->
                     </ul>
                 </div>
 
@@ -534,5 +566,102 @@
                 btn.disabled = false;
             });
         }
+    </script>
+    <script>
+        window.__agentRegErrors = @json($errors->keys());
+        (function () {
+            var form = document.getElementById('agent-reg-form');
+            if (!form) return;
+            var steps = Array.prototype.slice.call(form.querySelectorAll('.js-mstep'));
+            if (!steps.length) return;
+            form.classList.add('mstep-js');
+            var mq = window.matchMedia('(max-width: 767.98px)');
+            var cur = 0;
+            var head = document.getElementById('mstep-head');
+            var headCur = document.getElementById('mstep-cur');
+            var headTotal = document.getElementById('mstep-total');
+            var headTitle = document.getElementById('mstep-title');
+            var headFill = document.getElementById('mstep-fill');
+            var dotsBox = document.getElementById('mstep-dots');
+            var backBtn = document.getElementById('mstep-back');
+            var nextBtn = document.getElementById('mstep-next');
+            if (!head || !backBtn || !nextBtn) return;
+            headTotal.textContent = steps.length;
+            steps.forEach(function () { dotsBox.appendChild(document.createElement('li')); });
+            var dots = Array.prototype.slice.call(dotsBox.children);
+            function isMobile() { return mq.matches; }
+            function stepTitle(i) { return steps[i].getAttribute('data-mstep-title') || ('Step ' + (i + 1)); }
+            function scrollTop() {
+                if (head.scrollIntoView) {
+                    try { head.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+                    catch (e) { head.scrollIntoView(); }
+                }
+            }
+            function show(i) {
+                cur = Math.max(0, Math.min(steps.length - 1, i));
+                steps.forEach(function (s, idx) { s.classList.toggle('mstep-current', idx === cur); });
+                headCur.textContent = cur + 1;
+                headTitle.textContent = stepTitle(cur);
+                headFill.style.width = Math.round(((cur + 1) / steps.length) * 100) + '%';
+                dots.forEach(function (d, idx) {
+                    d.classList.toggle('now', idx === cur);
+                    d.classList.toggle('done', idx < cur);
+                });
+                backBtn.hidden = (cur === 0);
+                nextBtn.hidden = (cur === steps.length - 1);
+                if (isMobile()) scrollTop();
+            }
+            function validateStep(i) {
+                var fields = steps[i].querySelectorAll('input, select, textarea');
+                for (var k = 0; k < fields.length; k++) {
+                    if (!fields[k].checkValidity()) {
+                        try { fields[k].reportValidity(); } catch (e) {}
+                        return false;
+                    }
+                }
+                return true;
+            }
+            nextBtn.addEventListener('click', function () {
+                if (!isMobile()) return;
+                if (validateStep(cur)) show(cur + 1);
+            });
+            backBtn.addEventListener('click', function () { show(cur - 1); });
+            form.addEventListener('submit', function (e) {
+                if (!isMobile()) return;
+                var fields = form.querySelectorAll('input, select, textarea');
+                var bad = null;
+                for (var k = 0; k < fields.length; k++) {
+                    if (!fields[k].checkValidity()) { bad = fields[k]; break; }
+                }
+                if (bad) {
+                    e.preventDefault();
+                    var st = bad.closest ? bad.closest('.js-mstep') : null;
+                    var idx = st ? steps.indexOf(st) : -1;
+                    if (idx !== -1 && idx !== cur) show(idx);
+                    setTimeout(function () { try { bad.reportValidity(); } catch (err) {} }, 60);
+                }
+            });
+            form.addEventListener('reset', function () {
+                setTimeout(function () { show(0); }, 0);
+            });
+            if (typeof mq.addEventListener === 'function') {
+                mq.addEventListener('change', function () { show(cur); });
+            }
+            var errs = window.__agentRegErrors || [];
+            var landed = false;
+            for (var n = 0; n < errs.length; n++) {
+                var found = null;
+                try { found = form.querySelector('[name="' + errs[n] + '"]'); } catch (ex) { found = null; }
+                if (!found && errs[n].indexOf('references') === 0) {
+                    found = document.getElementById('references-container');
+                }
+                if (found) {
+                    var s = found.closest ? found.closest('.js-mstep') : null;
+                    var si = s ? steps.indexOf(s) : -1;
+                    if (si !== -1) { show(si); landed = true; break; }
+                }
+            }
+            if (!landed) show(0);
+        })();
     </script>
 @endsection

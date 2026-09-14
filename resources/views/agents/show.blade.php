@@ -324,6 +324,7 @@ $statusValue = $card->status instanceof \BackedEnum
 
     <form method="POST" action="{{ route('agents.application-status', $agent) }}" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         @csrf
+        @method('PATCH')
         <select name="application_status" style="border:1px solid #d1d5db; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; min-width:160px; color:#1e293b; background:#fff;">
             <option value="pending"  @selected($appStatus === 'pending')>⏳ Pending</option>
             <option value="approved" @selected($appStatus === 'approved')>✅ Approved</option>

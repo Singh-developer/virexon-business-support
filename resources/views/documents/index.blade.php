@@ -1,253 +1,356 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $cfg = $docConfig ?? \App\Models\AgentDocument::types();
+    $statusOf = function ($type) use ($documents) {
+        return $documents[$type]->status ?? 'not_uploaded';
+    };
+    $fileOf = function ($type) use ($documents) {
+        $d = $documents[$type] ?? null;
+        return $d && $d->file_path ? \Illuminate\Support\Facades\Storage::url($d->file_path) : '';
+    };
+    $noteOf = function ($type) use ($documents) {
+        $d = $documents[$type] ?? null;
+        return ($d && $d->admin_note && in_array($d->status ?? '', ['rejected', 're_upload'])) ? $d->admin_note : '';
+    };
 
-    <div class="max-w-7xl mx-auto px-4 lg:px-6 py-8">
+    // KYC row combines PAN + Aadhaar + Photo
+    $kycTypes = ['pan_card', 'aadhaar', 'photo'];
+    $kycStatuses = [];
+    foreach ($kycTypes as $t) { $kycStatuses[$t] = $statusOf($t); }
+    if (in_array('rejected', $kycStatuses) || in_array('re_upload', $kycStatuses)) {
+        $kycStatus = in_array('rejected', $kycStatuses) ? 'rejected' : 're_upload';
+    } elseif (in_array('pending', $kycStatuses)) {
+        $kycStatus = 'pending';
+    } elseif (count(array_unique($kycStatuses)) === 1 && $kycStatuses['pan_card'] === 'approved') {
+        $kycStatus = 'approved';
+    } else {
+        $kycStatus = 'not_uploaded';
+    }
+    $kycUploadType = 'pan_card';
+    foreach ($kycTypes as $t) {
+        if (($statusOf($t)) !== 'approved') { $kycUploadType = $t; break; }
+    }
+    $kycFileUrl = '';
+    foreach ($kycTypes as $t) {
+        if ($fileOf($t) !== '') { $kycFileUrl = $fileOf($t); break; }
+    }
+    $kycNote = '';
+    foreach ($kycTypes as $t) {
+        if ($noteOf($t) !== '') { $kycNote = $noteOf($t); break; }
+    }
 
-        @if(session('success'))
-        <div class="mb-5 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center gap-3">
-            <i class="fa-solid fa-circle-check text-green-500"></i> {{ session('success') }}
-        </div>
-        @endif
-        @if(session('error'))
-        <div class="mb-5 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center gap-3">
-            <i class="fa-solid fa-circle-xmark text-red-500"></i> {{ session('error') }}
-        </div>
-        @endif
+    $panStatus = $statusOf('pan_card');
+    $bankStatus = $statusOf('bank_proof');
+    $agreeStatus = $statusOf('agent_id_proof');
+    $underStatus = $statusOf('address_proof');
 
-        <!-- Page Header -->
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-slate-900">Documents</h1>
-            <p class="text-slate-500 text-sm mt-1">Upload and manage your documents securely</p>
-        </div>
+    $isApproved = ($appStatus ?? '') === 'approved';
+    $purposeStatus = $isApproved ? 'approved' : 'pending';
 
-        <div class="flex flex-col xl:flex-row gap-6">
+    $rowBucket = function ($st) {
+        if ($st === 'approved') return 'completed';
+        if (in_array($st, ['rejected', 're_upload'])) return 'rejected';
+        return 'pending';
+    };
+    $buckets = [
+        $rowBucket($kycStatus),
+        $rowBucket($panStatus),
+        $rowBucket($bankStatus),
+        $rowBucket($agreeStatus),
+        $rowBucket($underStatus),
+        $rowBucket($purposeStatus),
+    ];
+    $totalRows = 6;
+    $compCount = count(array_filter($buckets, fn($b) => $b === 'completed'));
+    $pendCount = count(array_filter($buckets, fn($b) => $b === 'pending'));
+    $rejCount = count(array_filter($buckets, fn($b) => $b === 'rejected'));
+    $pct = $totalRows > 0 ? round($compCount / $totalRows * 100) : 0;
+    $circ = 2 * 3.14159265 * 52;
+    $dash = round($circ * $compCount / max(1, $totalRows), 1);
+    $isCompliant = ($compCount === $totalRows);
 
-            <!-- Main Content -->
-            <div class="flex-1 min-w-0">
+    $pill = function ($st, $posWord) {
+        if ($st === 'approved') return ['cls' => 'green', 'txt' => $posWord];
+        if ($st === 'rejected') return ['cls' => 'red', 'txt' => 'Rejected'];
+        if ($st === 're_upload') return ['cls' => 'amber', 'txt' => 'Re-upload'];
+        if ($st === 'pending') return ['cls' => 'amber', 'txt' => 'Pending'];
+        return ['cls' => 'slate', 'txt' => 'Pending'];
+    };
+    $kycPill = $pill($kycStatus, 'Verified');
+    $panPill = $pill($panStatus, 'Verified');
+    $bankPill = $pill($bankStatus, 'Verified');
+    $agreePill = $pill($agreeStatus, 'Signed');
+    $underPill = $pill($underStatus, 'Submitted');
+    $purposePill = $isApproved ? ['cls' => 'green', 'txt' => 'Approved'] : ['cls' => 'amber', 'txt' => 'Pending'];
+@endphp
+<div class="comp-wrap">
+    <style>
+        .comp-wrap {
+            background: #ffffff;
+            margin: -32px -16px -16px -16px;
+            padding: 0 0 96px 0;
+            min-height: calc(100vh - 60px);
+            font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        @media (min-width: 1024px) {
+            .comp-wrap {
+                margin: -32px auto -24px auto;
+                max-width: 430px;
+                border-left: 1px solid #eef1f5;
+                border-right: 1px solid #eef1f5;
+                min-height: calc(100vh - 60px);
+                box-shadow: 0 0 24px rgba(15,35,60,0.06);
+            }
+        }
+        .comp-head { padding: 20px 16px 0 16px; }
+        .comp-title { font-size: 24px; line-height: 28px; font-weight: 800; color: #17233c; letter-spacing: -0.2px; margin: 0; }
+        .comp-sub { font-size: 14px; line-height: 20px; color: #6b7a90; margin: 6px 0 0 0; font-weight: 400; }
+        .comp-flash { margin: 12px 12px 0 12px; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .comp-flash.ok { background: #e9f7ee; border: 1px solid #bfe6cb; color: #14663a; }
+        .comp-flash.err { background: #ffebe9; border: 1px solid #f3c1bb; color: #a02a1e; }
+        .comp-banner { margin: 14px 12px 0 12px; border-radius: 12px; padding: 14px 12px; display: flex; gap: 12px; align-items: flex-start; }
+        .comp-banner.green { background: #eef7f0; border: 1px solid #d9efdf; }
+        .comp-banner.amber { background: #fff7e8; border: 1px solid #f0dcb0; }
+        .comp-banner .b-ico { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .comp-banner .b-ico svg { width: 40px; height: 40px; }
+        .comp-banner .b-title { font-size: 16px; line-height: 22px; font-weight: 800; }
+        .comp-banner.green .b-title { color: #1a9e50; }
+        .comp-banner.amber .b-title { color: #b45309; }
+        .comp-banner .b-desc { font-size: 13px; line-height: 18px; color: #5b6b82; margin-top: 2px; font-weight: 400; }
+        .comp-label { font-size: 17px; line-height: 22px; font-weight: 800; color: #17233c; padding: 18px 16px 0 16px; margin: 0; letter-spacing: -0.1px; }
+        .comp-list { padding: 12px 12px 0 12px; display: flex; flex-direction: column; gap: 10px; }
+        .comp-card {
+            display: flex; align-items: center; gap: 12px;
+            background: #fff; border: 1px solid #eef1f5; border-radius: 12px;
+            padding: 12px 10px 12px 12px; width: 100%; min-height: 72px;
+            text-align: left; cursor: pointer; font: inherit; color: inherit; text-decoration: none;
+        }
+        button.comp-card { appearance: none; }
+        .comp-ico { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .comp-ico svg { width: 26px; height: 26px; }
+        .comp-main { flex: 1; min-width: 0; }
+        .comp-name { font-size: 15px; line-height: 20px; font-weight: 700; color: #1a2744; letter-spacing: -0.1px; display: block; }
+        .comp-desc { font-size: 13px; line-height: 18px; color: #6b7a90; margin-top: 3px; font-weight: 400; display: block; }
+        .comp-note { font-size: 12px; line-height: 16px; color: #c53e2e; margin-top: 4px; display: block; }
+        .comp-note strong { font-weight: 700; }
+        .comp-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .comp-pill { font-size: 13px; line-height: 18px; font-weight: 700; border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
+        .comp-pill.green { color: #1a9e50; background: #e9f7ee; }
+        .comp-pill.amber { color: #a66a00; background: #fff4da; }
+        .comp-pill.red { color: #c53e2e; background: #ffebe9; }
+        .comp-pill.slate { color: #5c6f84; background: #eef2f7; }
+        .comp-chev { color: #5b6b82; display: flex; align-items: center; padding-right: 2px; }
+        .comp-chev svg { width: 20px; height: 20px; }
+        .comp-summary { margin: 14px 12px 0 12px; border: 1px solid #eef1f5; border-radius: 12px; padding: 16px 14px; background: #fff; }
+        .comp-summary h3 { font-size: 17px; line-height: 22px; font-weight: 800; color: #17233c; margin: 0; letter-spacing: -0.1px; }
+        .comp-sum-body { display: flex; align-items: center; gap: 20px; margin-top: 14px; }
+        .comp-donut { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+        .comp-donut svg { display: block; }
+        .comp-donut-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .comp-donut-n { font-size: 20px; line-height: 24px; font-weight: 800; color: #17233c; }
+        .comp-donut-t { font-size: 12px; line-height: 16px; font-weight: 600; color: #3d4b60; margin-top: 2px; }
+        .comp-legend { display: flex; flex-direction: column; gap: 12px; }
+        .comp-leg { display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 20px; font-weight: 600; color: #3d4b60; }
+        .comp-dot { width: 14px; height: 14px; border-radius: 999px; flex-shrink: 0; }
+        .comp-support { text-align: center; padding: 12px 16px 0 16px; font-size: 11px; color: #9aa7ba; }
+        .comp-support a { color: #1f6bff; font-weight: 600; text-decoration: none; }
+        .comp-bottomnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; background: #fff; border-top: 1px solid #e9edf2; display: flex; align-items: stretch; justify-content: space-around; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)) 4px; }
+        @media (min-width: 1024px) { .comp-bottomnav { left: 288px; } }
+        .comp-bnav { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; padding: 2px 0; min-width: 0; }
+        .comp-bnav svg { width: 24px; height: 24px; }
+        .comp-bnav span { font-size: 11px; line-height: 14px; font-weight: 500; color: #6b7a90; }
+        .comp-bnav.active span { color: #1f6bff; font-weight: 700; }
+        #upload-modal .modal-card { background: #fff; border-radius: 12px; box-shadow: 0 20px 50px rgba(10,25,50,.25); width: 100%; max-width: 28rem; padding: 24px; }
+    </style>
 
-                <!-- Info Banner -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg px-5 py-4 mb-6 flex items-start gap-3">
-                    <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
-                    <div>
-                        <div class="font-semibold text-blue-900 text-sm">Important</div>
-                        <div class="text-blue-700 text-xs mt-0.5">Please upload clear and valid documents. All documents are encrypted and secure.</div>
-                    </div>
-                </div>
+    <div class="comp-head">
+        <h1 class="comp-title">Compliance</h1>
+        <p class="comp-sub">Track your compliance and verification status</p>
+    </div>
 
-                <!-- Document Cards Grid -->
-                @php
-                    $docConfig = [
-                        'pan_card'       => ['icon' => 'fa-id-card', 'color' => 'blue', 'label' => 'PAN Card', 'desc' => 'PAN Card, Address Proof, Photo', 'fields' => ['PAN Card', 'Address Proof', 'Photo'], 'accept' => '.jpg,.jpeg,.png,.pdf'],
-                        'aadhaar'        => ['icon' => 'fa-address-card', 'color' => 'green', 'label' => 'Aadhaar Card', 'desc' => 'Front and back of Aadhaar', 'fields' => ['Front Side', 'Back Side'], 'accept' => '.jpg,.jpeg,.png,.pdf'],
-                        'photo'          => ['icon' => 'fa-image', 'color' => 'purple', 'label' => 'Photograph', 'desc' => 'Recent passport size photograph', 'fields' => ['Passport Size Photo'], 'accept' => '.jpg,.jpeg,.png'],
-                        'bank_proof'     => ['icon' => 'fa-building-columns', 'color' => 'yellow', 'label' => 'Bank Verification', 'desc' => 'Bank details & account proof', 'fields' => ['Cancelled Cheque', 'Account Details', 'IFSC Verification'], 'accept' => '.jpg,.jpeg,.png,.pdf'],
-                        'agent_id_proof' => ['icon' => 'fa-id-badge', 'color' => 'orange', 'label' => 'Business Support Advance Agreement', 'desc' => 'Signed agreement document', 'fields' => ['Agreement Form', 'Firm Signature', 'Agent Signature'], 'accept' => '.jpg,.jpeg,.png,.pdf'],
-                        'address_proof'  => ['icon' => 'fa-house-user', 'color' => 'red', 'label' => 'Address Proof', 'desc' => 'Voter ID / Utility Bill / Aadhaar', 'fields' => ['Address Proof Document'], 'accept' => '.jpg,.jpeg,.png,.pdf'],
-                    ];
+    @if(session('success'))
+    <div class="comp-flash ok">&#10003;&nbsp;&nbsp;{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+    <div class="comp-flash err">&#10005;&nbsp;&nbsp;{{ session('error') }}</div>
+    @endif
 
-                    $colorMap = [
-                        'blue'   => ['bg' => 'bg-blue-50',   'icon' => 'text-blue-500',   'border' => 'border-blue-100'],
-                        'green'  => ['bg' => 'bg-green-50',  'icon' => 'text-green-500',  'border' => 'border-green-100'],
-                        'purple' => ['bg' => 'bg-purple-50', 'icon' => 'text-purple-500', 'border' => 'border-purple-100'],
-                        'yellow' => ['bg' => 'bg-yellow-50', 'icon' => 'text-yellow-500', 'border' => 'border-yellow-100'],
-                        'orange' => ['bg' => 'bg-orange-50', 'icon' => 'text-orange-500', 'border' => 'border-orange-100'],
-                        'red'    => ['bg' => 'bg-red-50',    'icon' => 'text-red-500',    'border' => 'border-red-100'],
-                    ];
-                @endphp
+    @if($isCompliant)
+    <div class="comp-banner green">
+        <span class="b-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1a9e50" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 7.6-7.5 9-4.3-1.4-7.5-4.5-7.5-9V6z"/><path d="M9 11.5l2.2 2.2L15.5 9.5"/></svg>
+        </span>
+        <span>
+            <span class="b-title" style="display:block;">You are Compliant</span>
+            <span class="b-desc" style="display:block;">All required documents and verification steps are complete.</span>
+        </span>
+    </div>
+    @else
+    <div class="comp-banner amber">
+        <span class="b-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        </span>
+        <span>
+            <span class="b-title" style="display:block;">Action Required</span>
+            <span class="b-desc" style="display:block;">{{ $compCount }} of {{ $totalRows }} steps complete. Upload pending documents to proceed.</span>
+        </span>
+    </div>
+    @endif
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-                    @foreach($docConfig as $type => $config)
-                        @php
-                            $doc    = $documents[$type] ?? null;
-                            $status = $doc?->status ?? 'not_uploaded';
-                            $colors = $colorMap[$config['color']];
-                        @endphp
-                        <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 flex flex-col justify-between min-h-[220px] {{ $status === 'rejected' || $status === 're_upload' ? 'border-red-200 ring-1 ring-red-200' : '' }}">
-                            <div>
-                                <!-- Header -->
-                                <div class="flex items-start justify-between mb-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg {{ $colors['bg'] }} flex items-center justify-center">
-                                            <i class="fa-regular {{ $config['icon'] }} {{ $colors['icon'] }} text-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="font-bold text-slate-900 text-sm leading-tight">{{ $config['label'] }}</div>
-                                            <div class="text-slate-400 text-xs mt-0.5">{{ $config['desc'] }}</div>
-                                        </div>
-                                    </div>
-                                    <!-- Status Badge -->
-                                    @if($status === 'approved')
-                                        <span class="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full flex items-center gap-1"><i class="fa-solid fa-check text-[10px]"></i> Approved</span>
-                                    @elseif($status === 'rejected')
-                                        <span class="text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-2.5 py-1 rounded-full flex items-center gap-1"><i class="fa-solid fa-xmark text-[10px]"></i> Rejected</span>
-                                    @elseif($status === 're_upload')
-                                        <span class="text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full flex items-center gap-1"><i class="fa-solid fa-rotate-right text-[10px]"></i> Re-upload</span>
-                                    @elseif($status === 'pending')
-                                        <span class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full flex items-center gap-1"><i class="fa-solid fa-clock text-[10px]"></i> Under Review</span>
-                                    @else
-                                        <span class="text-xs font-bold text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">Not Uploaded</span>
-                                    @endif
-                                </div>
+    <h2 class="comp-label">Compliance Snapshot</h2>
 
-                                <!-- Field checklist -->
-                                <ul class="space-y-1 mb-3">
-                                    @foreach($config['fields'] as $field)
-                                    <li class="flex items-center gap-2 text-xs text-slate-600">
-                                        <i class="fa-solid fa-check {{ in_array($status, ['approved','pending','rejected','re_upload']) ? 'text-green-500' : 'text-slate-300' }} text-[10px]"></i>
-                                        {{ $field }}
-                                    </li>
-                                    @endforeach
-                                </ul>
+    <div class="comp-list">
+        <!-- KYC Documents (combined PAN + Aadhaar + Photo) -->
+        <button type="button" class="comp-card" onclick="openUploadModal('{{ $kycUploadType }}', '{{ $cfg[$kycUploadType]['label'] }}', '{{ $cfg[$kycUploadType]['accept'] }}', '{{ $kycFileUrl }}')">
+            <span class="comp-ico" style="background:#e6f6ec;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1faa59" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 17c.6-1.8 1.7-2.7 3-2.7s2.4.9 3 2.7"/><path d="M14 9h4M14 12.5h4M14 16h2.5"/></svg>
+            </span>
+            <span class="comp-main">
+                <span class="comp-name">KYC Documents</span>
+                <span class="comp-desc">All KYC documents are verified</span>
+                @if($kycNote !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $kycNote }}</span>@endif
+            </span>
+            <span class="comp-right">
+                <span class="comp-pill {{ $kycPill['cls'] }}">{{ $kycPill['txt'] }}</span>
+                <span class="comp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+            </span>
+        </button>
 
-                                <!-- Rejection note -->
-                                @if($doc && $doc->admin_note && in_array($status, ['rejected', 're_upload']))
-                                <div class="bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3">
-                                    <div class="text-xs font-semibold text-red-700 mb-0.5"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Admin Note:</div>
-                                    <div class="text-xs text-red-600">{{ $doc->admin_note }}</div>
-                                </div>
-                                @endif
-                            </div>
+        <!-- PAN Verification -->
+        <button type="button" class="comp-card" onclick="openUploadModal('pan_card', '{{ $cfg['pan_card']['label'] }}', '{{ $cfg['pan_card']['accept'] }}', '{{ $fileOf('pan_card') }}')">
+            <span class="comp-ico" style="background:#e6f6ec;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1faa59" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="6" y="8.5" width="5" height="3.5" rx="0.8"/><path d="M6 15h12"/></svg>
+            </span>
+            <span class="comp-main">
+                <span class="comp-name">PAN Verification</span>
+                <span class="comp-desc">PAN number is verified</span>
+                @if($noteOf('pan_card') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('pan_card') }}</span>@endif
+            </span>
+            <span class="comp-right">
+                <span class="comp-pill {{ $panPill['cls'] }}">{{ $panPill['txt'] }}</span>
+                <span class="comp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+            </span>
+        </button>
 
-                            <!-- Actions -->
-                            <div class="flex items-center gap-2 mt-auto pt-3 border-t border-slate-50">
-                                @if($doc && $doc->file_path)
-                                <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                   class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                                    <i class="fa-regular fa-eye"></i> View →
-                                </a>
-                                @endif
+        <!-- Bank Details -->
+        <button type="button" class="comp-card" onclick="openUploadModal('bank_proof', '{{ $cfg['bank_proof']['label'] }}', '{{ $cfg['bank_proof']['accept'] }}', '{{ $fileOf('bank_proof') }}')">
+            <span class="comp-ico" style="background:#e0f5f0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#14a085" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 4l9 5.5"/><path d="M4 9.5V19M20 9.5V19"/><path d="M2.5 19.5h19"/><path d="M8.5 12v7M12 12v7M15.5 12v7"/></svg>
+            </span>
+            <span class="comp-main">
+                <span class="comp-name">Bank Details</span>
+                <span class="comp-desc">Bank account details are verified</span>
+                @if($noteOf('bank_proof') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('bank_proof') }}</span>@endif
+            </span>
+            <span class="comp-right">
+                <span class="comp-pill {{ $bankPill['cls'] }}">{{ $bankPill['txt'] }}</span>
+                <span class="comp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+            </span>
+        </button>
 
-                                @if($status !== 'approved')
-                                <button type="button"
-                                    onclick="openUploadModal('{{ $type }}', '{{ $config['label'] }}', '{{ $config['accept'] }}')"
-                                    class="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg {{ $status === 'rejected' || $status === 're_upload' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white' }} flex items-center gap-1.5 transition">
-                                    <i class="fa-solid fa-arrow-up-from-bracket text-[10px]"></i>
-                                    {{ in_array($status, ['rejected', 're_upload']) ? 'Re-upload' : 'Upload' }}
-                                </button>
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
+        <!-- Agreement -->
+        <button type="button" class="comp-card" onclick="openUploadModal('agent_id_proof', '{{ $cfg['agent_id_proof']['label'] }}', '{{ $cfg['agent_id_proof']['accept'] }}', '{{ $fileOf('agent_id_proof') }}')">
+            <span class="comp-ico" style="background:#e6f6ec;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1faa59" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8L19 8.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M13.5 3.5V9H19"/><path d="M8.5 13h5M8.5 16h3"/></svg>
+            </span>
+            <span class="comp-main">
+                <span class="comp-name">Agreement</span>
+                <span class="comp-desc">Agreement is signed by both parties</span>
+                @if($noteOf('agent_id_proof') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('agent_id_proof') }}</span>@endif
+            </span>
+            <span class="comp-right">
+                <span class="comp-pill {{ $agreePill['cls'] }}">{{ $agreePill['txt'] }}</span>
+                <span class="comp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+            </span>
+        </button>
 
-                <!-- Document Status Summary -->
-                @php
-                    $totalDocs     = count($docConfig);
-                    $uploadedDocs  = $documents->count();
-                    $approvedDocs  = $documents->where('status', 'approved')->count();
-                    $pendingDocs   = $documents->where('status', 'pending')->count();
-                    $rejectedDocs  = $documents->whereIn('status', ['rejected', 're_upload'])->count();
-                    $notUploaded   = $totalDocs - $uploadedDocs;
-                @endphp
+        <!-- Agent Undertaking -->
+        <button type="button" class="comp-card" onclick="openUploadModal('address_proof', '{{ $cfg['address_proof']['label'] }}', '{{ $cfg['address_proof']['accept'] }}', '{{ $fileOf('address_proof') }}')">
+            <span class="comp-ico" style="background:#fff1e0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8L19 8.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M13.5 3.5V9H19"/><path d="M8.5 13h5M8.5 16h3"/><circle cx="16.5" cy="16.5" r="2.4"/><path d="M15.6 16.5l.7.7 1.3-1.4"/></svg>
+            </span>
+            <span class="comp-main">
+                <span class="comp-name">Agent Undertaking</span>
+                <span class="comp-desc">Undertaking is submitted</span>
+                @if($noteOf('address_proof') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('address_proof') }}</span>@endif
+            </span>
+            <span class="comp-right">
+                <span class="comp-pill {{ $underPill['cls'] }}">{{ $underPill['txt'] }}</span>
+                <span class="comp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+            </span>
+        </button>
 
-                <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
-                    <h3 class="font-bold text-slate-800 mb-4">Document Status Summary</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div class="bg-green-50 border border-green-100 rounded-lg p-3 text-center">
-                            <div class="text-2xl font-bold text-green-600">{{ $approvedDocs }}</div>
-                            <div class="text-xs text-green-700 font-medium mt-1">Approved</div>
-                        </div>
-                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
-                            <div class="text-2xl font-bold text-blue-600">{{ $pendingDocs }}</div>
-                            <div class="text-xs text-blue-700 font-medium mt-1">Under Review</div>
-                        </div>
-                        <div class="bg-red-50 border border-red-100 rounded-lg p-3 text-center">
-                            <div class="text-2xl font-bold text-red-600">{{ $rejectedDocs }}</div>
-                            <div class="text-xs text-red-700 font-medium mt-1">Rejected</div>
-                        </div>
-                        <div class="bg-slate-50 border border-slate-100 rounded-lg p-3 text-center">
-                            <div class="text-2xl font-bold text-slate-500">{{ $notUploaded }}</div>
-                            <div class="text-xs text-slate-600 font-medium mt-1">Pending Upload</div>
-                        </div>
-                    </div>
+        <!-- Advance Purpose -->
+        <a class="comp-card" href="{{ route('advances.index') }}">
+            <span class="comp-ico" style="background:#e6f6ec;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1faa59" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8L19 8.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M13.5 3.5V9H19"/><path d="M8.5 13.5l2.5 2.5 4.5-4.5"/></svg>
+            </span>
+            <span class="comp-main">
+                <span class="comp-name">Advance Purpose</span>
+                <span class="comp-desc">Purpose is approved by the firm</span>
+            </span>
+            <span class="comp-right">
+                <span class="comp-pill {{ $purposePill['cls'] }}">{{ $purposePill['txt'] }}</span>
+                <span class="comp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+            </span>
+        </a>
+    </div>
 
-                    <!-- Progress Bar -->
-                    <div class="mt-5">
-                        <div class="flex justify-between text-xs font-medium text-slate-600 mb-1.5">
-                            <span>Overall Progress</span>
-                            <span>{{ $approvedDocs }}/{{ $totalDocs }} Approved</span>
-                        </div>
-                        <div class="w-full bg-slate-100 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full transition-all" style="width: {{ $totalDocs > 0 ? round($approvedDocs / $totalDocs * 100) : 0 }}%"></div>
-                        </div>
-                        @if($approvedDocs === $totalDocs)
-                        <div class="mt-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center gap-2">
-                            <i class="fa-solid fa-shield-halved text-green-500"></i>
-                            <span class="text-green-800 font-semibold text-sm">You are Compliant! All required documents have been approved.</span>
-                        </div>
-                        @endif
-                    </div>
+    <div class="comp-summary">
+        <h3>Compliance Summary</h3>
+        <div class="comp-sum-body">
+            <div class="comp-donut">
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="52" stroke="#edf0f4" stroke-width="12" fill="none"/>
+                    <circle cx="60" cy="60" r="52" stroke="#16a34a" stroke-width="12" fill="none" stroke-linecap="round"
+                        stroke-dasharray="{{ $dash }} {{ round($circ, 1) }}" transform="rotate(-90 60 60)"/>
+                </svg>
+                <div class="comp-donut-c">
+                    <div class="comp-donut-n">{{ $compCount }}/{{ $totalRows }}</div>
+                    <div class="comp-donut-t">Completed</div>
                 </div>
             </div>
-
-            <!-- Sidebar -->
-            <div class="xl:w-72 space-y-5">
-
-                <!-- Document Guidelines -->
-                <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="fa-solid fa-circle-info text-blue-500"></i>
-                        <h3 class="font-bold text-slate-800">Document Guidelines</h3>
-                    </div>
-                    <ul class="space-y-2.5 text-xs text-slate-600">
-                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-dot text-blue-400 mt-0.5 text-[8px]"></i> Upload clear and readable documents</li>
-                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-dot text-blue-400 mt-0.5 text-[8px]"></i> Accepted formats: PDF, JPG, PNG</li>
-                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-dot text-blue-400 mt-0.5 text-[8px]"></i> Maximum file size: 5MB per document</li>
-                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-dot text-blue-400 mt-0.5 text-[8px]"></i> All documents are securely encrypted</li>
-                        <li class="flex items-start gap-2"><i class="fa-solid fa-circle-dot text-blue-400 mt-0.5 text-[8px]"></i> Keep your documents up to date</li>
-                    </ul>
-                </div>
-
-                <!-- Need Help -->
-                <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="fa-regular fa-circle-question text-slate-500"></i>
-                        <h3 class="font-bold text-slate-800">Need Help?</h3>
-                    </div>
-                    <p class="text-xs text-slate-500 mb-4">If you face any issue while uploading or verifying documents, our support team is here to help you.</p>
-                    <a href="{{ route('tickets.create') }}" class="flex items-center justify-center gap-2 w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-lg transition">
-                        <i class="fa-regular fa-headset"></i> Contact Support
-                    </a>
-                    <div class="mt-3 pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
-                        <!-- <div class="font-semibold text-slate-700">0120-1234567</div> -->
-                        <div>support@virexon.in</div>
-                    </div>
-                </div>
-
-                <!-- Application Status -->
-                <div class="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
-                    <div class="flex items-center gap-2 mb-3">
-                        <i class="fa-solid fa-layer-group text-slate-500"></i>
-                        <h3 class="font-bold text-slate-800">Application Flow</h3>
-                    </div>
-                    @php $appStatus = auth()->user()->detail?->status ?? 'pending'; @endphp
-                    <ol class="space-y-3">
-                        <li class="flex items-center gap-3">
-                            <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 {{ in_array($appStatus, ['form_received','approved','pending']) ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-500' }}"><i class="fa-solid fa-check text-[10px]"></i></span>
-                            <span class="text-xs {{ in_array($appStatus, ['form_received','approved','pending']) ? 'text-slate-800 font-semibold' : 'text-slate-400' }}">Fund Application Submitted</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 {{ $appStatus === 'form_received' || $appStatus === 'approved' ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-500' }}">{{ $appStatus === 'form_received' || $appStatus === 'approved' ? '<i class="fa-solid fa-check text-[10px]"></i>' : '2' }}</span>
-                            <span class="text-xs {{ $appStatus === 'form_received' || $appStatus === 'approved' ? 'text-slate-800 font-semibold' : 'text-slate-400' }}">Form Received by Admin</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 bg-blue-500 text-white">3</span>
-                            <span class="text-xs text-slate-800 font-semibold">Upload Documents</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 {{ $appStatus === 'approved' ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-500' }}">4</span>
-                            <span class="text-xs {{ $appStatus === 'approved' ? 'text-slate-800 font-semibold' : 'text-slate-400' }}">Final Approval</span>
-                        </li>
-                    </ol>
-                </div>
+            <div class="comp-legend">
+                <div class="comp-leg"><span class="comp-dot" style="background:#16a34a;"></span>Completed ({{ $compCount }})</div>
+                <div class="comp-leg"><span class="comp-dot" style="background:#f59e0b;"></span>Pending ({{ $pendCount }})</div>
+                <div class="comp-leg"><span class="comp-dot" style="background:#ef4444;"></span>Rejected ({{ $rejCount }})</div>
             </div>
         </div>
     </div>
 
-    <!-- Upload Modal -->
+    <div class="comp-support">
+        Need help? <a href="{{ route('tickets.create') }}">Contact support</a> &middot; <a href="{{ route('dashboard') }}">Dashboard</a>
+    </div>
+
+    <nav class="comp-bottomnav" aria-label="Primary">
+        <a class="comp-bnav" href="{{ route('dashboard') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7a90" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>
+            <span>Dashboard</span>
+        </a>
+        <a class="comp-bnav" href="{{ route('advances.index') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7a90" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8L19 8.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M13.5 3.5V9H19"/><circle cx="11" cy="14" r="2.2"/><path d="M11 12.8v2.4M10 13.4h2"/></svg>
+            <span>Advance</span>
+        </a>
+        <a class="comp-bnav" href="{{ route('documents.index') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7a90" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8L19 8.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M13.5 3.5V9H19"/><path d="M9 13h6M9 16.5h6"/></svg>
+            <span>Documents</span>
+        </a>
+        <a class="comp-bnav active" href="#" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="#1f6bff"><rect x="5" y="3" width="14" height="18" rx="2"/><rect x="8.5" y="7.5" width="7" height="1.8" rx="0.9" fill="#fff"/><rect x="8.5" y="11" width="7" height="1.8" rx="0.9" fill="#fff"/><rect x="8.5" y="14.5" width="4.5" height="1.8" rx="0.9" fill="#fff"/></svg>
+            <span>Compliance</span>
+        </a>
+        <a class="comp-bnav" href="{{ route('settings.profile') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6b7a90" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.5 3.9-5.2 7-5.2s5.8 1.7 7 5.2"/></svg>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- Upload Modal (functionality preserved) -->
     <div id="upload-modal" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+        <div class="modal-card">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-bold text-slate-900" id="modal-title">Upload Document</h3>
                 <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -257,7 +360,10 @@
                 @csrf
                 <input type="hidden" name="document_type" id="modal-doc-type">
 
-                <!-- Drop Zone -->
+                <a id="modal-view-link" href="#" target="_blank" class="hidden mb-3 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 items-center gap-2 text-sm text-blue-700 font-semibold" style="display:none;">
+                    View current file &rarr;
+                </a>
+
                 <div id="drop-zone" class="border-2 border-dashed border-blue-200 rounded-xl p-8 text-center cursor-pointer hover:bg-blue-50 transition mb-4 group"
                      onclick="document.getElementById('file-input').click()">
                     <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-400 mb-2 group-hover:text-blue-600"></i>
@@ -291,11 +397,23 @@
     </div>
 
     <script>
-        function openUploadModal(type, label, accept) {
+        function openUploadModal(type, label, accept, fileUrl) {
             document.getElementById('modal-doc-type').value = type;
             document.getElementById('modal-title').textContent = 'Upload: ' + label;
-            document.getElementById('file-input').accept = accept;
+            document.getElementById('file-input').accept = accept || '';
+            var exts = (accept || '').split(',')
+                .map(function(e) { return e.replace(/^\./, '').toUpperCase(); })
+                .filter(function(e) { return e; })
+                .join(', ');
+            document.getElementById('modal-accept-text').textContent = (exts ? exts : 'PDF, JPG, PNG') + ' up to 5MB';
             document.getElementById('file-name-display').classList.add('hidden');
+            var vl = document.getElementById('modal-view-link');
+            if (fileUrl) {
+                vl.href = fileUrl;
+                vl.style.display = 'flex';
+            } else {
+                vl.style.display = 'none';
+            }
             document.getElementById('upload-modal').classList.remove('hidden');
         }
 
@@ -339,4 +457,5 @@
             if (e.target === this) closeUploadModal();
         });
     </script>
+</div>
 @endsection

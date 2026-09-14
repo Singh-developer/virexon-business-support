@@ -124,22 +124,11 @@
 @endif
 
 {{-- =============================== DOCUMENT ROWS =============================== --}}
-@php
-$docMeta = [
-    'pan_card'       => ['icon' => '🪪', 'label' => 'PAN Card',                         'desc' => 'Clear scan of PAN card. Required for KYC.'],
-    'aadhaar'        => ['icon' => '📋', 'label' => 'Aadhaar Card',                     'desc' => 'Front & back of Aadhaar. Used for identity verification.'],
-    'photo'          => ['icon' => '📸', 'label' => 'Photograph',                       'desc' => 'Passport-size photo. Recent and clear.'],
-    'bank_proof'     => ['icon' => '🏦', 'label' => 'Bank Passbook / Cancelled Cheque', 'desc' => 'First page of passbook or cancelled cheque leaf.'],
-    'agent_id_proof' => ['icon' => '📄', 'label' => 'Agent ID Proof / Agreement',       'desc' => 'Agent ID card, appointment letter, or signed agreement.'],
-    'address_proof'  => ['icon' => '🏠', 'label' => 'Address Proof',                    'desc' => 'Voter ID, utility bill, or any government address proof.'],
-];
-@endphp
-
-@foreach($types as $type)
+@foreach($types as $type => $meta)
     @php
         $doc    = $documents[$type] ?? null;
         $status = $doc?->status ?? 'not_uploaded';
-        $meta   = $docMeta[$type] ?? ['icon' => '📎', 'label' => ucfirst(str_replace('_',' ',$type)), 'desc' => ''];
+        $meta   = $meta ?? ['emoji' => '📎', 'admin_label' => ucfirst(str_replace('_',' ',$type)), 'admin_desc' => ''];
 
         $statusHelp = match($status) {
             'approved'     => 'Document accepted. No action needed.',
@@ -154,12 +143,12 @@ $docMeta = [
         <div class="doc-inner">
 
             {{-- Icon + Label --}}
-            <div style="min-width:36px;font-size:26px;padding-top:2px;">{{ $meta['icon'] }}</div>
+            <div style="min-width:36px;font-size:26px;padding-top:2px;">{{ $meta['emoji'] }}</div>
 
             {{-- Info --}}
             <div style="flex:1;min-width:180px;">
-                <div style="font-weight:700;font-size:15px;color:#1e293b;">{{ $meta['label'] }}</div>
-                <div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">{{ $meta['desc'] }}</div>
+                <div style="font-weight:700;font-size:15px;color:#1e293b;">{{ $meta['admin_label'] }}</div>
+                <div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">{{ $meta['admin_desc'] }}</div>
 
                 @if($doc)
                     <div style="font-size:12px;color:#64748b;margin-bottom:2px;">
@@ -263,6 +252,7 @@ $docMeta = [
         @if($approvedCount === $totalDocs && $appStatus !== 'approved')
         <form method="POST" action="{{ route('agents.application-status', $agent) }}" style="margin:0;">
             @csrf
+            @method('PATCH')
             <input type="hidden" name="application_status" value="approved">
             <button type="submit" class="btn primary" onclick="return confirm('Give this agent final approval?')">
                 ✅ Give Final Approval

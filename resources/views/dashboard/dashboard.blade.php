@@ -346,9 +346,16 @@
             <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/80 space-y-3">
                 <h2 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-3">Compliance Snapshot</h2>
 
+                @php
+                    $docOk      = fn($type) => optional($documents[$type] ?? null)->status === 'approved';
+                    $bankOk     = $detail && $detail->bank_name;
+                    $allCompliant = $docOk('pan_card') && $docOk('aadhaar') && $docOk('photo')
+                        && $docOk('agent_id_proof') && $docOk('address_proof') && $bankOk;
+                @endphp
+
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 items-center">
 
-                    <!-- 1. KYC -->
+                    <!-- 1. KYC (PAN + Aadhaar) -->
                     <div class="flex items-center space-x-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                         <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,7 +364,7 @@
                         </div>
                         <div class="space-y-0.5 overflow-hidden">
                             <div class="font-bold text-slate-800 text-xs truncate">KYC Documents</div>
-                            @if(isset($documents['kyc']) && $documents['kyc']->status === 'verified')
+                            @if($docOk('pan_card') && $docOk('aadhaar'))
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F8F5] text-[#27AE60]">Compliant</span>
                             @else
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF5E7] text-[#E65100]">Pending</span>
@@ -372,7 +379,7 @@
                         </div>
                         <div class="space-y-0.5 overflow-hidden">
                             <div class="font-bold text-slate-800 text-xs truncate">PAN Verified</div>
-                            @if(isset($documents['pan']) && $documents['pan']->status === 'verified')
+                            @if($docOk('pan_card'))
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F8F5] text-[#27AE60]">Compliant</span>
                             @else
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF5E7] text-[#E65100]">Pending</span>
@@ -380,7 +387,24 @@
                         </div>
                     </div>
 
-                    <!-- 3. Bank -->
+                    <!-- 3. Photograph -->
+                    <div class="flex items-center space-x-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                        <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm8 8a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" />
+                            </svg>
+                        </div>
+                        <div class="space-y-0.5 overflow-hidden">
+                            <div class="font-bold text-slate-800 text-xs truncate">Photograph</div>
+                            @if($docOk('photo'))
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F8F5] text-[#27AE60]">Compliant</span>
+                            @else
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF5E7] text-[#E65100]">Pending</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- 4. Bank -->
                     <div class="flex items-center space-x-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                         <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,7 +413,7 @@
                         </div>
                         <div class="space-y-0.5 overflow-hidden">
                             <div class="font-bold text-slate-800 text-xs truncate">Bank Details</div>
-                            @if($detail && $detail->bank_name)
+                            @if($bankOk)
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F8F5] text-[#27AE60]">Verified</span>
                             @else
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF5E7] text-[#E65100]">Pending</span>
@@ -397,7 +421,7 @@
                         </div>
                     </div>
 
-                    <!-- 4. Agreement -->
+                    <!-- 5. Agreement -->
                     <div class="flex items-center space-x-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                         <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,7 +430,7 @@
                         </div>
                         <div class="space-y-0.5 overflow-hidden">
                             <div class="font-bold text-slate-800 text-xs truncate">Agreement Signed</div>
-                            @if(isset($documents['agreement']) && $documents['agreement']->status === 'verified')
+                            @if($docOk('agent_id_proof'))
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F8F5] text-[#27AE60]">Compliant</span>
                             @else
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF5E7] text-[#E65100]">Pending</span>
@@ -414,31 +438,24 @@
                         </div>
                     </div>
 
-                    <!-- 5. Undertaking -->
+                    <!-- 6. Address Proof -->
                     <div class="flex items-center space-x-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                         <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-600 border border-slate-200 shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                             </svg>
                         </div>
                         <div class="space-y-0.5 overflow-hidden">
-                            <div class="font-bold text-slate-800 text-xs truncate">Undertaking</div>
-                            @if(isset($documents['undertaking']) && $documents['undertaking']->status === 'verified')
-                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F8F5] text-[#27AE60]">Submitted</span>
+                            <div class="font-bold text-slate-800 text-xs truncate">Address Proof</div>
+                            @if($docOk('address_proof'))
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F8F5] text-[#27AE60]">Compliant</span>
                             @else
                                 <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF5E7] text-[#E65100]">Pending</span>
                             @endif
                         </div>
                     </div>
 
-                    <!-- 6. Status Shield Card -->
-                    @php
-                        $allCompliant = isset($documents['kyc']) && $documents['kyc']->status === 'verified'
-                            && isset($documents['pan']) && $documents['pan']->status === 'verified'
-                            && $detail && $detail->bank_name
-                            && isset($documents['agreement']) && $documents['agreement']->status === 'verified'
-                            && isset($documents['undertaking']) && $documents['undertaking']->status === 'verified';
-                    @endphp
+                    <!-- 7. Status Shield Card -->
                     <div class="{{ $allCompliant ? 'bg-[#E8F8F5] border-emerald-200' : 'bg-[#FEF5E7] border-amber-200' }} border rounded-xl p-3 flex items-center space-x-3">
                         <div class="w-9 h-9 rounded-full {{ $allCompliant ? 'bg-[#27AE60]' : 'bg-[#E65100]' }} text-white flex items-center justify-center shrink-0 shadow-md">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -15,11 +15,27 @@ class AgentDashboardController extends Controller
 
         $detail = $user->detail;
 
-        $totalApproved = $detail->max_limit ?? 0;
+        // Total Approved = the amount sanctioned in the admin-approved loan letter.
+        // Falls back to the agent's stored max_limit for agents approved
+        // through the older flow (and 0 when nothing is approved yet).
+        $approvedLetter = $user->sanctionLetters()
+            ->where('review_status', 'approved')
+            ->latest('reviewed_at')
+            ->first();
 
-        $currentUsage = $card->current_usage ?? 0;
+        $approvedAmount = $approvedLetter
+            ? (float) ($approvedLetter->getDynamicValue('approved_amount') ?? 0)
+            : 0;
 
-        $remainingLimit = $card->remaining_limit ?? 0;
+        $totalApproved = $approvedAmount > 0
+            ? $approvedAmount
+            : (float) ($detail->max_limit ?? 0);
+
+        $currentUsage = (float) ($card->current_usage ?? 0);
+
+        // Remaining Limit stays consistent with the approved amount,
+        // not with the card's static limit.
+        $remainingLimit = max(0, $totalApproved - $currentUsage);
 
         $totalTransactions = Transaction::where('user_id', $user->id)
             ->where('status', 'successful')
@@ -49,7 +65,7 @@ class AgentDashboardController extends Controller
             ? round(($currentUsage / $totalApproved) * 100, 1)
             : 0;
 
-        $documents = $user->documents->keyBy('type');
+        $documents = $user->documents->keyBy('document_type');
 
         return view('dashboard.dashboard', compact(
             'card',

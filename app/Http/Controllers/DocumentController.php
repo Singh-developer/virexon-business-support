@@ -31,8 +31,9 @@ class DocumentController extends Controller
 
         $documents = $user->documents()->get()->keyBy('document_type');
         $types     = AgentDocument::requiredTypes();
+        $docConfig = AgentDocument::types();
 
-        return view('documents.index', compact('documents', 'types', 'appStatus'));
+        return view('documents.index', compact('documents', 'types', 'docConfig', 'appStatus'));
     }
 
     /**
@@ -102,13 +103,46 @@ class DocumentController extends Controller
     // -------------------------------------------------------
 
     /**
+     * Admin overview: all agents with a live document summary.
+     * Single entry point to find documents awaiting review.
+     */
+    public function adminOverview()
+    {
+        $types = AgentDocument::types();
+        $total = count($types);
+
+        $agents = User::with(['detail', 'documents'])
+            ->whereHas('role', fn($q) => $q->where('slug', 'agent'))
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get()
+            ->map(function (User $agent) use ($total) {
+                $docs = $agent->documents;
+
+                return [
+                    'agent'            => $agent,
+                    'total'            => $total,
+                    'uploaded'         => $docs->count(),
+                    'approved'         => $docs->where('status', 'approved')->count(),
+                    'pending'          => $docs->where('status', 'pending')->count(),
+                    'action_needed'    => $docs->whereIn('status', ['rejected', 're_upload'])->count(),
+                    'not_uploaded'     => max(0, $total - $docs->count()),
+                    'is_compliant'     => $docs->where('status', 'approved')->count() === $total,
+                    'app_status'       => $agent->detail?->application_status ?? 'pending',
+                ];
+            });
+
+        return view('admin.documents.overview', compact('agents', 'types', 'total'));
+    }
+
+    /**
      * Admin views all documents for a specific agent.
      */
     public function adminIndex($userId)
     {
         $agent     = User::with(['detail', 'documents'])->findOrFail($userId);
         $documents = $agent->documents()->get()->keyBy('document_type');
-        $types     = AgentDocument::requiredTypes();
+        $types     = AgentDocument::types();
 
         return view('admin.documents.index', compact('agent', 'documents', 'types'));
     }

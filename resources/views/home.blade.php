@@ -667,6 +667,182 @@
         }
 
         /* =========================================
+           ABOUT US SECTION
+        ========================================= */
+        .about-section {
+            padding: 60px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .about-section .section-title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .about-tagline {
+            text-align: center;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .about-lead {
+            max-width: 900px;
+            margin: 0 auto 40px auto;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .about-lead strong {
+            color: var(--text-dark);
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .about-card {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 28px 24px;
+            background: var(--bg-white);
+            transition: all 0.3s;
+        }
+
+        .about-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .about-card h3 {
+            font-size: 17px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .about-card h3 i {
+            color: var(--primary);
+        }
+
+        .about-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+
+        .about-card p strong {
+            color: var(--text-dark);
+        }
+
+        .commit-list {
+            margin-top: 12px;
+        }
+
+        .commit-list li {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .commit-list li i {
+            color: #22c55e;
+            margin-top: 4px;
+        }
+
+        .notice-box {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .notice-box h3 {
+            font-size: 17px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notice-box h3 i {
+            color: var(--secondary);
+        }
+
+        .notice-box p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .notice-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .contact-card {
+            background: linear-gradient(135deg, var(--logo-grad-start), var(--logo-grad-end));
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            color: #fff;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .contact-card h3 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .contact-card p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.7;
+        }
+
+        .contact-items {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .contact-items li {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .contact-items i {
+            color: #4ade80;
+            font-size: 18px;
+            margin-top: 2px;
+        }
+
+        .contact-items a {
+            color: #fff;
+        }
+
+        .contact-items a:hover {
+            text-decoration: underline;
+        }
+
+        /* =========================================
            STUNNING FOOTER
         ========================================= */
         footer {
@@ -956,6 +1132,16 @@
                 padding: 40px 0;
             }
 
+            /* About Mobile */
+            .about-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-card {
+                grid-template-columns: 1fr;
+                padding: 28px 22px;
+            }
+
             .who-can-benefit .section-title {
                 text-align: center;
             }
@@ -993,12 +1179,12 @@
 
             <ul class="nav-links" id="navLinks">
                 <li><a href="#" class="active">Home</a></li>
-                <li><a href="#">About Us</a></li>
+                <li><a href="#about-us">About Us</a></li>
                 <!-- <li><a href="#">Benefits</a></li>
                 <li><a href="#">How It Works</a></li>
                 <li><a href="#">Documents</a></li>
                 <li><a href="#">FAQs</a></li> -->
-                <li><a href="#">Contact Us</a></li>
+                <li><a href="#contact">Contact Us</a></li>
 
                 <div class="nav-actions-mobile" style="display: none;">
                     <a href="{{ route('login') }}" class="btn btn-outline" style="width: 100%;"><i class="fa-regular fa-user"></i> Login</a>
@@ -1193,6 +1379,116 @@
     </div>
 
     <div class="container">
+        <section class="about-section" id="about-us">
+            <h2 class="section-title">About Us</h2>
+            <div class="about-tagline">VIREXON (EASY ONLINE MARKETING)</div>
+
+            <p class="about-lead">
+                <strong>VIREXON (EASY ONLINE MARKETING)</strong> is a business platform focused on building structured
+                opportunities and support systems for eligible working Agents associated with the Company.
+                Our objective is to create a transparent, systematic and technology-enabled environment where eligible
+                Agents can access defined business support initiatives in accordance with the Company's policies,
+                eligibility requirements and applicable contractual terms.
+            </p>
+
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3><i class="fa-solid fa-compass"></i> Our Approach</h3>
+                    <p>
+                        We believe that a strong business network is built on <strong>trust, transparency,
+                        responsibility and consistent working relationships</strong>.
+                        Through our digital platform, we aim to simplify the process of Agent registration,
+                        documentation, verification, communication and access to eligible support programs.
+                        Our systems are designed to maintain proper documentation and ensure that each support request
+                        is evaluated according to the applicable eligibility criteria and prescribed procedures.
+                    </p>
+                </div>
+
+                <div class="about-card">
+                    <h3><i class="fa-solid fa-hand-holding-dollar"></i> Agent Support</h3>
+                    <p>
+                        As part of our business support initiatives, eligible working Agents may be considered for
+                        various support facilities introduced by the Company from time to time.
+                        The <strong>A/F (Advance Fund) Support Facility</strong> is intended specifically for eligible
+                        working Agents and is subject to verification, documentation, eligibility assessment, Company
+                        approval and execution of the applicable A/F Agreement.
+                        Issuance of any preliminary sanction or approval does not by itself create an unconditional
+                        right to receive any amount. Any final support shall remain subject to the applicable terms,
+                        conditions and contractual documentation.
+                    </p>
+                </div>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3><i class="fa-solid fa-shield-halved"></i> Our Commitment</h3>
+                    <p>We are committed to:</p>
+                    <ul class="commit-list">
+                        <li><i class="fa-solid fa-circle-check"></i> Maintaining a structured and transparent process</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Protecting the accuracy and integrity of submitted information</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Following documented verification procedures</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Providing clear terms and conditions before any final arrangement</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Maintaining proper records and documentation</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Supporting eligible Agents through defined Company programs</li>
+                        <li><i class="fa-solid fa-circle-check"></i> Continuously improving our digital systems and operational processes</li>
+                    </ul>
+                </div>
+
+                <div class="about-card">
+                    <h3><i class="fa-solid fa-microchip"></i> Technology-Driven Process</h3>
+                    <p>
+                        Our online platform enables Agents to submit required information and documents through a
+                        structured digital process. This helps the Company manage applications, verification,
+                        documentation and support-related activities in a systematic manner.
+                        We continue to focus on improving technology, operational efficiency and communication so that
+                        our Agents can interact with the Company's support systems more conveniently.
+                    </p>
+                </div>
+            </div>
+
+            <div class="notice-box">
+                <h3><i class="fa-solid fa-triangle-exclamation"></i> Important Notice</h3>
+                <p>
+                    The information provided on this website is for general informational purposes regarding the
+                    Company's Agent support initiatives.
+                    Any A/F or other support facility is available only to eligible Agents who satisfy the applicable
+                    requirements of the Company. Submission of an application, payment of applicable Portal Charges,
+                    completion of verification or issuance of a preliminary sanction does not automatically guarantee
+                    approval or release of any amount.
+                </p>
+                <p>
+                    The final terms governing any approved A/F arrangement shall be contained in the applicable
+                    <strong>A/F Agreement</strong> and related documents executed between the parties.
+                </p>
+            </div>
+
+            <div class="contact-card" id="contact">
+                <div>
+                    <h3>Contact Us</h3>
+                    <p>
+                        <strong>VIREXON (EASY ONLINE MARKETING)</strong><br>
+                        Plot No. 6-10-3/5, Plot No. 25, Balanagar, Hyderabad &ndash; 500043
+                    </p>
+                </div>
+                <ul class="contact-items">
+                    <li>
+                        <i class="fa-solid fa-phone"></i>
+                        <span>Contact Number: <a href="tel:+918069328745">+91 8069328745</a></span>
+                    </li>
+                    <li>
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>E-mail ID: <a href="mailto:support@finance.virexon.in">support@finance.virexon.in</a></span>
+                    </li>
+                    <li>
+                        <i class="fa-solid fa-globe"></i>
+                        <span>Website: <a href="https://finence.virexon.in" target="_blank">https://finence.virexon.in</a></span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <div class="container">
         <section class="bottom-section">
 
             <div class="who-can-benefit">
@@ -1296,6 +1592,7 @@
                         <!-- <li><a href="#">About Us</a></li>
                         <li><a href="#">How it Works</a></li>
                         <li><a href="#">Eligibility Criteria</a></li> -->
+                        <li><a href="#about-us">About Us</a></li>
                         <li><a href="{{ route('login') }}">Apply for Advance</a></li>
                         <li><a href="{{ route('login') }}">Login</a></li>
                     </ul>
@@ -1330,6 +1627,28 @@
                     </ul>
                 </div> -->
 
+                <div>
+                    <h4 class="footer-heading">Contact Us</h4>
+                    <ul class="contact-info">
+                        <li>
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Plot No. 6-10-3/5, Plot No. 25, Balanagar, Hyderabad &ndash; 500043</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-phone"></i>
+                            <span><a href="tel:+918069328745">+91 8069328745</a></span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-envelope"></i>
+                            <span><a href="mailto:support@finance.virexon.in">support@finance.virexon.in</a></span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-globe"></i>
+                            <span><a href="https://finence.virexon.in" target="_blank">https://finence.virexon.in</a></span>
+                        </li>
+                    </ul>
+                </div>
+
             </div>
 
             <div class="footer-bottom">
@@ -1354,6 +1673,15 @@
                 mobileActions.style.display = 'none';
                 menuToggle.classList.replace('fa-xmark', 'fa-bars');
             }
+        });
+
+        // Close mobile menu when a nav link is tapped
+        navLinks.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                mobileActions.style.display = 'none';
+                menuToggle.classList.replace('fa-xmark', 'fa-bars');
+            });
         });
     </script>
 

@@ -73,7 +73,8 @@
                 <a class="nav-item <?php echo e(request()->routeIs('cards.*')?'active':''); ?>" href="<?php echo e(route('cards.index')); ?>">▣ <span>Virtual Cards</span></a>
                 <a class="nav-item <?php echo e(request()->routeIs('payments.*')?'active':''); ?>" href="<?php echo e(route('payments.index')); ?>">↗ <span>Payments</span></a>
                 <a class="nav-item <?php echo e(request()->routeIs('transactions.*')?'active':''); ?>" href="<?php echo e(route('transactions.index')); ?>">≡ <span>Transactions</span></a>
-                <?php if(auth()->user()->isAdmin()): ?><a class="nav-item <?php echo e(request()->routeIs('assertions.*')?'active':''); ?>" href="<?php echo e(route('assertions.index')); ?>">✉ <span>Assertion Letters</span></a><?php endif; ?>
+                <?php if(auth()->user()->isAdmin()): ?><a class="nav-item <?php echo e(request()->routeIs('admin.documents.*')?'active':''); ?>" href="<?php echo e(route('admin.documents.overview')); ?>">📎 <span>Documents</span></a><?php endif; ?>
+                <?php if(auth()->user()->isAdmin()): ?><a class="nav-item <?php echo e(request()->routeIs('sanctions.*')?'active':''); ?>" href="<?php echo e(route('sanctions.index')); ?>">✉ <span>Sanction Letters</span></a><?php endif; ?>
                 <a class="nav-item <?php echo e(request()->routeIs('admin.tickets.*')?'active':''); ?>" href="<?php echo e(route('admin.tickets.index')); ?>">⚑ <span>Support Tickets</span></a>
                 <div class="nav-label" style="margin-top:20px;">SETTINGS</div>
                 <a class="nav-item <?php echo e(request()->routeIs('settings.profile') ? 'active' : ''); ?>" href="<?php echo e(route('settings.profile')); ?>">⚙ <span>My Settings</span></a>
@@ -121,12 +122,16 @@
                                 <?php $__empty_1 = true; $__currentLoopData = auth()->user()->notifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                 <?php
                                 $notifUrl = '#';
-                                if (isset($notification->data['ticket_id']) && auth()->user()->isAdmin()) {
+                                if (isset($notification->data['url']) && $notification->data['url'] !== '#') {
+                                $notifUrl = $notification->data['url'];
+                                } elseif (isset($notification->data['ticket_id']) && auth()->user()->isAdmin()) {
                                 $notifUrl = route('admin.tickets.show', $notification->data['ticket_id']);
                                 } elseif (isset($notification->data['ticket_id'])) {
                                 $notifUrl = route('tickets.show', $notification->data['ticket_id']);
                                 } elseif (isset($notification->data['agent_id'])) {
                                 $notifUrl = route('agents.edit', $notification->data['agent_id']);
+                                } elseif (isset($notification->data['sanction_id'])) {
+                                $notifUrl = route('sanctions.review', $notification->data['sanction_id']);
                                 }
                                 $finalUrl = route('notifications.read', ['id' => $notification->id, 'redirect' => $notifUrl]);
                                 ?>

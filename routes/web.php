@@ -14,7 +14,9 @@ use App\Http\Controllers\{
     WebhookController,
     SettingsController,
     RegistrationController,
-    AssertionLetterController,
+    SanctionLetterController,
+    SanctionReviewController,
+    AgentSanctionLetterController,
     PaytmPaymentController,
 };
 
@@ -185,6 +187,7 @@ Route::middleware('auth')->group(function () {
         /*
         | Agent Documents (Admin Review)
         */
+        Route::get('/admin/documents', [\App\Http\Controllers\DocumentController::class, 'adminOverview'])->name('admin.documents.overview');
         Route::get('/admin/agents/{userId}/documents', [\App\Http\Controllers\DocumentController::class, 'adminIndex'])->name('admin.documents.index');
         Route::patch('/admin/agents/{userId}/documents/{docId}', [\App\Http\Controllers\DocumentController::class, 'adminReview'])->name('admin.documents.review');
 
@@ -289,31 +292,37 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Payments
+    | Payments (Admin / Super Admin only)
     |--------------------------------------------------------------------------
+    |
+    | Blocked for agents. Restriction applied in routes/web.php via the
+    | `role:super-admin,admin` middleware group below.
+    |
     */
 
-    Route::resource(
-        'payments',
-        PaymentController::class
-    )->only([
-        'index',
-        'create',
-        'store',
-        'show'
-    ]);
+    Route::middleware('role:super-admin,admin')->group(function () {
 
+        Route::resource(
+            'payments',
+            PaymentController::class
+        )->only([
+            'index',
+            'create',
+            'store',
+            'show'
+        ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Sandbox Payment Completion
-    |--------------------------------------------------------------------------
-    */
+        /*
+        |--------------------------------------------------------------------------
+        | Sandbox Payment Completion
+        |--------------------------------------------------------------------------
+        */
 
-    Route::post('/payments/{payment}/mock-complete', [
-        PaymentController::class,
-        'mockComplete'
-    ])->name('payments.mock-complete');
+        Route::post('/payments/{payment}/mock-complete', [
+            PaymentController::class,
+            'mockComplete'
+        ])->name('payments.mock-complete');
+    });
 
 
     /*
@@ -330,7 +339,7 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Assertion Letters (Admin / Super Admin)
+    | Sanction Letters (Admin / Super Admin)
     |--------------------------------------------------------------------------
     |
     | Live preview endpoint works for any authenticated user so the form's
@@ -339,42 +348,115 @@ Route::middleware('auth')->group(function () {
     |
     */
 
-    Route::post('/assertions/preview', [
-        AssertionLetterController::class,
+    Route::post('/sanctions/preview', [
+        SanctionLetterController::class,
         'preview'
-    ])->name('assertions.preview');
+    ])->name('sanctions.preview');
 
-    Route::post('/assertions/download-pdf', [
-        AssertionLetterController::class,
+    Route::post('/sanctions/download-pdf', [
+        SanctionLetterController::class,
         'downloadPdf'
-    ])->name('assertions.download-pdf');
+    ])->name('sanctions.download-pdf');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Agent Sanction Letters (Authenticated Agents)
+    |--------------------------------------------------------------------------
+    | Agent-facing workflow: view, preview, download and upload the signed PDF.
+    | Ownership is enforced inside AgentSanctionLetterController.
+    */
+
+    Route::prefix('agent')->name('agent.')->group(function () {
+
+        Route::get('/sanction-letters', [
+            AgentSanctionLetterController::class,
+            'index'
+        ])->name('sanctions.index');
+
+        Route::get('/sanction-letters/{sanction}', [
+            AgentSanctionLetterController::class,
+            'show'
+        ])->name('sanctions.show');
+
+        Route::get('/sanction-letters/{sanction}/pdf', [
+            AgentSanctionLetterController::class,
+            'pdf'
+        ])->name('sanctions.pdf');
+
+        Route::get('/sanction-letters/{sanction}/download', [
+            AgentSanctionLetterController::class,
+            'download'
+        ])->name('sanctions.download');
+
+        Route::get('/sanction-letters/{sanction}/signed-pdf', [
+            AgentSanctionLetterController::class,
+            'signedPdf'
+        ])->name('sanctions.signed-pdf');
+
+        Route::post('/sanction-letters/{sanction}/upload', [
+            AgentSanctionLetterController::class,
+            'upload'
+        ])->name('sanctions.upload');
+
+    });
 
     Route::middleware('role:super-admin,admin')->group(function () {
 
-        Route::get('/assertions', [
-            AssertionLetterController::class,
+        Route::get('/sanctions', [
+            SanctionLetterController::class,
             'index'
-        ])->name('assertions.index');
+        ])->name('sanctions.index');
 
-        Route::get('/assertions/create', [
-            AssertionLetterController::class,
+        Route::get('/sanctions/create', [
+            SanctionLetterController::class,
             'create'
-        ])->name('assertions.create');
+        ])->name('sanctions.create');
 
-        Route::post('/assertions', [
-            AssertionLetterController::class,
+        Route::post('/sanctions', [
+            SanctionLetterController::class,
             'store'
-        ])->name('assertions.store');
+        ])->name('sanctions.store');
 
-        Route::get('/assertions/{assertion}', [
-            AssertionLetterController::class,
+        Route::get('/sanctions/{sanction}', [
+            SanctionLetterController::class,
             'show'
-        ])->name('assertions.show');
+        ])->name('sanctions.show');
 
-        Route::get('/assertions/{assertion}/download', [
-            AssertionLetterController::class,
+        Route::get('/sanctions/{sanction}/download', [
+            SanctionLetterController::class,
             'download'
-        ])->name('assertions.download');
+        ])->name('sanctions.download');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Admin Review of Signed Sanction Letter PDFs
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/sanctions/{sanction}/review', [
+            SanctionReviewController::class,
+            'show'
+        ])->name('sanctions.review');
+
+        Route::post('/sanctions/{sanction}/approve', [
+            SanctionReviewController::class,
+            'approve'
+        ])->name('sanctions.approve');
+
+        Route::post('/sanctions/{sanction}/reupload-required', [
+            SanctionReviewController::class,
+            'requestReupload'
+        ])->name('sanctions.reupload-required');
+
+        Route::get('/sanctions/{sanction}/signed/{upload}', [
+            SanctionReviewController::class,
+            'signedPdf'
+        ])->name('sanctions.signed-pdf');
+
+        Route::get('/sanctions/{sanction}/signed/{upload}/download', [
+            SanctionReviewController::class,
+            'signedDownload'
+        ])->name('sanctions.signed-download');
 
     });
 
