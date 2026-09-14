@@ -61,12 +61,14 @@ class SanctionReviewController extends Controller
             'review_comment' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        // Keep the latest upload visible to the agent, but clear admin decision state.
+        // Keep the latest upload visible to the agent, but clear admin decision state
+        // and open a fresh upload slot (another 48 hours to re-upload).
         $sanction->update([
             'review_status' => 'reupload_required',
             'reviewed_at' => now(),
             'reviewed_by' => auth()->id(),
             'review_comment' => $request->input('review_comment'),
+            'upload_deadline_at' => now()->addHours(SanctionLetter::UPLOAD_WINDOW_HOURS),
         ]);
 
         $sanction->user->notify(new SanctionLetterReviewedNotification($sanction));

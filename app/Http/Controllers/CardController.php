@@ -66,7 +66,7 @@ class CardController extends Controller
                 }
             )
             ->latest()
-            ->paginate(12)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view('cards.index', compact('cards'));

@@ -318,8 +318,8 @@
             </span>
             @endif
             <span class="doc-main">
-                <span class="doc-name" style="display:block;">Final Approval</span>
-                <span class="doc-desc" style="display:block; white-space:normal;">Admin reviews your documents and gives final approval.</span>
+                <span class="doc-name" style="display:block;">Disbursement Process</span>
+                <span class="doc-desc" style="display:block; white-space:normal;">Admin reviews your documents and gives disbursement.</span>
             </span>
             <span class="doc-right">
                 @if($appStatus === 'approved')

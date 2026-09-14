@@ -394,7 +394,7 @@ $statusValue = $card->status instanceof \BackedEnum
 
         {{-- Advance --}}
         <div class="agent-section-head">Advance Details</div>
-        <div class="detail-item"><div class="detail-label">Loan Amount Requested</div><div class="detail-value">{{ optional($detail)->loan_amount ? '₹'.number_format(optional($detail)->loan_amount, 2) : '—' }}</div></div>
+        <div class="detail-item"><div class="detail-label">Fund Amount Requested</div><div class="detail-value">{{ optional($detail)->loan_amount ? '₹'.number_format(optional($detail)->loan_amount, 2) : '—' }}</div></div>
         <div class="detail-item"><div class="detail-label">Purpose of Advance</div><div class="detail-value">{!! dv(optional($detail)->purpose_of_advance) !!}</div></div>
     </div>
 

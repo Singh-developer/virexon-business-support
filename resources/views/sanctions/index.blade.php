@@ -35,6 +35,7 @@
         <option value="reupload_required" {{ $status === 'reupload_required' ? 'selected' : '' }}>Re-upload Required</option>
         <option value="approved" {{ $status === 'approved' ? 'selected' : '' }}>Approved</option>
     </select>
+    @include('partials.per-page-fields', ['perPage' => $letters->perPage()])
     @if($letters->hasPages() || $status !== 'all')
     <a href="{{ route('sanctions.index') }}" style="font-size:13px;color:#1557d6;text-decoration:none;">Reset</a>
     @endif
@@ -100,7 +101,7 @@
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                         <a href="{{ route('sanctions.show', $letter) }}" class="btn secondary tiny">View</a>
                         <a href="{{ route('sanctions.download', $letter) }}" class="btn secondary tiny">PDF</a>
-                        <a href="{{ route('sanctions.review', $letter) }}" class="btn primary tiny">Review</a>
+                        <a href="{{ route('sanctions.review', $letter) }}" class="btn secondary tiny">Review</a>
                     </div>
                 </td>
             </tr>

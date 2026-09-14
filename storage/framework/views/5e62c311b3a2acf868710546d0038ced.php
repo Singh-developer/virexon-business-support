@@ -51,7 +51,7 @@ table { border-collapse: collapse; }
 .p1 { page-break-after: always; }
 
 .doc-title { text-align: center; font-size: 14pt; font-weight: bold; letter-spacing: 0.5pt; margin-top: 13pt; }
-.title-line { width: 200pt; border-bottom: 1pt solid #000; margin: 1pt auto 0 auto; }
+.title-line { width: 170pt; border-bottom: 1pt solid #000; margin: 1pt auto 0 auto; }
 
 .ref-row { width: 100%; margin-top: 21pt; font-size: 9.8pt; }
 .ref-row td { vertical-align: top; padding: 0; }
@@ -90,13 +90,13 @@ table { border-collapse: collapse; }
 .sig-row td { vertical-align: bottom; padding: 0; }
 .sig-row .right { text-align: right; }
 
-/* ---------- authorized signatory stamp ---------- */
+/* ---------- authorized signatory stamp (no border) ---------- */
 .stamp-box {
     width: 132pt;
-    border: 1pt solid #002060;
-    border-radius: 6pt;
-    padding: 3pt 5pt;
-    margin-bottom: 4pt;
+    border: none;
+    border-radius: 0;
+    padding: 2pt 5pt;
+    margin-bottom: 2pt;
     text-align: center;
 }
 .stamp-box .stamp-title {
@@ -112,43 +112,36 @@ table { border-collapse: collapse; }
     line-height: 1.2;
 }
 .stamp-box img.stamp-sign {
-    height: 26pt;
-    margin: 1pt auto;
+    max-height: 44pt;
+    max-width: 118pt;
+    margin: 2pt auto;
 }
 .stamp-seal {
-    display: inline-block;
-    border: 0.8pt solid #b91c1c;
-    color: #b91c1c;
-    font-size: 6pt;
-    font-weight: bold;
-    letter-spacing: 0.4pt;
-    border-radius: 3pt;
-    padding: 1pt 5pt;
-    margin-top: 2pt;
+    display: none;
 }
 
 /* ---------- page 1 footer ---------- */
 .pfoot { text-align: right; margin-top: 14pt; font-size: 9.8pt; }
 
 /* ---------- page 2 ---------- */
-.sec-title { font-size: 10pt; font-weight: bold; margin-top: 17pt; }
+.sec-title { font-size: 10pt; font-weight: bold; margin-top: 10pt; }
 .sec-line { width: 240pt; border-bottom: 1pt solid #000; margin: 2pt 0 0 0; }
 
-.terms { margin-top: 5pt; font-size: 6.9pt; line-height: 1.13; text-align: justify; }
-.term { margin-bottom: 1pt; padding-left: 18pt; text-indent: -18pt; }
+.terms { margin-top: 4pt; font-size: 6.9pt; line-height: 1.08; text-align: justify; }
+.term { margin-bottom: 0.6pt; padding-left: 18pt; text-indent: -18pt; }
 .term.doc { padding-left: 27pt; text-indent: -9pt; }
 
-.terms-note { margin-top: 7pt; text-align: right; font-size: 7pt; }
+.terms-note { margin-top: 4pt; text-align: right; font-size: 7pt; }
 
-.p2sig { margin-top: 2pt; font-size: 7pt; }
-.p2sig .blank { text-align: right; height: 8pt; }
+.p2sig { margin-top: 1pt; font-size: 7pt; }
+.p2sig .blank { text-align: right; height: 4pt; }
 .p2sig .lg { text-align: right; }
-.p2sig .btm { margin-top: 3pt; }
+.p2sig .btm { margin-top: 2pt; }
 .p2sig .btm .lft { }
 .p2sig .btm .rgt { text-align: right; float: right; }
 
 /* ---------- footer ---------- */
-.pfoot2 { text-align: right; margin-top: 12pt; font-size: 9.8pt; }
+.pfoot2 { text-align: right; margin-top: 6pt; font-size: 9.8pt; }
 </style>
 </head>
 <body>
@@ -193,6 +186,11 @@ table { border-collapse: collapse; }
 
     $greetingLine = $greeting ?? 'Dear Sir/Madam,';
     $introBody = $body ?? 'With reference to your application/request for financial support and subject to the terms and conditions of the applicable Agent Agreement/ Advance Fund Agreement, we are pleased to inform you that the Company has approved the following Advance Fund in your favour:';
+
+    // Signature stamp: use the uploaded image if provided, otherwise the default PDF stamp.
+    $stampImageUrl = !empty($signature_image_url)
+        ? $signature_image_url
+        : public_path('images/sign-pdf.png');
 ?>
 
 <!-- ================= PAGE 1 ================= -->
@@ -277,12 +275,8 @@ table { border-collapse: collapse; }
             <tr>
                 <td>
                     <div class="stamp-box">
-                        <div class="stamp-title">AUTHORIZED SIGNATORY</div>
-                        <?php if(!empty($signature_image_url)): ?>
-                        <img class="stamp-sign" src="<?php echo e($signature_image_url); ?>" alt="Signature">
-                        <?php endif; ?>
-                        <div class="stamp-sub"><?php echo e($signature_name ?? 'Virexon'); ?><?php if(!empty($signature_designation)): ?><br><?php echo e($signature_designation); ?><?php endif; ?> <?php if(!empty($signature_company)): ?><br><?php echo e($signature_company); ?><?php endif; ?></div>
-                        <div class="stamp-seal">VIREXON &#9679; SEALED</div>
+                        <!-- <div class="stamp-title">AUTHORIZED SIGNATORY</div> -->
+                        <img class="stamp-sign" src="<?php echo e($stampImageUrl); ?>" alt="Signature">
                     </div>
                     <div>Authorized Signatory</div>
                 </td>
@@ -302,7 +296,7 @@ table { border-collapse: collapse; }
     <tr>
         <td class="hdr-logo">
             <div class="logo-wrap">
-                <img src="<?php echo e(public_path('images/virexon-logo-dark.jpeg')); ?>" alt="Virexon Logo">
+                <img src="<?php echo e(public_path('images/virexon-light.png')); ?>" alt="Virexon Logo">
                 <div class="tagline">EASY ONLINE MARKETING</div>
             </div>
         </td>
@@ -388,12 +382,8 @@ table { border-collapse: collapse; }
             <tr>
                 <td style="vertical-align:bottom;">
                     <div class="stamp-box">
-                        <div class="stamp-title">AUTHORIZED SIGNATORY</div>
-                        <?php if(!empty($signature_image_url)): ?>
-                        <img class="stamp-sign" src="<?php echo e($signature_image_url); ?>" alt="Signature">
-                        <?php endif; ?>
-                        <div class="stamp-sub"><?php echo e($signature_name ?? 'Virexon'); ?><?php if(!empty($signature_designation)): ?><br><?php echo e($signature_designation); ?><?php endif; ?> <?php if(!empty($signature_company)): ?><br><?php echo e($signature_company); ?><?php endif; ?></div>
-                        <div class="stamp-seal">VIREXON &#9679; SEALED</div>
+                        <!-- <div class="stamp-title">AUTHORIZED SIGNATORY</div> -->
+                        <img class="stamp-sign" src="<?php echo e($stampImageUrl); ?>" alt="Signature">
                     </div>
                     <div>Authorized Signatory</div>
                 </td>

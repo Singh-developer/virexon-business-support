@@ -3,6 +3,10 @@
 @section('content')
 @php
     $ws = $letter->workflowStatus();
+    $canUpload = $letter->canUpload();
+    $deadline = $letter->uploadDeadline();
+    $deadlinePassed = $letter->uploadDeadlinePassed();
+    $deadlineIso = $deadline->toIso8601String();
     $statusMeta = [
         'approved'          => ['label' => 'Approved',           'badge' => 'bg-green-50 text-green-700 border-green-200', 'icon' => 'fa-solid fa-check'],
         'under_review'      => ['label' => 'Under Review',       'badge' => 'bg-blue-50 text-blue-700 border-blue-200',     'icon' => 'fa-solid fa-clock'],
@@ -139,6 +143,21 @@
         </div>
 
         @if($letter->canUpload())
+        <div class="mb-4 rounded-xl border px-4 py-3 bg-amber-50 border-amber-200">
+            <div class="flex items-center gap-3">
+                <i class="fa-regular fa-hourglass-half text-amber-500"></i>
+                <div>
+                    <div class="text-xs font-bold text-amber-800">Upload your signed PDF within 48 hours</div>
+                    <div class="text-xs text-amber-700 countdown-row mt-0.5">
+                        Time left: <strong class="countdown" data-deadline="{{ $deadlineIso }}">{{ $letter->uploadTimeRemaining() }}</strong>
+                        <span class="md:inline hidden">· Deadline: {{ $deadline->format('d M Y, h:i A') }}</span>
+                    </div>
+                    <div class="text-[11px] text-amber-700 italic mt-0.5">
+                        After the deadline passes the upload will be disabled. If you miss it, contact the admin to get a new upload slot.
+                    </div>
+                </div>
+            </div>
+        </div>
         <p class="text-slate-500 text-xs mt-2 mb-5">
             After downloading, please print / physically or electronically sign the PDF, then upload the signed copy (PDF only, up to 10MB).
         </p>
@@ -164,6 +183,10 @@
                 <span id="signed-file-text"></span>
             </div>
 
+            <div id="deadline-expired-note" class="hidden mb-4 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">
+                <i class="fa-solid fa-lock mr-1"></i> The 48-hour upload window has expired. Upload is disabled — please contact the admin to get a new upload slot.
+            </div>
+
             @error('signed_pdf')
             <div class="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-3">{{ $message }}</div>
             @enderror
@@ -173,6 +196,10 @@
                 <i class="fa-solid fa-arrow-up-from-bracket"></i> Upload Signed PDF
             </button>
         </form>
+        @elseif($deadlinePassed && $ws['key'] !== 'under_review' && $ws['key'] !== 'approved')
+        <div class="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700 inline-block">
+            <i class="fa-solid fa-lock mr-1"></i> The 48-hour upload window has expired. Upload is disabled — please contact the admin to get a new upload slot.
+        </div>
         @elseif($ws['key'] === 'under_review' && $letter->signed_pdf_path)
         <p class="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mt-3 inline-block">
             ⏳ Your signed PDF is under review. Please wait for the admin's decision before uploading again.
@@ -230,8 +257,47 @@
         });
     }
 
-    @if(($letter->signed_pdf_upload_count ?? 0) > 0)
-    // Prevent accidental double submit when under review (no form present anyway).
-    @endif
+    const countdownEls = document.querySelectorAll('.countdown[data-deadline]');
+    countdownEls.forEach(function(el) {
+        const deadline = new Date(el.getAttribute('data-deadline')).getTime();
+        const form = document.getElementById('signed-upload-form');
+        const btn = document.getElementById('signed-upload-btn');
+        const expiredNote = document.getElementById('deadline-expired-note');
+        const dropZone = document.getElementById('signed-drop-zone');
+
+        function tick() {
+            const diff = deadline - Date.now();
+            if (diff <= 0) {
+                el.textContent = 'Expired';
+                const row = el.closest('.countdown-row');
+                if (row) row.classList.replace('text-amber-700', 'text-red-700');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btn.innerHTML = '<i class="fa-solid fa-lock"></i> Upload Disabled';
+                }
+                if (expiredNote) expiredNote.classList.remove('hidden');
+                if (dropZone) {
+                    dropZone.classList.add('opacity-40', 'pointer-events-none');
+                    dropZone.style.cursor = 'not-allowed';
+                }
+                if (form) {
+                    const fileInput = form.querySelector('input[type=file]');
+                    if (fileInput) fileInput.disabled = true;
+                }
+                return;
+            }
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            el.textContent = (d > 0 ? d + 'd ' : '') +
+                String(h).padStart(2, '0') + ':' +
+                String(m).padStart(2, '0') + ':' +
+                String(s).padStart(2, '0');
+        }
+        tick();
+        setInterval(tick, 1000);
+    });
 </script>
 @endsection

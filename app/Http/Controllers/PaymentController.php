@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class PaymentController
+class PaymentController extends Controller
 {
     /* public function index(Request $r)
     {
@@ -80,7 +80,7 @@ class PaymentController
                 }
             )
             ->latest()
-            ->paginate(15)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view(

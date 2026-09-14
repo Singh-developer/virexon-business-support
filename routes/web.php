@@ -215,6 +215,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('agents/{agent}/application-status', [App\Http\Controllers\AgentController::class, 'updateApplicationStatus'])->name('agents.application-status');
         
         Route::patch('agents/{agent}/limit-commission', [App\Http\Controllers\AgentController::class, 'updateLimitCommission'])->name('agents.update-limit-commission');
+
+        Route::patch('agents/{agent}/details', [App\Http\Controllers\AgentController::class, 'updateDetails'])->name('agents.update-details');
         
         // Advances & Commissions
         Route::post('agents/{agent}/advances', [App\Http\Controllers\Admin\AdvanceController::class, 'store'])->name('admin.advances.store');

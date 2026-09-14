@@ -14,12 +14,13 @@ use Illuminate\Support\Str;
 class AgentSanctionLetterController extends Controller
 {
     /** List all sanction letters issued to the logged-in agent. */
-    public function index()
+    public function index(Request $request)
     {
         $letters = auth()->user()->sanctionLetters()
             ->with(['user', 'business'])
             ->latest()
-            ->paginate(15);
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         return view('agent.sanctions.index', ['letters' => $letters]);
     }

@@ -28,7 +28,7 @@ class SanctionLetterController extends Controller
             $query->where('review_status', $status);
         }
 
-        $letters = $query->latest()->paginate(15)->withQueryString();
+        $letters = $query->latest()->paginate($this->perPage($request))->withQueryString();
 
         return view("sanctions.index", compact("letters", "status"));
     }
@@ -113,10 +113,11 @@ class SanctionLetterController extends Controller
             "dynamic_fields" => $pdfData["dynamic_fields"],
             "closing" => $data["closing"],
             "notes" => $data["notes"] ?? null,
-            "signature_name" => $data["signature_name"],
+            "signature_name" => $data["signature_name"] ?? null,
             "signature_designation" => $data["signature_designation"] ?? null,
             "signature_company" => $data["signature_company"] ?? null,
             "signature_image" => $signatureImagePath,
+            "upload_deadline_at" => now()->addHours(SanctionLetter::UPLOAD_WINDOW_HOURS),
             "pdf_path" => $relativePath, "status" => "sent", "sent_at" => now(),
         ]);
         $recipientEmail = $agent->detail?->personal_email ?: $agent->email     ?: $agent->email;
@@ -220,7 +221,7 @@ class SanctionLetterController extends Controller
             "body" => ["required", "string"],
             "notes" => ["nullable", "string"],
             "closing" => ["required", "string"],
-            "signature_name" => ["required", "string", "max:180"],
+            "signature_name" => ["nullable", "string", "max:180"],
             "signature_designation" => ["nullable", "string", "max:180"],
             "signature_company" => ["nullable", "string", "max:180"],
             "guardian_relation" => ["nullable", "string", "in:S/o,D/o,W/o"],
@@ -312,7 +313,7 @@ class SanctionLetterController extends Controller
             "notes" => $replaceTokens($data["notes"] ?? null),
             "dynamic_fields" => $dynamicFields,
             "closing" => $replaceTokens($data["closing"]),
-            "signature_name" => $data["signature_name"],
+            "signature_name" => $data["signature_name"] ?? null,
             "guardian_relation" => $data["guardian_relation"] ?? "S/o",
             "signature_designation" => $data["signature_designation"] ?? null,
             "signature_company" => $data["signature_company"] ?? null,

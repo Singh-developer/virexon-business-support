@@ -54,7 +54,7 @@ class TransactionController extends Controller
                 )
             )
             ->latest()
-            ->paginate(20)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view(

@@ -24,6 +24,7 @@
 </div>
 
 <div class="panel" style="padding: 0; background: transparent; border: none; box-shadow: none;">
+    @include('partials.per-page', ['perPage' => $users->perPage()])
     <div class="table-wrap">
         <table id="usersTable" class="display nowrap" style="width:100%">
             <thead>
@@ -88,12 +89,17 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
 $(document).ready(function () {
-    $('#usersTable').DataTable({
-        pageLength: 25,
-        order: [[6, 'desc']],
-        columnDefs: [{ targets: [7], orderable: false }],
-        language: { search: "Quick Search:" }
-    });
+    var $t = $('#usersTable');
+    // Skip DataTables when only the empty-state (colspan) row is present.
+    if ($t.length && $t.find('tbody td[colspan]').length === 0) {
+        $t.DataTable({
+            pageLength: 20,
+            lengthMenu: [20, 40, 100],
+            order: [[6, 'desc']],
+            columnDefs: [{ targets: [7], orderable: false }],
+            language: { search: "Quick Search:" }
+        });
+    }
 });
 </script>
 @endsection

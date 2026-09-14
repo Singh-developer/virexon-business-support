@@ -15,6 +15,9 @@ class SanctionLetter extends Model
     public const REFERENCE_PREFIX = 'RFE';
     public const SANCTION_LETTER_PREFIX = 'V-EOM/SL';
 
+    /** Hours an agent has to upload the signed PDF before the slot expires. */
+    public const UPLOAD_WINDOW_HOURS = 48;
+
     protected $table = 'sanction_letters';
 
     protected $fillable = [
@@ -32,6 +35,7 @@ class SanctionLetter extends Model
         'signature_designation',
         'signature_company',
         'signature_image',
+        'upload_deadline_at',
         'pdf_path',
         'status',
         'sent_at',
@@ -48,6 +52,7 @@ class SanctionLetter extends Model
     protected $casts = [
         'sanction_number' => 'integer',
         'sent_at' => 'datetime',
+        'upload_deadline_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'downloaded_at' => 'datetime',
@@ -127,7 +132,37 @@ class SanctionLetter extends Model
             return false;
         }
 
+        // The upload slot has expired - only an admin reset can open a new one.
+        if ($this->uploadDeadlinePassed()) {
+            return false;
+        }
+
         return true;
+    }
+
+    /**
+     * The deadline by which the agent must upload the signed PDF.
+     * Falls back to sent_at/created_at + the upload window for older rows.
+     */
+    public function uploadDeadline(): \Illuminate\Support\Carbon
+    {
+        return $this->upload_deadline_at
+            ?? ($this->sent_at ?: $this->created_at)->addHours(self::UPLOAD_WINDOW_HOURS);
+    }
+
+    /** Whether the upload window has already expired. */
+    public function uploadDeadlinePassed(): bool
+    {
+        return now()->greaterThan($this->uploadDeadline());
+    }
+
+    /** Human friendly remaining time, or null once expired. */
+    public function uploadTimeRemaining(): ?string
+    {
+        if ($this->uploadDeadlinePassed()) {
+            return null;
+        }
+        return now()->diffForHumans($this->uploadDeadline(), ['parts' => 2]);
     }
 
     /**

@@ -403,88 +403,243 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 {{-- ====================================================================
-     SECTION 3: FULL APPLICATION DETAILS (Read-only)
+     SECTION 3: FULL APPLICATION DETAILS (Editable by Admin)
 ==================================================================== --}}
 <div class="panel">
     <div class="panel-head">
         <div>
             <h3>Agent Application Details</h3>
-            <p>Information submitted by the agent during registration. Read-only.</p>
+            <p>Information submitted by the agent during registration. Editable by admin.</p>
         </div>
     </div>
 
-    <div class="agent-detail-grid">
-
-        {{-- Personal Info --}}
-        <div class="agent-section-head">Personal Information</div>
-        <div class="detail-item"><div class="detail-label">Full Name</div><div class="detail-value">{!! agentDv($agent->name) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Official Email</div><div class="detail-value">{!! agentDv($agent->email) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Personal Email</div><div class="detail-value">{!! agentDv(optional($detail)->personal_email) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Mobile</div><div class="detail-value">{!! agentDv(optional($detail)->mobile) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Guardian / Father Name</div><div class="detail-value">{!! agentDv(optional($detail)->guardian_name ?? optional($detail)->father_name) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Agent ID Number</div><div class="detail-value">{!! agentDv(optional($detail)->agent_id_number) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Date of Birth</div><div class="detail-value">{!! agentDv(optional($detail)->date_of_birth) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Gender</div><div class="detail-value">{!! agentDv(optional($detail)->gender ? ucfirst(optional($detail)->gender) : null) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">PAN Number</div><div class="detail-value">{!! agentDv(optional($detail)->pan_number) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Marital Status</div><div class="detail-value">{!! agentDv(optional($detail)->is_married === 1 ? 'Married' : (optional($detail)->is_married === 0 ? 'Single' : null)) !!}</div></div>
-
-        {{-- Address --}}
-        <div class="agent-section-head">Address</div>
-        <div class="detail-item" style="grid-column:1/-1">
-            <div class="detail-label">Current Address</div>
-            <div class="detail-value">
-                {!! agentDv(optional($detail)->current_address) !!}
-                @if(optional($detail)->address_line_2), {{ optional($detail)->address_line_2 }}@endif
-            </div>
-        </div>
-        <div class="detail-item"><div class="detail-label">City</div><div class="detail-value">{!! agentDv(optional($detail)->current_city) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">State</div><div class="detail-value">{!! agentDv(optional($detail)->current_state) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Pincode</div><div class="detail-value">{!! agentDv(optional($detail)->current_pincode) !!}</div></div>
-
-        {{-- Bank Details --}}
-        <div class="agent-section-head">Bank Details</div>
-        <div class="detail-item"><div class="detail-label">Account Holder</div><div class="detail-value">{!! agentDv(optional($detail)->account_name) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Bank Name</div><div class="detail-value">{!! agentDv(optional($detail)->bank_name) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Account Number</div><div class="detail-value">{!! agentDv(optional($detail)->account_number) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">IFSC / Routing No.</div><div class="detail-value">{!! agentDv(optional($detail)->routing_number) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Account Type</div><div class="detail-value">{!! agentDv(optional($detail)->account_type) !!}</div></div>
-        <div class="detail-item"><div class="detail-label">Branch</div><div class="detail-value">{!! agentDv(optional($detail)->branch_name) !!}</div></div>
-
-        {{-- Advance --}}
-        <div class="agent-section-head">Advance Details</div>
-        <div class="detail-item">
-            <div class="detail-label">Loan Amount Requested</div>
-            <div class="detail-value">
-                {{ optional($detail)->loan_amount ? '₹' . number_format(optional($detail)->loan_amount, 2) : '—' }}
-            </div>
-        </div>
-        <div class="detail-item"><div class="detail-label">Purpose of Advance</div><div class="detail-value">{!! agentDv(optional($detail)->purpose_of_advance) !!}</div></div>
-
-    </div>
-
-    {{-- References --}}
-    @if($refs->count())
-    <div style="border-top:1px solid #f1f5f9; margin-top:0;">
-        <div style="background:#f8fafc; padding:10px 16px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#64748b;">
-            References ({{ $refs->count() }})
-        </div>
-        <div style="padding:14px 16px; display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:12px;">
-            @foreach($refs as $i => $ref)
-            <div style="border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-                <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Reference {{ $i + 1 }}</div>
-                <div style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:4px;">{{ $ref->person_name }}</div>
-                <div style="font-size:12px; color:#64748b;">📞 {{ $ref->mobile }}</div>
-                <div style="font-size:11px; color:#94a3b8; margin-top:4px;">ID: {{ $ref->company_agent_id }}</div>
-            </div>
+    @if($errors->any())
+    <div class="flash failed" style="margin:0 20px 16px;">
+        <strong>Please fix the following errors:</strong>
+        <ul style="margin:8px 0 0 18px;">
+            @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
             @endforeach
-        </div>
-    </div>
-    @else
-    <div style="padding:14px 16px; color:#94a3b8; font-size:12px; border-top:1px solid #f1f5f9;">
-        No references submitted yet.
+        </ul>
     </div>
     @endif
+
+    @php
+        $dobVal = old('date_of_birth', optional($detail)->date_of_birth ? \Carbon\Carbon::parse(optional($detail)->date_of_birth)->format('Y-m-d') : '');
+        $marriedVal = old('is_married', optional($detail)->is_married);
+        // Normalise boolean-ish values for the select.
+        $marriedSelected = $marriedVal === '' || $marriedVal === null ? '' : (int) (bool) $marriedVal;
+    @endphp
+
+    <form method="POST" action="{{ route('agents.update-details', $agent) }}">
+        @csrf
+        @method('PATCH')
+
+        {{-- Personal Information --}}
+        <div class="agent-section-head" style="border-radius:8px 8px 0 0; border:1px solid #e2e8f0; border-bottom:none;">Personal Information</div>
+        <div style="border:1px solid #e2e8f0; border-bottom:none; padding:16px;">
+            <div class="form-grid">
+                <label>Personal Email
+                    <input name="personal_email" type="email" value="{{ old('personal_email', optional($detail)->personal_email) }}" style="color:#1e293b">
+                </label>
+                <label>Mobile
+                    <input name="mobile" value="{{ old('mobile', optional($detail)->mobile) }}" style="color:#1e293b">
+                </label>
+                <label>WhatsApp Number
+                    <input name="whatsapp_number" value="{{ old('whatsapp_number', optional($detail)->whatsapp_number) }}" style="color:#1e293b">
+                </label>
+                <label>Guardian / Father Name
+                    <input name="guardian_name" value="{{ old('guardian_name', optional($detail)->guardian_name ?? optional($detail)->father_name) }}" style="color:#1e293b">
+                </label>
+                <label>Father Name
+                    <input name="father_name" value="{{ old('father_name', optional($detail)->father_name) }}" style="color:#1e293b">
+                </label>
+                <label>Mother Name
+                    <input name="mother_name" value="{{ old('mother_name', optional($detail)->mother_name) }}" style="color:#1e293b">
+                </label>
+                <label>Agent ID Number
+                    <input name="agent_id_number" value="{{ old('agent_id_number', optional($detail)->agent_id_number) }}" style="color:#1e293b">
+                </label>
+                <label>Date of Birth
+                    <input name="date_of_birth" type="date" value="{{ $dobVal }}" style="color:#1e293b">
+                </label>
+                <label>Gender
+                    <select name="gender" style="color:#1e293b">
+                        <option value="">— Select —</option>
+                        <option value="male" @selected(old('gender', optional($detail)->gender) === 'male')>Male</option>
+                        <option value="female" @selected(old('gender', optional($detail)->gender) === 'female')>Female</option>
+                        <option value="other" @selected(old('gender', optional($detail)->gender) === 'other')>Other</option>
+                    </select>
+                </label>
+                <label>PAN Number
+                    <input name="pan_number" value="{{ old('pan_number', optional($detail)->pan_number) }}" style="color:#1e293b; text-transform:uppercase;">
+                </label>
+                <label>Aadhar Number
+                    <input name="aadhar_number" value="{{ old('aadhar_number', optional($detail)->aadhar_number) }}" style="color:#1e293b">
+                </label>
+                <label>Marital Status
+                    <select name="is_married" id="is_married" style="color:#1e293b">
+                        <option value="">— Select —</option>
+                        <option value="0" @selected((string) old('is_married', $marriedSelected) === '0')>Single</option>
+                        <option value="1" @selected((string) old('is_married', $marriedSelected) === '1')>Married</option>
+                    </select>
+                </label>
+                <label>Spouse Name
+                    <input name="spouse_name" value="{{ old('spouse_name', optional($detail)->spouse_name) }}" style="color:#1e293b">
+                </label>
+                <label>Spouse Mobile
+                    <input name="spouse_mobile" value="{{ old('spouse_mobile', optional($detail)->spouse_mobile) }}" style="color:#1e293b">
+                </label>
+            </div>
+        </div>
+
+        {{-- Address --}}
+        <div class="agent-section-head" style="border:1px solid #e2e8f0; border-bottom:none; border-top:none;">Address</div>
+        <div style="border:1px solid #e2e8f0; border-bottom:none; padding:16px;">
+            <div class="form-grid">
+                <label style="grid-column:1/-1;">Current Address
+                    <input name="current_address" value="{{ old('current_address', optional($detail)->current_address) }}" style="color:#1e293b">
+                </label>
+                <label>Address Line 2
+                    <input name="address_line_2" value="{{ old('address_line_2', optional($detail)->address_line_2) }}" style="color:#1e293b">
+                </label>
+                <label>Current City
+                    <input name="current_city" value="{{ old('current_city', optional($detail)->current_city) }}" style="color:#1e293b">
+                </label>
+                <label>Current State
+                    <input name="current_state" value="{{ old('current_state', optional($detail)->current_state) }}" style="color:#1e293b">
+                </label>
+                <label>Current Pincode
+                    <input name="current_pincode" value="{{ old('current_pincode', optional($detail)->current_pincode) }}" style="color:#1e293b">
+                </label>
+                <label style="grid-column:1/-1;">Permanent Address
+                    <input name="permanent_address" value="{{ old('permanent_address', optional($detail)->permanent_address) }}" style="color:#1e293b">
+                </label>
+                <label>Permanent City
+                    <input name="permanent_city" value="{{ old('permanent_city', optional($detail)->permanent_city) }}" style="color:#1e293b">
+                </label>
+                <label>Permanent State
+                    <input name="permanent_state" value="{{ old('permanent_state', optional($detail)->permanent_state) }}" style="color:#1e293b">
+                </label>
+                <label>Permanent Pincode
+                    <input name="permanent_pincode" value="{{ old('permanent_pincode', optional($detail)->permanent_pincode) }}" style="color:#1e293b">
+                </label>
+            </div>
+        </div>
+
+        {{-- Bank Details --}}
+        <div class="agent-section-head" style="border:1px solid #e2e8f0; border-bottom:none; border-top:none;">Bank Details</div>
+        <div style="border:1px solid #e2e8f0; border-bottom:none; padding:16px;">
+            <div class="form-grid">
+                <label>Account Holder
+                    <input name="account_name" value="{{ old('account_name', optional($detail)->account_name) }}" style="color:#1e293b">
+                </label>
+                <label>Bank Name
+                    <input name="bank_name" value="{{ old('bank_name', optional($detail)->bank_name) }}" style="color:#1e293b">
+                </label>
+                <label>Account Number
+                    <input name="account_number" value="{{ old('account_number', optional($detail)->account_number) }}" style="color:#1e293b">
+                </label>
+                <label>IFSC / Routing No.
+                    <input name="routing_number" value="{{ old('routing_number', optional($detail)->routing_number) }}" style="color:#1e293b">
+                </label>
+                <label>Account Type
+                    <input name="account_type" value="{{ old('account_type', optional($detail)->account_type) }}" placeholder="Savings / Current" style="color:#1e293b">
+                </label>
+                <label>Branch
+                    <input name="branch_name" value="{{ old('branch_name', optional($detail)->branch_name) }}" style="color:#1e293b">
+                </label>
+            </div>
+        </div>
+
+        {{-- Advance --}}
+        <div class="agent-section-head" style="border:1px solid #e2e8f0; border-bottom:none; border-top:none;">Advance Details</div>
+        <div style="border:1px solid #e2e8f0; border-bottom:none; padding:16px;">
+            <div class="form-grid">
+                <label>Fund Amount Requested (₹)
+                    <input name="loan_amount" type="number" step="0.01" min="0" value="{{ old('loan_amount', optional($detail)->loan_amount) }}" style="color:#1e293b">
+                </label>
+                <label>Loan Tenure (months)
+                    <input name="loan_tenure" type="number" min="1" max="360" value="{{ old('loan_tenure', optional($detail)->loan_tenure ?? 60) }}" style="color:#1e293b">
+                </label>
+                <label style="grid-column:1/-1;">Purpose of Advance
+                    <input name="purpose_of_advance" value="{{ old('purpose_of_advance', optional($detail)->purpose_of_advance) }}" style="color:#1e293b">
+                </label>
+            </div>
+        </div>
+
+        {{-- References --}}
+        <div class="agent-section-head" style="border:1px solid #e2e8f0; border-bottom:none; border-top:none;">References</div>
+        <div style="border:1px solid #e2e8f0; border-radius:0 0 10px 10px; padding:16px;">
+            <div id="references-wrap" style="display:grid; gap:0;">
+                @forelse($refs as $i => $ref)
+                <div class="reference-row" data-ref-row style="padding:16px 0; border-top:1px dashed #e2e8f0; @if($loop->first) border-top:none; padding-top:0; @endif">
+                    <input type="hidden" name="references[{{ $i }}][id]" value="{{ $ref->id }}">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                        <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:#94a3b8;" data-ref-title>Reference #{{ $i + 1 }}</div>
+                        <button type="button" class="btn secondary" onclick="this.closest('[data-ref-row]').remove(); renumberReferences();">Remove</button>
+                    </div>
+                    <div class="form-grid">
+                        <label>Name
+                            <input name="references[{{ $i }}][person_name]" value="{{ old("references.$i.person_name", $ref->person_name) }}" style="color:#1e293b">
+                        </label>
+                        <label>Mobile
+                            <input name="references[{{ $i }}][mobile]" value="{{ old("references.$i.mobile", $ref->mobile) }}" style="color:#1e293b">
+                        </label>
+                        <label style="grid-column:1/-1;">Company Agent ID
+                            <input name="references[{{ $i }}][company_agent_id]" value="{{ old("references.$i.company_agent_id", $ref->company_agent_id) }}" style="color:#1e293b">
+                        </label>
+                    </div>
+                </div>
+                @empty
+                <div id="references-empty" style="color:#94a3b8; font-size:12px;">No references submitted yet. Add one below.</div>
+                @endforelse
+            </div>
+            <div style="margin-top:10px;">
+                <button type="button" class="btn secondary" onclick="addReferenceRow()">+ Add Reference</button>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <span style="color:#64748b; font-size:12px;">Saved to the agent's application record.</span>
+            <button class="btn primary">Save Agent Details</button>
+        </div>
+    </form>
 </div>
+
+<script>
+let refIndex = {{ max(1, $refs->count()) }};
+function renumberReferences() {
+    const rows = document.querySelectorAll('#references-wrap [data-ref-row]');
+    rows.forEach(function(row, idx) {
+        const title = row.querySelector('[data-ref-title]');
+        if (title) title.textContent = 'Reference #' + (idx + 1);
+        if (idx === 0) { row.style.borderTop = 'none'; row.style.paddingTop = '0'; }
+        else { row.style.borderTop = '1px dashed #e2e8f0'; row.style.paddingTop = '16px'; }
+    });
+}
+function addReferenceRow() {
+    const wrap = document.getElementById('references-wrap');
+    const empty = document.getElementById('references-empty');
+    if (empty) empty.remove();
+    const hasRows = wrap.querySelector('[data-ref-row]') !== null;
+    const div = document.createElement('div');
+    div.setAttribute('data-ref-row', '');
+    div.style.cssText = 'padding:16px 0;' + (hasRows ? 'border-top:1px dashed #e2e8f0;' : 'border-top:none;padding-top:0;');
+    div.innerHTML =
+        '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">' +
+            '<div data-ref-title style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:#94a3b8;">Reference #' + (wrap.querySelectorAll('[data-ref-row]').length + 1) + '</div>' +
+            '<button type="button" class="btn secondary" onclick="this.closest(\'[data-ref-row]\').remove(); renumberReferences();">Remove</button>' +
+        '</div>' +
+        '<div class="form-grid">' +
+            '<label>Name<input name="references[' + refIndex + '][person_name]" style="color:#1e293b"></label>' +
+            '<label>Mobile<input name="references[' + refIndex + '][mobile]" style="color:#1e293b"></label>' +
+            '<label style="grid-column:1/-1;">Company Agent ID<input name="references[' + refIndex + '][company_agent_id]" style="color:#1e293b"></label>' +
+        '</div>';
+    wrap.appendChild(div);
+    refIndex++;
+}
+</script>
 
 @endif {{-- end @if($agent->exists) --}}
 

@@ -240,21 +240,7 @@ iframe#previewFrame { width: 100%; height: 100%; border: none; border-radius: 8p
 
             <!-- Signatory Card -->
             <div class="card">
-                <div class="card-title">4. Authorized Signatory</div>
-                <div class="field">
-                    <label for="signature_name">Name</label>
-                    <input id="signature_name" name="signature_name" type="text" required maxlength="180" value="<?php echo e(old('signature_name', auth()->user()->name)); ?>">
-                </div>
-                <div class="row-2">
-                    <div class="field">
-                        <label for="signature_designation">Designation</label>
-                        <input id="signature_designation" name="signature_designation" type="text" maxlength="180" value="<?php echo e(old('signature_designation', 'Director')); ?>">
-                    </div>
-                    <div class="field">
-                        <label for="signature_company">Company</label>
-                        <input id="signature_company" name="signature_company" type="text" maxlength="180" value="<?php echo e(old('signature_company', 'Virexon')); ?>">
-                    </div>
-                </div>
+                <div class="card-title">4. Signature / Stamp</div>
                 <div class="field">
                     <label>Upload Signature Image</label>
                     <div style="display:flex; gap:16px;">

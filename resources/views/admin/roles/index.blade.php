@@ -67,7 +67,11 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
 $(document).ready(function () {
-    $('#rolesTable').DataTable({ pageLength: 25, order: [[0, 'desc']] });
+    var $t = $('#rolesTable');
+    // Skip DataTables when only the empty-state (colspan) row is present.
+    if ($t.length && $t.find('tbody td[colspan]').length === 0) {
+        $t.DataTable({ pageLength: 20, lengthMenu: [20, 40, 100], order: [[0, 'desc']] });
+    }
 });
 </script>
 @endsection

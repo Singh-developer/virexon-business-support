@@ -45,12 +45,18 @@
         </div>
     </div>
 
+    <div class="mb-5 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm">
+        <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i><strong>Important Note:</strong> Download, carefully review, sign, and re-upload the Sanction Letter within <strong>48 hours</strong>. Failure to complete this process within the specified time will result in <strong>cancellation of the sanction</strong>. After submission, the Sanction Letter will be reviewed and approved, following which the applicant will be required to <strong>complete the subsequent process</strong>.
+    </div>
+
     @php $statusMeta = [
         'approved'          => ['label' => 'Approved',          'badge' => 'bg-green-50 text-green-700 border-green-200', 'icon' => 'fa-solid fa-check'],
         'under_review'      => ['label' => 'Under Review',      'badge' => 'bg-blue-50 text-blue-700 border-blue-200',     'icon' => 'fa-solid fa-clock'],
         'reupload_required' => ['label' => 'Re-upload Required','badge' => 'bg-orange-50 text-orange-700 border-orange-200','icon' => 'fa-solid fa-rotate-right'],
         'pending'           => ['label' => 'Pending',           'badge' => 'bg-slate-50 text-slate-600 border-slate-200',  'icon' => 'fa-regular fa-hourglass'],
     ]; @endphp
+
+    @include('partials.per-page', ['perPage' => $letters->perPage()])
 
     @forelse($letters as $letter)
     @php
@@ -67,6 +73,15 @@
                     <div class="font-bold text-slate-900 text-sm">{{ $letter->sanction_letter_no }}</div>
                     <div class="text-slate-400 text-xs mt-0.5">{{ $letter->subject }}</div>
                     <div class="text-slate-400 text-xs mt-0.5">Sent: {{ $letter->sent_at?->format('d M Y, h:i A') ?? $letter->created_at->format('d M Y') }}</div>
+                    @if($letter->canUpload())
+                    <div class="text-xs mt-0.5 {{ $ws['key'] === 'reupload_required' ? 'text-orange-500' : 'text-blue-600' }}">
+                        <i class="fa-regular fa-hourglass-half mr-1"></i> Upload within: <strong>{{ $letter->uploadTimeRemaining() }}</strong> (deadline {{ $letter->uploadDeadline()->format('d M Y, h:i A') }})
+                    </div>
+                    @elseif($letter->uploadDeadlinePassed() && $ws['key'] === 'pending')
+                    <div class="text-xs mt-0.5 text-red-500">
+                        <i class="fa-solid fa-lock mr-1"></i> Upload window expired — contact admin to open a new slot.
+                    </div>
+                    @endif
                     @if($letter->downloaded_at)
                     <div class="text-slate-400 text-xs mt-0.5">Downloaded: {{ $letter->downloaded_at->format('d M Y, h:i A') }}</div>
                     @endif

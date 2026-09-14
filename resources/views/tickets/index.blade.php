@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
@@ -23,7 +24,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             @if($tickets->count() > 0)
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table id="agentTicketsTable" class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-semibold">
                                 <th class="p-4">ID</th>
@@ -70,4 +71,20 @@
             @endif
         </div>
     </main>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function() {
+    var $t = $('#agentTicketsTable');
+    // Skip DataTables when the table is absent (no tickets yet).
+    if ($t.length && $t.find('tbody td[colspan]').length === 0) {
+        $t.DataTable({
+            pageLength: 20,
+            lengthMenu: [20, 40, 100],
+            order: [],
+            language: { search: "Quick Search:" }
+        });
+    }
+});
+</script>
 @endsection

@@ -28,6 +28,7 @@
             <option value="spending" @selected(request('payment_type') === 'spending')">Spending</option>
             <option value="repayment" @selected(request('payment_type') === 'repayment')">Repayment</option>
         </select>
+        @include('partials.per-page-fields', ['perPage' => $payments->perPage()])
         <button class="btn secondary">Filter</button>
     </form>
     <div class="table-wrap">

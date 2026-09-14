@@ -63,7 +63,8 @@
 <script>
 $(document).ready(function() {
     $('#ticketsTable').DataTable({
-        pageLength: 25,
+        pageLength: 20,
+        lengthMenu: [20, 40, 100],
         order: [[0, 'desc']], 
     });
 });

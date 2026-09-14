@@ -5,6 +5,7 @@
 <style>
     .dt-buttons { margin-bottom: 15px; }
     .dataTables_wrapper .dataTables_filter { margin-bottom: 15px; }
+    .dataTables_wrapper .dataTables_length { margin-bottom: 15px; }
     .table-wrap { overflow-x: auto; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
     .filter-container { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap; }
     .filter-container > div { display: flex; flex-direction: column; gap: 5px; }
@@ -181,7 +182,7 @@
 <script>
 $(document).ready(function() {
     var table = $('#agentsTable').DataTable({
-        dom: 'Bfrtip',
+        dom: 'Blfrtip',
         buttons: [
             { extend: 'colvis', text: 'Select Columns', className: 'btn secondary tiny' },
             { extend: 'copy', className: 'btn secondary tiny', exportOptions: { columns: ':visible' } },
@@ -190,7 +191,8 @@ $(document).ready(function() {
             { extend: 'pdf', className: 'btn secondary tiny', exportOptions: { columns: ':visible' }, orientation: 'landscape' },
             { extend: 'print', className: 'btn secondary tiny', exportOptions: { columns: ':visible' } }
         ],
-        pageLength: 25,
+        pageLength: 20,
+        lengthMenu: [20, 40, 100],
         columnDefs: [
             { targets: [0, 4, 5, 6, 7], visible: false }
         ],

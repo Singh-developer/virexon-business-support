@@ -23,7 +23,7 @@
     <div class="login-card">
         <div class="login-brand">
             <!-- <div class="brand-mark large">🤝</div> -->
-            <div><a href=""><img src="{{ asset('images/virexon-light.png')}}" alt="Virexon" style="max-width: 40%;" /><a></div>
+            <div><a href=""><img src="{{ asset('images/virexon-logo-normal.png')}}" alt="Virexon" style="max-width: 60%;" /><a></div>
             <div class="brand-title">AGENT</div>
             <div class="brand-sub">BUSINESS SUPPORT</div>
             <div class="brand-tag">PARTNERING YOUR GROWTH</div>

@@ -47,6 +47,8 @@
             placeholder="Search card, holder or last 4 digits"
         >
 
+        @include('partials.per-page-fields', ['perPage' => $cards->perPage()])
+
         <button class="btn secondary">
             Search
         </button>

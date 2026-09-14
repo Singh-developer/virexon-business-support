@@ -80,11 +80,12 @@ class RoleController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function users()
+    public function users(Request $request)
     {
         $users = User::with('role', 'business', 'detail')
             ->orderByDesc('id')
-            ->paginate(25);
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         $roles = Role::orderBy('name')->get();
 

@@ -131,7 +131,7 @@
         ========================================= */
         header {
             background: var(--bg-white);
-            padding: 15px 0;
+            padding: 8px 0;
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -151,8 +151,16 @@
             gap: 10px;
             font-size: 20px;
             font-weight: 700;
-            line-height: 1.2;
+            line-height: 1;
             z-index: 1001;
+        }
+
+        .logo img {
+            height: 90px;
+            width: auto;
+            max-width: 200px;
+            display: block;
+            object-fit: contain;
         }
 
         .logo-icon {
@@ -1025,6 +1033,15 @@
         @media (max-width: 768px) {
 
             /* Navbar Mobile */
+            header {
+                padding: 6px 0;
+            }
+
+            .logo img {
+                height: 70px;
+                max-width: 160px;
+            }
+
             .menu-toggle {
                 display: block;
             }
@@ -1174,7 +1191,7 @@
                     AGENT
                     <span>Business Support</span>
                 </div> -->
-                <img src="{{ asset('images/virexon-light.png')}}" alt="Virexon" style="max-width: 50%;" />
+                <img src="{{ asset('images/virexon-logo.png')}}" alt="Virexon" />
             </div>
 
             <ul class="nav-links" id="navLinks">
@@ -1575,7 +1592,7 @@
                             AGENT
                             <span>Support</span>
                         </div> -->
-                        <img src="{{ asset('images/virexon-light.png')}}" alt="Virexon" style="max-width: 30%;" />
+                        <img src="{{ asset('images/virexon-logo.png')}}" alt="Virexon" style="max-width: 30%;" />
                     </div>
                     <p>Empowering agents nationwide with zero-interest financial backing. Achieve your sales targets, expand your reach, and secure your financial future with our seamless support network.</p>
                     <!-- <div class="social-icons">

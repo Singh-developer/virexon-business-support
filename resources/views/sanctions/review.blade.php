@@ -114,7 +114,7 @@
                     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;display:block;margin-bottom:6px;">Approval Note (optional)</label>
                     <textarea name="review_comment" rows="2" class="note-input" placeholder="e.g. Signed copy verified & accepted.">{{ $letter->review_comment }}</textarea>
                     <div style="margin-top:10px;">
-                        <button type="submit" class="btn primary tiny" style="width:100%;justify-content:center;">✓ Approve Signed PDF</button>
+                        <button type="submit" class="btn secondary tiny" style="width:100%;justify-content:center;">✓ Approve Signed PDF</button>
                     </div>
                 </form>
 
@@ -139,7 +139,7 @@
                 <div style="font-weight:700;font-size:13px;color:#1e293b;">🗂 Latest Signed PDF</div>
                 <div style="display:flex;gap:8px;">
                     <a href="{{ route('sanctions.signed-pdf', [$letter, $latest]) }}" target="_blank" class="btn secondary tiny">View</a>
-                    <a href="{{ route('sanctions.signed-download', [$letter, $latest]) }}" class="btn primary tiny">Download</a>
+                    <a href="{{ route('sanctions.signed-download', [$letter, $latest]) }}" class="btn secondary tiny">Download</a>
                 </div>
             </div>
 

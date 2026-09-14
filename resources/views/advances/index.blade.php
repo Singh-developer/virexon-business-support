@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
     <div class="max-w-7xl mx-auto px-4 lg:px-6 py-8 transition-all">
         
@@ -157,7 +158,7 @@
             </div>
             
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
+                <table id="commissionTable" class="w-full text-left text-sm">
                     <thead>
                         <tr class="bg-slate-50 text-slate-500 border-b border-slate-200">
                             <th class="px-6 py-3 font-semibold">Date</th>
@@ -191,5 +192,22 @@
         </div>
 
     </div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function() {
+    var $t = $('#commissionTable');
+    // Skip DataTables when the table is absent or only shows the empty-state (colspan) row.
+    if ($t.length && $t.find('tbody td[colspan]').length === 0) {
+        $t.DataTable({
+            pageLength: 20,
+            lengthMenu: [20, 40, 100],
+            order: [],
+            language: { search: "Quick Search:" }
+        });
+    }
+});
+</script>
 @endsection
 

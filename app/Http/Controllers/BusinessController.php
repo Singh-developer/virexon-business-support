@@ -7,7 +7,7 @@ use App\Models\Business;
 use App\Services\AuditService;
 use Illuminate\Http\Request;
 
-class BusinessController
+class BusinessController extends Controller
 {
     /* public function index(Request $r)
     {
@@ -42,7 +42,7 @@ class BusinessController
                 )
             )
             ->latest()
-            ->paginate(12)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view(

@@ -449,6 +449,122 @@ class AgentController extends Controller
         return back()->with('success', $message);
     }
 
+    public function updateDetails(Request $request, User $agent)
+    {
+        abort_unless($agent->isAgent(), 404);
+
+        $detailId = optional($agent->detail)->id;
+
+        $data = $request->validate([
+            'personal_email'     => 'nullable|email|max:255',
+            'mobile'             => 'nullable|string|max:20',
+            'whatsapp_number'    => 'nullable|string|max:20',
+            'guardian_name'      => 'nullable|string|max:255',
+            'father_name'        => 'nullable|string|max:255',
+            'mother_name'        => 'nullable|string|max:255',
+            'agent_id_number'    => ['nullable', 'string', 'max:255', Rule::unique('user_details', 'agent_id_number')->ignore($detailId)],
+            'date_of_birth'      => 'nullable|date',
+            'gender'             => 'nullable|in:male,female,other',
+            'is_married'         => 'nullable|boolean',
+            'spouse_name'        => 'nullable|string|max:255',
+            'spouse_mobile'      => 'nullable|string|max:20',
+            'current_address'    => 'nullable|string|max:500',
+            'address_line_2'     => 'nullable|string|max:255',
+            'current_city'       => 'nullable|string|max:255',
+            'current_state'      => 'nullable|string|max:255',
+            'current_pincode'    => 'nullable|string|max:20',
+            'permanent_address'  => 'nullable|string|max:500',
+            'permanent_city'     => 'nullable|string|max:255',
+            'permanent_state'    => 'nullable|string|max:255',
+            'permanent_pincode'  => 'nullable|string|max:20',
+            'loan_amount'        => 'nullable|numeric|min:0|max:999999999999.99',
+            'loan_tenure'        => 'nullable|integer|min:1|max:360',
+            'purpose_of_advance' => 'nullable|string|max:1000',
+            'account_name'       => 'nullable|string|max:255',
+            'bank_name'          => 'nullable|string|max:255',
+            'account_number'     => 'nullable|string|max:255',
+            'routing_number'     => 'nullable|string|max:255',
+            'account_type'       => 'nullable|string|max:255',
+            'branch_name'        => 'nullable|string|max:255',
+            'pan_number'         => ['nullable', 'string', 'max:20', Rule::unique('user_details', 'pan_number')->ignore($detailId)],
+            'aadhar_number'      => ['nullable', 'string', 'max:20', Rule::unique('user_details', 'aadhar_number')->ignore($detailId)],
+
+            'references'                        => 'nullable|array|max:5',
+            'references.*.id'                   => 'nullable|exists:reference_people,id',
+            'references.*.person_name'          => 'required_with:references|string|max:255',
+            'references.*.mobile'               => 'required_with:references|string|max:20',
+            'references.*.company_agent_id'     => 'nullable|string|max:255',
+        ]);
+
+        DB::transaction(function () use ($agent, $data, $request) {
+            $detailData = collect($data)->except(['references'])->toArray();
+
+            // Keep father_name in sync when only guardian_name is supplied (legacy column).
+            if (array_key_exists('guardian_name', $detailData) && empty($detailData['father_name'])) {
+                $detailData['father_name'] = $detailData['guardian_name'];
+            }
+
+            // Normalise empty strings to null so unique columns don't clash on "".
+            foreach (['agent_id_number', 'pan_number', 'aadhar_number'] as $uniqueKey) {
+                if (array_key_exists($uniqueKey, $detailData) && $detailData[$uniqueKey] === '') {
+                    $detailData[$uniqueKey] = null;
+                }
+            }
+
+            if (! empty($detailData) || $agent->detail === null) {
+                $agent->detail()->updateOrCreate(
+                    ['user_id' => $agent->id],
+                    $detailData
+                );
+            }
+
+            // Sync references (edit existing, add new, drop removed).
+            if ($request->has('references')) {
+                $keepIds = [];
+                foreach ($data['references'] ?? [] as $ref) {
+                    // Skip fully empty rows.
+                    if (empty($ref['person_name']) && empty($ref['mobile']) && empty($ref['company_agent_id'])) {
+                        continue;
+                    }
+
+                    // Company agent ID must stay unique — skip rows that would collide.
+                    if (! empty($ref['company_agent_id'])) {
+                        $collision = \App\Models\ReferencePerson::where('company_agent_id', $ref['company_agent_id'])
+                            ->when(! empty($ref['id']), fn ($q) => $q->where('id', '!=', $ref['id']))
+                            ->exists();
+                        if ($collision) {
+                            continue;
+                        }
+                    }
+
+                    if (! empty($ref['id'])) {
+                        $existing = $agent->referencePersons()->where('id', $ref['id'])->first();
+                        if ($existing) {
+                            $existing->update([
+                                'person_name'      => $ref['person_name'],
+                                'mobile'           => $ref['mobile'],
+                                'company_agent_id' => $ref['company_agent_id'] ?? $existing->company_agent_id,
+                            ]);
+                            $keepIds[] = $existing->id;
+                        }
+                    } else {
+                        $created = $agent->referencePersons()->create([
+                            'person_name'      => $ref['person_name'],
+                            'mobile'           => $ref['mobile'],
+                            'company_agent_id' => $ref['company_agent_id'] ?? ('REF-' . strtoupper(str()->random(8))),
+                        ]);
+                        $keepIds[] = $created->id;
+                    }
+                }
+
+                // Delete references removed by the admin.
+                $agent->referencePersons()->whereNotIn('id', $keepIds)->delete();
+            }
+        });
+
+        return back()->with('success', 'Agent details updated.');
+    }
+
     private function validated(
         Request $request,
         ?User $agent = null
