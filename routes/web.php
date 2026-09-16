@@ -20,6 +20,8 @@ use App\Http\Controllers\{
     PaytmPaymentController,
 };
 
+use App\Http\Controllers\Admin\TrashController;
+
 /*
 |--------------------------------------------------------------------------
 | Authentication
@@ -200,6 +202,14 @@ Route::middleware('auth')->group(function () {
             'updateStatus'
         ])->name('cards.status');
 
+        /*
+        | Trash (soft delete) a Virtual Card
+        */
+        Route::delete('/cards/{card}', [
+            CardController::class,
+            'destroy'
+        ])->name('cards.destroy');
+
 
         /*
         | Agent Management
@@ -229,6 +239,9 @@ Route::middleware('auth')->group(function () {
             'destroy'
         ]);
 
+        Route::post('agents/bulk', [AgentController::class, 'bulk'])->name('agents.bulk');
+        Route::delete('agents/{agent}', [AgentController::class, 'destroy'])->name('agents.destroy');
+
         /*
         |--------------------------------------------------------------------------
         | Role & User Management
@@ -244,6 +257,21 @@ Route::middleware('auth')->group(function () {
 
         Route::patch('users/{user}/role', [\App\Http\Controllers\Admin\RoleController::class, 'assignRole'])
             ->name('admin.users.role');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Trash (Admin)
+        |--------------------------------------------------------------------------
+        |
+        | Browse / restore / permanently delete soft-deleted records.
+        | Permanent delete is guarded: only trashed records can be purged,
+        | and uploaded files are removed from disk at that point only.
+        |
+        */
+        Route::get('/admin/trash', [TrashController::class, 'index'])->name('admin.trash.index');
+        Route::post('/admin/trash/{type}/{id}/restore', [TrashController::class, 'restore'])->name('admin.trash.restore');
+        Route::delete('/admin/trash/{type}/{id}', [TrashController::class, 'forceDelete'])->name('admin.trash.force-delete');
+        Route::delete('/admin/trash/{type}/purge', [TrashController::class, 'emptyType'])->name('admin.trash.purge');
     });
 
 
@@ -395,6 +423,11 @@ Route::middleware('auth')->group(function () {
             'signedPdf'
         ])->name('sanctions.signed-pdf');
 
+        Route::post('/sanction-letters/{sanction}/pay-fee', [
+            AgentSanctionLetterController::class,
+            'payFee'
+        ])->name('sanctions.pay-fee');
+
         Route::post('/sanction-letters/{sanction}/upload', [
             AgentSanctionLetterController::class,
             'upload'
@@ -423,6 +456,11 @@ Route::middleware('auth')->group(function () {
             SanctionLetterController::class,
             'show'
         ])->name('sanctions.show');
+
+        Route::delete('/sanctions/{sanction}', [
+            SanctionLetterController::class,
+            'destroy'
+        ])->name('sanctions.destroy');
 
         Route::get('/sanctions/{sanction}/download', [
             SanctionLetterController::class,
@@ -539,6 +577,21 @@ Route::match(['get', 'post'], '/payments/paytm/callback', [
     PaymentController::class,
     'paytmCallback'
 ])->name('payments.paytm.callback');
+
+/*
+|--------------------------------------------------------------------------
+| Agent Sanction Letter Processing-Fee Paytm Callback
+|--------------------------------------------------------------------------
+| Intentionally OUTSIDE the auth middleware: Paytm posts the agent's
+| browser here cross-site after the payment, and a Lax session cookie is
+| not sent on cross-site POSTs. The controller silently logs the agent
+| back in using a short-lived signed verifier baked into the callback URL.
+*/
+
+Route::match(['get', 'post'], '/agent/sanction-letters/paytm-callback', [
+    App\Http\Controllers\AgentSanctionLetterController::class,
+    'paytmCallback'
+])->name('agent.sanctions.fee-callback');
 
 /*
 |--------------------------------------------------------------------------

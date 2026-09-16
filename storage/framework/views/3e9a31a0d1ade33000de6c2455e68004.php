@@ -76,6 +76,10 @@
 
                     <th>Status</th>
 
+                    <?php if(auth()->user()->isAdmin()): ?>
+                        <th>Actions</th>
+                    <?php endif; ?>
+
                 </tr>
 
             </thead>
@@ -184,6 +188,16 @@
 
                         </td>
 
+                        <?php if(auth()->user()->isAdmin()): ?>
+                            <td>
+                                <form method="POST" action="<?php echo e(route('cards.destroy', $card)); ?>" style="display:inline;">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('DELETE'); ?>
+                                    <button type="submit" class="btn tiny" style="background:#dc2626;color:#fff;border:1px solid #b91c1c;" onclick="return confirm('Move this virtual card to trash? It can be restored or permanently deleted later from the Trash.');">Trash</button>
+                                </form>
+                            </td>
+                        <?php endif; ?>
+
                     </tr>
 
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -191,7 +205,7 @@
                     <tr>
 
                         <td
-                            colspan="7"
+                            colspan="<?php echo e(auth()->user()->isAdmin() ? 8 : 7); ?>"
                             style="text-align:center;"
                         >
 

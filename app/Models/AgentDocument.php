@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\HandlesTrash;
 
 class AgentDocument extends Model
 {
+    use SoftDeletes, HandlesTrash;
     protected $fillable = [
         'user_id',
         'document_type',
@@ -23,6 +26,12 @@ class AgentDocument extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** Uploaded KYC files stay on disk until the document is purged. */
+    protected function trashFileMap(): array
+    {
+        return ['public' => 'file_path'];
     }
 
     /**

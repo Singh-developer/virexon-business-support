@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Business;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -97,35 +98,97 @@ class AgentController extends Controller
 
         $imported = 0;
         $skipped = 0;
+        $rowErrors = [];
+        $seenPhones = [];
+        $seenPans = [];
 
         DB::beginTransaction();
         try {
-            foreach ($data as $row) {
+            foreach ($data as $line => $row) {
+                $lineNo = $line + 2; // 1-based, header is line 1
+
                 // Skip empty rows
                 if (count($row) !== count($header)) {
                     $skipped++;
                     continue;
                 }
-                
+
                 $row = array_combine($header, $row);
-                
+
                 // Minimum required fields: name, email
                 if (empty($row['name']) || empty($row['email'])) {
                     $skipped++;
                     continue;
                 }
 
+                $email = trim($row['email']);
+                $phone = trim($row['phone'] ?? '');
+                $pan = strtoupper(trim($row['pan_number'] ?? ''));
+
+                $phoneDigits = preg_replace('/\D+/', '', $phone);
+                if (strlen($phoneDigits) === 12 && str_starts_with($phoneDigits, '91')) {
+                    $phoneDigits = substr($phoneDigits, 2);
+                }
+
                 // Check if user exists
-                $user = User::where('email', $row['email'])->first();
+                $user = User::where('email', $email)->first();
                 if (!$user) {
+                    // PAN number validation (Indian PAN: ABCDE1234F)
+                    if (empty($pan)) {
+                        $rowErrors[] = "Row {$lineNo} ({$email}): PAN number is required.";
+                        $skipped++;
+                        continue;
+                    }
+                    if (!preg_match('/^[A-Z]{5}\d{4}[A-Z]$/', $pan)) {
+                        $rowErrors[] = "Row {$lineNo} ({$email}): Invalid PAN '{$row['pan_number']}' — expected format ABCDE1234F.";
+                        $skipped++;
+                        continue;
+                    }
+
+                    // Phone number validation (10-digit Indian mobile)
+                    if (empty($phone)) {
+                        $rowErrors[] = "Row {$lineNo} ({$email}): Phone number is required.";
+                        $skipped++;
+                        continue;
+                    }
+                    if (!preg_match('/^[6-9]\d{9}$/', $phoneDigits)) {
+                        $rowErrors[] = "Row {$lineNo} ({$email}): Invalid phone '{$row['phone']}' — expected 10-digit Indian mobile (e.g. 9876543210).";
+                        $skipped++;
+                        continue;
+                    }
+
+                    if (in_array($phoneDigits, $seenPhones, true)) {
+                        $rowErrors[] = "Row {$lineNo} ({$email}): Phone {$phoneDigits} is duplicated in this file.";
+                        $skipped++;
+                        continue;
+                    }
+                    if (in_array($pan, $seenPans, true)) {
+                        $rowErrors[] = "Row {$lineNo} ({$email}): PAN {$pan} is duplicated in this file.";
+                        $skipped++;
+                        continue;
+                    }
+                    if (User::where('phone', $phoneDigits)->exists()) {
+                        $rowErrors[] = "Row {$lineNo} ({$email}): Phone {$phoneDigits} already belongs to another agent.";
+                        $skipped++;
+                        continue;
+                    }
+                    if (\App\Models\UserDetail::where('pan_number', $pan)->exists()) {
+                        $rowErrors[] = "Row {$lineNo} ({$email}): PAN {$pan} already belongs to another agent.";
+                        $skipped++;
+                        continue;
+                    }
+
                     $user = User::create([
                         'name' => $row['name'],
-                        'email' => $row['email'],
-                        'phone' => $row['phone'] ?? null,
-                        'password' => \Illuminate\Support\Facades\Hash::make('Agent@12345'), // Default password
+                        'email' => $email,
+                        'phone' => $phoneDigits,
+                        'password' => \Illuminate\Support\Facades\Hash::make("{$pan}@" . substr($phoneDigits, -4)), // Default password: {pan}@{last 4 of phone}
                         'role_id' => $role->id,
                         'status' => strtolower($row['status'] ?? 'active') === 'active' ? 'active' : 'inactive',
                     ]);
+
+                    $seenPhones[] = $phoneDigits;
+                    $seenPans[] = $pan;
                     $imported++;
                 } else {
                     $skipped++;
@@ -151,8 +214,13 @@ class AgentController extends Controller
                 }
 
                 // Fallback for mobile if not provided but phone is
-                if (!isset($detailData['mobile']) && !empty($row['phone'])) {
-                    $detailData['mobile'] = $row['phone'];
+                if (!isset($detailData['mobile']) && !empty($phoneDigits)) {
+                    $detailData['mobile'] = $phoneDigits;
+                }
+
+                // Always store the PAN in uppercase so it matches the login password.
+                if (!empty($pan)) {
+                    $detailData['pan_number'] = $pan;
                 }
 
                 if (!empty($detailData)) {
@@ -163,7 +231,13 @@ class AgentController extends Controller
                 }
             }
             DB::commit();
-            return back()->with('success', "Import complete! $imported imported, $skipped skipped.");
+            $response = back()->with('success', "Import complete! $imported imported, $skipped skipped.");
+
+            if (! empty($rowErrors)) {
+                $response->with('import_errors', $rowErrors);
+            }
+
+            return $response;
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Import failed: ' . $e->getMessage());
@@ -329,6 +403,103 @@ class AgentController extends Controller
             'success',
             "Agent login access has been {$statusText}."
         );
+    }
+
+    /**
+     * Bulk actions for selected agents:
+     *  - trash        Move whole selection to trash (cascades to related records)
+     *  - activate     Re-enable login access for the whole selection
+     *  - deactivate   Disable login access for the whole selection
+     */
+    public function bulk(Request $request, AuditService $audit)
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+
+        $data = $request->validate([
+            'action' => 'required|in:trash,activate,deactivate',
+            'ids'    => 'required|string',
+        ]);
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', explode(',', $data['ids'])))));
+
+        if (empty($ids)) {
+            return back()->with('error', 'No agents were selected.');
+        }
+
+        $agents = User::query()
+            ->with(['role'])
+            ->whereIn('id', $ids)
+            ->get()
+            ->filter(fn ($user) => $user->isAgent());
+
+        if ($agents->isEmpty()) {
+            return back()->with('error', 'No agents were found. The selection may already be trashed.');
+        }
+
+        $count = 0;
+
+        foreach ($agents as $agent) {
+            switch ($data['action']) {
+                case 'trash':
+                    if (! $agent->trashed()) {
+                        $agent->delete();
+                        $audit->record($request, 'agent.trashed', $agent, [
+                            'agent_id' => $agent->id,
+                            'bulk'     => true,
+                        ]);
+                        $count++;
+                    }
+                    break;
+
+                case 'activate':
+                    if ($agent->status !== 'active') {
+                        $agent->update(['status' => 'active']);
+                        $count++;
+                    }
+                    break;
+
+                case 'deactivate':
+                    if ($agent->status !== 'inactive') {
+                        $agent->update(['status' => 'inactive']);
+                        $count++;
+                    }
+                    break;
+            }
+        }
+
+        $label = match ($data['action']) {
+            'trash'      => 'moved to trash',
+            'activate'   => 'enabled',
+            'deactivate' => 'disabled',
+        };
+
+        return back()->with('success', "{$count} agent(s) {$label}.");
+    }
+
+    /**
+     * Soft delete the agent. Related records (virtual card, sanction letters,
+     * documents, advances, commissions, payments, details, references) are
+     * trashed together. Uploaded files stay in place until the agent is
+     * permanently removed from the trash.
+     */
+    public function destroy(Request $request, User $agent, AuditService $audit)
+    {
+        abort_unless($agent->isAgent(), 404);
+        abort_unless($request->user()->isAdmin(), 403);
+
+        if ($agent->trashed()) {
+            return back()->with('error', 'This agent is already in the trash.');
+        }
+
+        $agent->delete();
+
+        $audit->record($request, 'agent.trashed', $agent, [
+            'agent_id' => $agent->id,
+        ]);
+
+        return redirect()
+            ->route('agents.index')
+            ->with('success', "Agent {$agent->name} moved to trash. Virtual card, sanction letters, documents and related records were trashed too.");
     }
 
     public function show(User $agent)

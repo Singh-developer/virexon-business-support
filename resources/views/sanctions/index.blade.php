@@ -102,6 +102,13 @@
                         <a href="{{ route('sanctions.show', $letter) }}" class="btn secondary tiny">View</a>
                         <a href="{{ route('sanctions.download', $letter) }}" class="btn secondary tiny">PDF</a>
                         <a href="{{ route('sanctions.review', $letter) }}" class="btn secondary tiny">Review</a>
+                        <form method="POST" action="{{ route('sanctions.destroy', $letter) }}" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn secondary tiny" style="background:#dc2626;color:#fff;border:1px solid #b91c1c;" onclick="return confirm('Move this sanction letter to trash? The PDF and any signed uploads stay on disk until permanently deleted from the Trash.');">
+                                Trash
+                            </button>
+                        </form>
                     </div>
                 </td>
             </tr>

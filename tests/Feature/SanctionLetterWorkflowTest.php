@@ -199,7 +199,7 @@ class SanctionLetterWorkflowTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('sanctions.index'))
             ->assertOk()
-            ->assertSee('#101');
+            ->assertSee($letter->sanction_letter_no);
 
         $this->actingAs($this->admin)
             ->get(route('sanctions.index', ['status' => 'under_review']))

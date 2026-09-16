@@ -119,6 +119,7 @@ class SanctionLetterController extends Controller
             "signature_image" => $signatureImagePath,
             "upload_deadline_at" => now()->addHours(SanctionLetter::UPLOAD_WINDOW_HOURS),
             "pdf_path" => $relativePath, "status" => "sent", "sent_at" => now(),
+            "process_fee" => (float) ($data["process_fee"] ?? 0),
         ]);
         $recipientEmail = $agent->detail?->personal_email ?: $agent->email     ?: $agent->email;
         $sendEmail = $request->boolean("send_email");
@@ -184,6 +185,30 @@ class SanctionLetterController extends Controller
         $resolvedClosing = $replaceTokens($sanction->closing);
 
         return view("sanctions.show", ["letter" => $sanction, "resolvedTitle" => $resolvedTitle, "resolvedBody" => $resolvedBody, "resolvedGreeting" => $resolvedGreeting, "resolvedClosing" => $resolvedClosing]);
+    }
+
+    /**
+     * Soft delete (trash) the sanction letter. The generated PDF and any
+     * signed uploads remain on disk until the record is permanently deleted
+     * from the trash.
+     */
+    public function destroy(Request $request, SanctionLetter $sanction, AuditService $audit)
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+
+        if ($sanction->trashed()) {
+            return back()->with('error', 'This sanction letter is already in the trash.');
+        }
+
+        $sanction->delete();
+
+        $audit->record($request, 'sanction_letter.trashed', $sanction, [
+            'sanction_letter_id' => $sanction->id,
+        ]);
+
+        return redirect()
+            ->route('sanctions.index')
+            ->with('success', "Sanction letter {$sanction->sanction_letter_no} moved to trash.");
     }
 
     public function download(SanctionLetter $sanction)

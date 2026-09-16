@@ -199,71 +199,44 @@ iframe#previewFrame { width: 100%; height: 100%; border: none; border-radius: 8p
                     <label for="total_monthly_settlement">Total Monthly Settlement (₹)</label>
                     <input id="total_monthly_settlement" type="text" value="" readonly style="background: #e0f2fe; color: #0369a1; font-weight: bold; border-color: #bae6fd;">
                 </div>
+</div>
+    </div>
+
+    <!-- ROW 2: Letter Content -->
+    <div class="section-grid">
+        <div class="card">
+            <div class="card-title">3. Letter Content</div>
+            <div class="row-2">
+                <div class="field">
+                    <label for="title">Document Title</label>
+                    <input id="title" name="title" type="text" required maxlength="200" value="{{ old('title', 'Sanction Letter A/F') }}">
+                </div>
+                <div class="field">
+                    <label for="subject">Email Subject</label>
+                    <input id="subject" name="subject" type="text" required maxlength="255" value="{{ old('subject', 'Your Advance Fund Sanction Letter from Virexon') }}">
+                </div>
+            </div>
+            <div class="row-2">
+                <div class="field">
+                    <label for="greeting">Greeting / Salutation</label>
+                    <input id="greeting" name="greeting" type="text" required value="{{ old('greeting', 'Dear Sir/Madam,') }}">
+                </div>
+                <div class="field">
+                    <label for="closing">Closing Line</label>
+                    <input id="closing" name="closing" type="text" required value="{{ old('closing', 'Yours sincerely,') }}">
+                </div>
+            </div>
+            <div class="field">
+                <label for="body">Body of the Letter</label>
+                <textarea id="body" name="body" required rows="4">{{ old('body', 'With reference to your application/request for financial support and subject to the terms and conditions of the applicable [[bold:Agent Agreement / Advance Fund Agreement]], we are pleased to inform you that the Company has approved the following Advance Fund in your favour:') }}</textarea>
+                <div class="hint">Use <code>[[field_name]]</code> syntax (e.g., <code>[[agent_name]]</code>, <code>[[approved_amount]]</code>).</div>
+            </div>
+            <div class="field">
+                <label for="notes">Notes (Optional)</label>
+                <textarea id="notes" name="notes" rows="2" placeholder="Optional notes to appear in the PDF">{{ old('notes', '') }}</textarea>
             </div>
         </div>
-
-        <!-- ROW 2: Letter Content & Signatory -->
-        <div class="section-grid">
-            <!-- Content Card -->
-            <div class="card">
-                <div class="card-title">3. Letter Content</div>
-                <div class="row-2">
-                    <div class="field">
-                        <label for="title">Document Title</label>
-                        <input id="title" name="title" type="text" required maxlength="200" value="{{ old('title', 'Sanction Letter A/F') }}">
-                    </div>
-                    <div class="field">
-                        <label for="subject">Email Subject</label>
-                        <input id="subject" name="subject" type="text" required maxlength="255" value="{{ old('subject', 'Your Advance Fund Sanction Letter from Virexon') }}">
-                    </div>
-                </div>
-                <div class="row-2">
-                    <div class="field">
-                        <label for="greeting">Greeting / Salutation</label>
-                        <input id="greeting" name="greeting" type="text" required value="{{ old('greeting', 'Dear Sir/Madam,') }}">
-                    </div>
-                    <div class="field">
-                        <label for="closing">Closing Line</label>
-                        <input id="closing" name="closing" type="text" required value="{{ old('closing', 'Yours sincerely,') }}">
-                    </div>
-                </div>
-                <div class="field">
-                    <label for="body">Body of the Letter</label>
-                    <textarea id="body" name="body" required rows="4">{{ old('body', 'With reference to your application/request for financial support and subject to the terms and conditions of the applicable [[bold:Agent Agreement / Advance Fund Agreement]], we are pleased to inform you that the Company has approved the following Advance Fund in your favour:') }}</textarea>
-                    <div class="hint">Use <code>[[field_name]]</code> syntax (e.g., <code>[[agent_name]]</code>, <code>[[approved_amount]]</code>).</div>
-                </div>
-                <div class="field">
-                    <label for="notes">Notes (Optional)</label>
-                    <textarea id="notes" name="notes" rows="2" placeholder="Optional notes to appear in the PDF">{{ old('notes', '') }}</textarea>
-                </div>
-            </div>
-
-            <!-- Signatory Card -->
-            <div class="card">
-                <div class="card-title">4. Signature / Stamp</div>
-                <div class="field">
-                    <label>Upload Signature Image</label>
-                    <div style="display:flex; gap:16px;">
-                        <label class="sig-upload-box" id="sigUploadBox" style="flex:1;">
-                            <input type="file" name="signature_image" id="sigImage" accept="image/png,image/jpeg,image/svg+xml">
-                            <div class="sig-upload-icon">✍️</div>
-                            <div style="width:54px;height:54px;margin:4px auto 10px;border:2px solid rgba(225,29,72,.4);border-radius:12px;background:rgba(254,242,242,.6);display:flex;align-items:center;justify-content:center;transform:rotate(-6deg);box-shadow:0 1px 3px rgba(0,0,0,.15);"><span style="font-size:9px;font-weight:700;letter-spacing:.5px;line-height:1.2;color:rgba(185,28,28,.8);text-align:center;">SAMPLE<br>STAMP</span></div>
-                            <div style="font-size:12px; color:var(--text-muted);">Click to upload PNG/JPG</div>
-                        </label>
-                        <div style="flex:1;">
-                            @if(!empty($existingSignature))
-                            <div id="sigPreview">
-                                <img src="{{ asset('storage/' . $existingSignature) }}" alt="Signature" style="max-height:80px; border:1px solid #e2e8f0; border-radius:8px;">
-                            </div>
-                            <input type="hidden" name="existing_signature_image" id="existingSigInput" value="{{ $existingSignature }}">
-                            @else
-                            <div id="sigPreview" style="display:none;"></div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
 
         <!-- Action Bar -->
         <div class="action-bar">
@@ -297,9 +270,6 @@ var indicator = document.getElementById('previewIndicator');
 var statusEl = document.getElementById('previewStatus');
 var userSelect = document.getElementById('user_id');
 var downloadBtn = document.getElementById('downloadBtn');
-var sigImage = document.getElementById('sigImage');
-var sigPreview = document.getElementById('sigPreview');
-var sigUploadBox = document.getElementById('sigUploadBox');
 var agentNameEl = document.getElementById('agent_name');
 var agentIdDisplayEl = document.getElementById('agent_id_display');
 var letterAddressEl = document.getElementById('letter_address');
@@ -314,27 +284,6 @@ form.addEventListener('keydown', function(e){
     if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'radio') {
         e.preventDefault();
     }
-});
-
-// Signature image preview
-sigImage.addEventListener('change', function(){
-    var file = this.files[0];
-    if(!file) return;
-    var existingSigInput = document.getElementById('existingSigInput');
-    if(existingSigInput) existingSigInput.value = '';
-    var reader = new FileReader();
-    reader.onload = function(e){
-        sigPreview.style.display = 'block';
-        sigPreview.innerHTML = '<img src="'+e.target.result+'" alt="Signature preview" style="max-height:80px; border:1px solid #e2e8f0; border-radius:8px;">';
-    };
-    reader.readAsDataURL(file);
-});
-
-sigUploadBox.addEventListener('dragover', function(e){ e.preventDefault(); this.style.borderColor = '#1a56db'; });
-sigUploadBox.addEventListener('dragleave', function(){ this.style.borderColor = '#cbd5e1'; });
-sigUploadBox.addEventListener('drop', function(e){
-    e.preventDefault(); this.style.borderColor = '#cbd5e1';
-    if(e.dataTransfer.files.length) { sigImage.files = e.dataTransfer.files; sigImage.dispatchEvent(new Event('change')); }
 });
 
 function updateAgentInfo(){

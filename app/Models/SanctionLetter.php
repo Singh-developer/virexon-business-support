@@ -7,16 +7,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Concerns\HandlesTrash;
 
 class SanctionLetter extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, HandlesTrash;
 
     public const REFERENCE_PREFIX = 'RFE';
     public const SANCTION_LETTER_PREFIX = 'V-EOM/SL';
 
     /** Hours an agent has to upload the signed PDF before the slot expires. */
     public const UPLOAD_WINDOW_HOURS = 48;
+
+    public const PROCESS_FEE_UNPAID = 'unpaid';
+    public const PROCESS_FEE_PENDING = 'pending';
+    public const PROCESS_FEE_PAID = 'paid';
 
     protected $table = 'sanction_letters';
 
@@ -38,6 +45,13 @@ class SanctionLetter extends Model
         'upload_deadline_at',
         'pdf_path',
         'status',
+        'process_fee',
+        'process_fee_status',
+        'process_fee_reference',
+        'process_fee_payment_id',
+        'process_fee_paid_at',
+        'process_fee_gateway',
+        'process_fee_response',
         'sent_at',
         'downloaded_at',
         'signed_pdf_path',
@@ -61,6 +75,10 @@ class SanctionLetter extends Model
         'reviewed_at' => 'datetime',
         'review_status' => 'string',
         'dynamic_fields' => 'array',
+        'process_fee' => 'decimal:2',
+        'process_fee_paid_at' => 'datetime',
+        'process_fee_gateway' => 'string',
+        'process_fee_response' => 'array',
     ];
 
     public function user(): BelongsTo
@@ -97,6 +115,38 @@ class SanctionLetter extends Model
     public function getFullNameAttribute(): string
     {
         return $this->user->name ?? '';
+    }
+
+    /** Signed PDF uploads are trashed / purged together with the letter. */
+    protected function trashRelations(): array
+    {
+        return ['uploads'];
+    }
+
+    /**
+     * Uploaded files are kept in the trash and removed only on permanent delete.
+     * A shared signature image is retained while any other letter still uses it.
+     */
+    protected function deleteTrashFiles(): void
+    {
+        if ($this->pdf_path) {
+            Storage::disk('public')->delete($this->pdf_path);
+        }
+
+        if ($this->signed_pdf_path) {
+            Storage::disk('local')->delete($this->signed_pdf_path);
+        }
+
+        if ($this->signature_image) {
+            $stillUsed = static::withTrashed()
+                ->where('id', '!=', $this->id)
+                ->where('signature_image', $this->signature_image)
+                ->exists();
+
+            if (! $stillUsed) {
+                Storage::disk('public')->delete($this->signature_image);
+            }
+        }
     }
 
     /**
@@ -212,5 +262,54 @@ class SanctionLetter extends Model
     public function getSanctionLetterNoAttribute(): string
     {
         return self::formatSanctionLetterNo($this->sanction_number ?? $this->id, $this->created_at?->year);
+    }
+
+    /**
+     * Processing fee in rupees. Prefers the dedicated column and falls back
+     * to the legacy `process_fee` value stored inside dynamic_fields.
+     */
+    public function processFeeAmount(): float
+    {
+        $fee = (float) $this->process_fee;
+
+        if ($fee > 0) {
+            return $fee;
+        }
+
+        $fields = is_array($this->dynamic_fields) ? $this->dynamic_fields : [];
+
+        return (float) ($fields['process_fee'] ?? 0);
+    }
+
+    /** Whether a processing fee applies to this letter. */
+    public function hasProcessFee(): bool
+    {
+        return $this->processFeeAmount() > 0;
+    }
+
+    /**
+     * Whether the agent has satisfied the processing fee requirement.
+     * Letters without a fee are considered paid so the upload stays open.
+     */
+    public function processFeePaid(): bool
+    {
+        if (! $this->hasProcessFee()) {
+            return true;
+        }
+
+        return $this->process_fee_status === self::PROCESS_FEE_PAID;
+    }
+
+    /** Whether a fee is still owed and no payment is currently in flight. */
+    public function processFeeDue(): bool
+    {
+        return ! $this->processFeePaid()
+            && $this->process_fee_status !== self::PROCESS_FEE_PENDING;
+    }
+
+    /** Whether a fee payment was initiated and is awaiting confirmation. */
+    public function processFeePending(): bool
+    {
+        return $this->process_fee_status === self::PROCESS_FEE_PENDING;
     }
 }

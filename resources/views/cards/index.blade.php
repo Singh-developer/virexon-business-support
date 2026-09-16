@@ -78,6 +78,10 @@
 
                     <th>Status</th>
 
+                    @if(auth()->user()->isAdmin())
+                        <th>Actions</th>
+                    @endif
+
                 </tr>
 
             </thead>
@@ -175,6 +179,16 @@
 
                         </td>
 
+                        @if(auth()->user()->isAdmin())
+                            <td>
+                                <form method="POST" action="{{ route('cards.destroy', $card) }}" style="display:inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn tiny" style="background:#dc2626;color:#fff;border:1px solid #b91c1c;" onclick="return confirm('Move this virtual card to trash? It can be restored or permanently deleted later from the Trash.');">Trash</button>
+                                </form>
+                            </td>
+                        @endif
+
                     </tr>
 
                 @empty
@@ -182,7 +196,7 @@
                     <tr>
 
                         <td
-                            colspan="7"
+                            colspan="{{ auth()->user()->isAdmin() ? 8 : 7 }}"
                             style="text-align:center;"
                         >
 

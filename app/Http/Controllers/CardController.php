@@ -369,4 +369,29 @@ class CardController extends Controller
             'cvv' => $cvv,
         ]);
     }
+
+    /**
+     * Soft delete (trash) a virtual card.
+     * Card PAN / CVV are encrypted at rest and removed from disk on
+     * permanent deletion from the trash.
+     */
+    public function destroy(Request $request, VirtualCard $card, AuditService $audit)
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+
+        if ($card->trashed()) {
+            return back()->with('error', 'This virtual card is already in the trash.');
+        }
+
+        $card->delete();
+
+        $audit->record($request, 'card.trashed', $card, [
+            'card_id' => $card->id,
+            'reference' => $card->reference,
+        ]);
+
+        return redirect()
+            ->route('cards.index')
+            ->with('success', "Virtual card {$card->reference} moved to trash.");
+    }
 }

@@ -7,6 +7,11 @@
     $deadline = $letter->uploadDeadline();
     $deadlinePassed = $letter->uploadDeadlinePassed();
     $deadlineIso = $deadline->toIso8601String();
+    $feePaid = $letter->processFeePaid();
+    $feePending = $letter->processFeePending();
+    $feeDue = $letter->processFeeDue();
+    $feeAmount = $letter->processFeeAmount();
+    $hasFee = $letter->hasProcessFee();
     $statusMeta = [
         'approved'          => ['label' => 'Approved',           'badge' => 'bg-green-50 text-green-700 border-green-200', 'icon' => 'fa-solid fa-check'],
         'under_review'      => ['label' => 'Under Review',       'badge' => 'bg-blue-50 text-blue-700 border-blue-200',     'icon' => 'fa-solid fa-clock'],
@@ -85,7 +90,11 @@
         <div>
             <div class="font-bold text-slate-800 text-sm">Pending Your Action</div>
             <div class="text-slate-500 text-xs mt-1">
+                @if($hasFee && ! $feePaid)
+                Complete the processing fee payment, then download and sign the PDF below and upload the signed copy to complete the workflow.
+                @else
                 Download and sign the PDF below, then upload the signed copy to complete the workflow.
+                @endif
             </div>
         </div>
     </div>
@@ -97,6 +106,10 @@
         <div class="flex flex-wrap items-center gap-1 text-xs">
             <span class="px-3 py-1.5 rounded-full font-semibold {{ $letter->status === 'sent' && $letter->sent_at ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-slate-50 text-slate-400 border border-slate-200' }}">
                 📨 Letter Sent
+            </span>
+            <span class="text-slate-300">→</span>
+            <span class="px-3 py-1.5 rounded-full font-semibold {{ $feePaid ? 'bg-green-50 text-green-700 border border-green-200' : ($feePending ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-400 border border-slate-200') }}">
+                💰 Processing Fee {{ $hasFee && ! $feePaid ? ($feePending ? '· Processing' : '· Pending') : '' }}
             </span>
             <span class="text-slate-300">→</span>
             <span class="px-3 py-1.5 rounded-full font-semibold {{ $letter->downloaded_at ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-slate-50 text-slate-400 border border-slate-200' }}">
@@ -142,7 +155,34 @@
             <div class="font-bold text-slate-800 text-sm">Upload Signed Sanction Letter PDF</div>
         </div>
 
-        @if($letter->canUpload())
+        @if($hasFee && ! $feePaid)
+        <div id="pay-fee" class="mb-4 rounded-xl border px-4 py-4 bg-amber-50 border-amber-200">
+            <div class="flex items-start gap-3">
+                <i class="fa-solid fa-money-check-dollar text-amber-500 mt-0.5"></i>
+                <div class="flex-1">
+                    <div class="text-xs font-bold text-amber-800">Processing Fee Required</div>
+                    <div class="text-xs text-amber-700 mt-1">
+                        A processing fee of <strong class="text-amber-800">₹ {{ number_format($feeAmount, 2) }}</strong> is required before you can upload the signed PDF.
+                    </div>
+                    <div class="text-[11px] text-amber-700 italic mt-1">
+                        Pay securely via Paytm. The upload unlocks immediately once the payment is confirmed.
+                    </div>
+                    @if($feePending)
+                    <div class="mt-2 text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 inline-block">
+                        <i class="fa-solid fa-clock-rotate-left mr-1"></i> Your previous payment attempt has not been confirmed by Paytm yet. You may pay again below.
+                    </div>
+                    @endif
+                    <form method="POST" action="{{ route('agent.sanctions.pay-fee', $letter) }}" class="mt-3">
+                        @csrf
+                        <button type="submit" id="pay-fee-btn"
+                            class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2">
+                            <i class="fa-solid fa-credit-card"></i> Pay Processing Fee ₹ {{ number_format($feeAmount, 2) }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @elseif($letter->canUpload())
         <div class="mb-4 rounded-xl border px-4 py-3 bg-amber-50 border-amber-200">
             <div class="flex items-center gap-3">
                 <i class="fa-regular fa-hourglass-half text-amber-500"></i>

@@ -85,6 +85,18 @@
                     @if($letter->downloaded_at)
                     <div class="text-slate-400 text-xs mt-0.5">Downloaded: {{ $letter->downloaded_at->format('d M Y, h:i A') }}</div>
                     @endif
+                    @if($letter->hasProcessFee())
+                    <div class="text-xs mt-0.5">
+                        💰 Processing Fee:
+                        @if($letter->processFeePaid())
+                        <span class="text-green-600 font-semibold">Paid ₹ {{ number_format($letter->processFeeAmount(), 2) }}</span>
+                        @elseif($letter->processFeePending())
+                        <span class="text-amber-600 font-semibold">Payment Processing · ₹ {{ number_format($letter->processFeeAmount(), 2) }}</span>
+                        @else
+                        <span class="text-red-600 font-semibold">₹ {{ number_format($letter->processFeeAmount(), 2) }} — Pay to upload signed PDF</span>
+                        @endif
+                    </div>
+                    @endif
                     @if(($letter->signed_pdf_upload_count ?? 0) > 0)
                     <div class="text-slate-400 text-xs mt-0.5">Signed PDF uploaded: {{ $letter->signed_pdf_uploaded_at->format('d M Y, h:i A') }}</div>
                     @endif
@@ -113,11 +125,23 @@
             <a href="{{ route('agent.sanctions.download', $letter) }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
                 <i class="fa-solid fa-download"></i> Download PDF
             </a>
-            @if($letter->canUpload())
-            <a href="{{ route('agent.sanctions.show', $letter) }}#upload"
-               class="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg {{ $ws['key'] === 'reupload_required' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white' }} flex items-center gap-1.5 transition">
-                <i class="fa-solid fa-arrow-up-from-bracket text-[10px]"></i>
-                {{ $ws['key'] === 'reupload_required' ? 'Re-upload Signed PDF' : 'Upload Signed PDF' }}
+            @if($letter->processFeePaid())
+                @if($letter->canUpload())
+                <a href="{{ route('agent.sanctions.show', $letter) }}#upload"
+                   class="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg {{ $ws['key'] === 'reupload_required' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white' }} flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-arrow-up-from-bracket text-[10px]"></i>
+                    {{ $ws['key'] === 'reupload_required' ? 'Re-upload Signed PDF' : 'Upload Signed PDF' }}
+                </a>
+                @endif
+            @else
+            <a href="{{ route('agent.sanctions.show', $letter) }}#pay-fee"
+               class="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-credit-card text-[10px]"></i>
+                @if($letter->processFeePending())
+                <i class="fa-solid fa-rotate-right text-[9px]"></i> Pay Again ₹ {{ number_format($letter->processFeeAmount(), 2) }}
+                @else
+                Pay Processing Fee ₹ {{ number_format($letter->processFeeAmount(), 2) }}
+                @endif
             </a>
             @endif
         </div>

@@ -18,6 +18,10 @@ class PaytmGatewayTest extends TestCase
         parent::setUp();
         config([
             'services.paytm.callback_url' => 'http://127.0.0.1:8000/payments/paytm/callback',
+            // The developer machine may export PAYTM_ENVIRONMENT globally; pin the
+            // sandbox defaults so these tests stay hermetic regardless of the OS env.
+            'services.paytm.environment' => 'staging',
+            'services.paytm.website' => 'WEBSTAGING',
         ]);
     }
 

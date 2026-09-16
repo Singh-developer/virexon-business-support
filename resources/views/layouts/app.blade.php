@@ -75,6 +75,7 @@
                 @if(auth()->user()->isAdmin())<a class="nav-item {{ request()->routeIs('admin.documents.*')?'active':'' }}" href="{{ route('admin.documents.overview') }}">📎 <span>Documents</span></a>@endif
                 @if(auth()->user()->isAdmin())<a class="nav-item {{ request()->routeIs('sanctions.*')?'active':'' }}" href="{{ route('sanctions.index') }}">✉ <span>Sanction Letters</span></a>@endif
                 <a class="nav-item {{ request()->routeIs('admin.tickets.*')?'active':'' }}" href="{{ route('admin.tickets.index') }}">⚑ <span>Support Tickets</span></a>
+                @if(auth()->user()->isAdmin())<a class="nav-item {{ request()->routeIs('admin.trash.*')?'active':'' }}" href="{{ route('admin.trash.index') }}">🗑 <span>Trash</span></a>@endif
                 <div class="nav-label" style="margin-top:20px;">SETTINGS</div>
                 <a class="nav-item {{ request()->routeIs('settings.profile') ? 'active' : '' }}" href="{{ route('settings.profile') }}">⚙ <span>My Settings</span></a>
                 @if(auth()->user()->isAdmin())

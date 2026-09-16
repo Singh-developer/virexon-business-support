@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\AgentDocument;
+use App\Models\Concerns\HandlesTrash;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes, HandlesTrash;
 
     protected $fillable = ['name', 'email', 'password', 'role_id', 'business_id', 'status', 'phone'];
     
@@ -93,6 +95,27 @@ class User extends Authenticatable
     }
 
     // ---------------------------------------------
+
+    /**
+     * Related records that are trashed / restored / purged together with an agent.
+     * Uploaded files on those records are untouched until a permanent delete.
+     *
+     * @return array<int, string>
+     */
+    protected function trashRelations(): array
+    {
+        return [
+            'virtualCard',
+            'sanctionLetters',
+            'documents',
+            'advances',
+            'commissions',
+            'payments',
+            'tickets',
+            'detail',
+            'referencePersons',
+        ];
+    }
 
     public function hasPermission(string $permission): bool
     {

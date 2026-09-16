@@ -187,10 +187,8 @@ table { border-collapse: collapse; }
     $greetingLine = $greeting ?? 'Dear Sir/Madam,';
     $introBody = $body ?? 'With reference to your application/request for financial support and subject to the terms and conditions of the applicable Agent Agreement/ Advance Fund Agreement, we are pleased to inform you that the Company has approved the following Advance Fund in your favour:';
 
-    // Signature stamp: use the uploaded image if provided, otherwise the default PDF stamp.
-    $stampImageUrl = !empty($signature_image_url)
-        ? $signature_image_url
-        : public_path('images/sign-pdf.png');
+    // Signature stamp: always the default PDF stamp image.
+    $stampImageUrl = public_path('images/sign-pdf.png');
 @endphp
 
 <!-- ================= PAGE 1 ================= -->
@@ -372,7 +370,7 @@ table { border-collapse: collapse; }
     <div class="term">&bull;&nbsp;&nbsp;By signing this Sanction Letter, the Agent expressly acknowledges that the Agent has read, understood and accepted the conditional nature of the Sanction, including the requirement of verification, Portal Charges, submission of prescribed documents and mandatory execution of the A/F Agreement prior to any finalization or release of A/F.</div>
 </div>
 
-<div class="terms-note">All Terms &amp; Conditions are read &amp; understand</div>
+<div class="terms-note">I confirm that I have read, understood, and agree to all the Terms &amp; Conditions.</div>
 
 <div class="p2sig">
     <div class="blank">&nbsp;</div>

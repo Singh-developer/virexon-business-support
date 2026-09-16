@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\HandlesTrash;
 
 class UserDetail extends Model
 {
+    use SoftDeletes, HandlesTrash;
+
     protected $guarded = []; // Allows mass assignment for all fields
 
     /**
@@ -43,5 +47,11 @@ class UserDetail extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** KYC files uploaded during registration stay until permanent delete. */
+    protected function trashFileMap(): array
+    {
+        return ['public' => ['pan_file_path', 'aadhar_file_path']];
     }
 }
