@@ -19,6 +19,7 @@ class AgentController extends Controller
                 'business',
                 'virtualCard',
                 'detail',
+                'documents',
             ])
             ->whereHas(
                 'role',
@@ -389,13 +390,20 @@ class AgentController extends Controller
             );
     }
 
-    public function toggleStatus(User $agent)
+    public function toggleStatus(Request $request, User $agent)
     {
         abort_unless($agent->isAgent(), 404);
 
-        $agent->update([
-            'status' => $agent->status === 'active' ? 'inactive' : 'active'
-        ]);
+        $desired = $request->input('status');
+
+        if ($desired !== null) {
+            $request->validate(['status' => ['required', 'in:active,inactive']]);
+            $agent->update(['status' => $desired]);
+        } else {
+            $agent->update([
+                'status' => $agent->status === 'active' ? 'inactive' : 'active',
+            ]);
+        }
 
         $statusText = $agent->status === 'active' ? 'enabled' : 'disabled';
 

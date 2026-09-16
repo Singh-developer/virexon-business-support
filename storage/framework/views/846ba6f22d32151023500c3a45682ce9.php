@@ -184,6 +184,9 @@
                     </td>
                     <td><?php echo e($agent->created_at->format('Y-m-d')); ?></td>
                     <td class="flex items-center gap-2">
+                        <button type="button" class="btn tiny secondary open-agent-modal" data-agent-id="<?php echo e($agent->id); ?>" title="Preview uploaded files, login access & commission">
+                            <i class="fa-solid fa-folder-open"></i> View Files
+                        </button>
                         <a class="btn tiny" href="<?php echo e(route('agents.edit', $agent)); ?>">Manage</a>
                         <form method="POST" action="<?php echo e(route('agents.toggle-status', $agent)); ?>" style="display:inline;">
                             <?php echo csrf_field(); ?>
@@ -229,6 +232,122 @@
         </form>
     </div>
 </div>
+
+<!-- Agent "View Files" Popup -->
+<div id="agentModal" style="display:none; position:fixed; z-index:101; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); overflow-y:auto;">
+    <div style="background-color:#fff; margin: 5% auto; padding: 24px; border-radius:12px; width: 640px; max-width: 94%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+            <div>
+                <h3 style="margin:0; font-weight:700; font-size:20px; color:#1e293b;" id="agentModalTitle">Manage Agent</h3>
+                <span class="badge neutral" id="agentModalStatus" style="margin-top:6px;">—</span>
+            </div>
+            <button type="button" class="btn tiny secondary" onclick="document.getElementById('agentModal').style.display='none'">✕ Close</button>
+        </div>
+
+        <!-- Login Access -->
+        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin-bottom:16px;">
+            <h4 style="margin:0 0 10px; font-size:14px; font-weight:700; color:#1e293b;">Login Access</h4>
+            <form method="POST" id="loginForm" style="display:flex; align-items:center; gap:12px;">
+                <?php echo csrf_field(); ?>
+                <?php echo method_field('PATCH'); ?>
+                <label style="font-size:13px; font-weight:600; color:#475569;">Login Status</label>
+                <select name="status" id="loginStatus" style="padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
+                    <option value="active">Enabled</option>
+                    <option value="inactive">Disabled</option>
+                </select>
+                <button type="submit" class="btn tiny primary">Save Login Access</button>
+            </form>
+            <p style="margin:10px 0 0; font-size:12px; color:#64748b;">When disabled, the agent is logged out and can no longer sign in.</p>
+        </div>
+
+        <!-- Application Status -->
+        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin-bottom:16px;">
+            <h4 style="margin:0 0 10px; font-size:14px; font-weight:700; color:#1e293b;">Application Status</h4>
+            <form method="POST" id="appForm" style="display:flex; align-items:center; gap:12px;">
+                <?php echo csrf_field(); ?>
+                <?php echo method_field('PATCH'); ?>
+                <label style="font-size:13px; font-weight:600; color:#475569;">Status</label>
+                <select name="application_status" id="appStatus" style="padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
+                    <option value="pending">Pending</option>
+                    <option value="form_received">Form Received</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <button type="submit" class="btn tiny primary">Save Application Status</button>
+            </form>
+            <p style="margin:10px 0 0; font-size:12px; color:#64748b;">Marking as "Form Received" enables the agent to upload their documents.</p>
+        </div>
+
+        <!-- Limit & Commission -->
+        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin-bottom:16px;">
+            <h4 style="margin:0 0 12px; font-size:14px; font-weight:700; color:#1e293b;">Limit & Commission</h4>
+            <form method="POST" id="commForm">
+                <?php echo csrf_field(); ?>
+                <?php echo method_field('PATCH'); ?>
+                <input type="hidden" name="action" value="save">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="font-size:12px; font-weight:600; color:#475569;">Max Limit (₹)</label>
+                        <input type="number" step="0.01" min="0" name="max_limit" id="fieldMaxLimit" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; margin-top:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; font-weight:600; color:#475569;">Commission Type</label>
+                        <select name="commission_type" id="fieldCommType" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; margin-top:4px;">
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed">Fixed (₹)</option>
+                        </select>
+                    </div>
+                    <div id="commRateWrap" style="display:block;">
+                        <label style="font-size:12px; font-weight:600; color:#475569;">Commission Rate (%)</label>
+                        <input type="number" step="0.0001" min="0" max="100" name="commission_rate" id="fieldCommRate" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; margin-top:4px;">
+                    </div>
+                    <div id="commFixedWrap" style="display:none;">
+                        <label style="font-size:12px; font-weight:600; color:#475569;">Commission Fixed (₹)</label>
+                        <input type="number" step="0.01" min="0" name="commission_fixed" id="fieldCommFixed" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; margin-top:4px;">
+                    </div>
+                </div>
+                <div style="margin-top:12px; text-align:right;">
+                    <button type="submit" class="btn tiny primary">Save Limit & Commission</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Uploaded Files (Preview Only) -->
+        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px;">
+            <h4 style="margin:0 0 12px; font-size:14px; font-weight:700; color:#1e293b;">Uploaded Documents</h4>
+            <p style="margin:0 0 12px; font-size:12px; color:#64748b;">
+                Files below are what the agent uploaded from their dashboard. To approve/reject them,
+                <a id="reviewAllLink" href="#" target="_blank" rel="noopener" style="color:#2563eb; font-weight:600;">open the full review page</a>.
+            </p>
+            <div id="agentFilesList"></div>
+        </div>
+    </div>
+</div>
+
+<?php
+    $agentManifest = $agents->map(function ($a) {
+        return [
+            'id'        => $a->id,
+            'name'      => $a->name,
+            'status'    => $a->status,
+            'application_status' => $a->detail?->application_status ?? 'pending',
+            'max_limit' => $a->detail?->max_limit !== null ? (float) $a->detail->max_limit : null,
+            'commission_type'  => $a->detail?->commission_type ?? 'percentage',
+            'commission_rate'  => $a->detail?->commission_rate !== null ? (float) $a->detail->commission_rate : null,
+            'commission_fixed' => $a->detail?->commission_fixed !== null ? (float) $a->detail->commission_fixed : null,
+            'documents' => $a->documents->map(function ($d) {
+                return [
+                    'type'          => $d->document_type,
+                    'type_label'    => \App\Models\AgentDocument::typeLabel($d->document_type),
+                    'status'        => $d->status,
+                    'original_name' => $d->original_name,
+                    'url'           => \Illuminate\Support\Facades\Storage::url($d->file_path),
+                ];
+            })->values()->all(),
+        ];
+    })->keyBy('id')->all();
+?>
+<script>window.AGENT_DATA = <?php echo json_encode($agentManifest, 15, 512) ?>;</script>
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -369,6 +488,131 @@ $(document).ready(function() {
     $('#bulkTrash').on('click', function () { bulkSubmit('trash'); });
     $('#bulkEnable').on('click', function () { bulkSubmit('activate'); });
     $('#bulkDisable').on('click', function () { bulkSubmit('deactivate'); });
+
+    // ------------------------------------------------------------------//
+    // Agent popup: files + login access + limit/commission                //
+    // ------------------------------------------------------------------//
+    var agentsBase = "<?php echo e(url('agents')); ?>";
+
+    function toggleCommFields() {
+        var isPercentage = $('#fieldCommType').val() === 'percentage';
+        $('#commRateWrap').css('display', isPercentage ? 'block' : 'none');
+        $('#commFixedWrap').css('display', isPercentage ? 'none' : 'block');
+    }
+
+    var pdfjsReady = null;
+
+    function ensurePdfJs() {
+        if (pdfjsReady) return pdfjsReady;
+        pdfjsReady = new Promise(function (resolve, reject) {
+            var lib = document.createElement('script');
+            lib.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+            lib.onload = function () {
+                var worker = document.createElement('script');
+                worker.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+                worker.onload = function () {
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = worker.src;
+                    resolve(window.pdfjsLib);
+                };
+                worker.onerror = reject;
+                document.body.appendChild(worker);
+            };
+            lib.onerror = reject;
+            document.body.appendChild(lib);
+        });
+        return pdfjsReady;
+    }
+
+    // Render the first page of a PDF onto a canvas so admin sees it as an image.
+    function renderPdfPreview(url, box) {
+        ensurePdfJs().then(function (PdfLib) {
+            return PdfLib.getDocument({ url: url }).promise.then(function (pdfDoc) {
+                return pdfDoc.getPage(1).then(function (page) {
+                    var boxW = 132, boxH = 168;
+                    var base = page.getViewport({ scale: 1 });
+                    var scale = Math.min(boxW / base.width, boxH / base.height);
+                    var viewport = page.getViewport({ scale: scale });
+                    var canvas = document.createElement('canvas');
+                    canvas.width = Math.floor(viewport.width);
+                    canvas.height = Math.floor(viewport.height);
+                    canvas.style.maxWidth = '100%';
+                    return page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport })
+                        .promise.then(function () {
+                            box.empty();
+                            box.append(canvas);
+                        });
+                });
+            });
+        }).catch(function () {
+            box.html('<span style="font-size:11px; color:#94a3b8; text-align:center; padding:4px;">Preview unavailable. Use&nbsp;"Open Original".</span>');
+        });
+    }
+
+    function openAgentModal(id) {
+        var data = window.AGENT_DATA[String(id)];
+        if (!data) return;
+
+        $('#agentModalTitle').text(data.name);
+        $('#agentModalStatus').text('Login: ' + (data.status === 'active' ? 'Enabled' : 'Disabled'))
+            .attr('class', 'badge ' + (data.status === 'active' ? 'success' : 'failed'));
+
+        $('#loginStatus').val(data.status);
+        $('#loginForm').attr('action', agentsBase + '/' + id + '/toggle-status');
+
+        $('#appStatus').val(data.application_status || 'pending');
+        $('#appForm').attr('action', agentsBase + '/' + id + '/application-status');
+
+        $('#fieldMaxLimit').val(data.max_limit === null ? '' : data.max_limit);
+        $('#fieldCommType').val(data.commission_type || 'percentage');
+        $('#fieldCommRate').val(data.commission_rate === null ? '' : data.commission_rate);
+        $('#fieldCommFixed').val(data.commission_fixed === null ? '' : data.commission_fixed);
+        toggleCommFields();
+        $('#commForm').attr('action', agentsBase + '/' + id + '/limit-commission');
+        $('#reviewAllLink').attr('href', "<?php echo e(url('admin/agents')); ?>" + '/' + id + '/documents');
+
+        var list = $('#agentFilesList').empty();
+        if (!data.documents.length) {
+            list.html('<p style="margin:0; font-size:13px; color:#94a3b8;">No documents uploaded by this agent yet.</p>');
+        } else {
+            data.documents.forEach(function (doc) {
+                var badgeClass = 'neutral';
+                if (doc.status === 'approved') badgeClass = 'success';
+                if (doc.status === 'rejected') badgeClass = 'failed';
+                var isPdf = /\.pdf$/i.test(doc.url);
+                var preview;
+                if (isPdf) {
+                    preview = '<div class="pdf-thumb" data-pdf="' + doc.url + '" style="width:132px; height:168px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">' +
+                        '<span style="color:#94a3b8;">Loading…</span></div>';
+                } else {
+                    preview = '<a href="' + doc.url + '" target="_blank" rel="noopener" style="flex-shrink:0;"><img src="' + doc.url + '" alt="' + (doc.original_name || doc.type_label) + '" style="max-width:132px; max-height:168px; border-radius:6px; border:1px solid #e2e8f0; display:block;"></a>';
+                }
+                var row = $(
+                    '<div style="display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:8px; background:#f8fafc;">' +
+                        preview +
+                        '<div style="flex:1; min-width:0;">' +
+                            '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+                                '<span style="font-weight:700; font-size:13px; color:#1e293b;">' + doc.type_label + '</span>' +
+                                '<span class="badge ' + badgeClass + '">' + doc.status + '</span>' +
+                                (isPdf ? '<span class="badge neutral">PDF → image preview</span>' : '') +
+                            '</div>' +
+                            '<div style="margin-top:4px; font-size:12px; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + (doc.original_name || '') + '">' + (doc.original_name || '') + '</div>' +
+                            '<div style="margin-top:6px;"><a href="' + doc.url + '" target="_blank" rel="noopener" class="btn tiny secondary">Open Original</a></div>' +
+                        '</div>' +
+                    '</div>'
+                );
+                list.append(row);
+                if (isPdf) renderPdfPreview(doc.url, row.find('.pdf-thumb'));
+            });
+        }
+
+        document.getElementById('agentModal').style.display = 'block';
+    }
+
+    $('#agentsTable').on('click', '.open-agent-modal', function () {
+        openAgentModal($(this).data('agent-id'));
+    });
+
+    $('#fieldCommType').on('change', toggleCommFields);
 
     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         var node = table.row(dataIndex).node();
