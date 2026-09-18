@@ -29,16 +29,36 @@ class DocumentController extends Controller
             return view('documents.locked', compact('appStatus'));
         }
 
-        $documents = $user->documents()->get()->keyBy('document_type');
+        // Group by type to support multiple files per type
+        // (aadhaar=2 front/back, pan/bank=1, rest=multiple).
+        $allDocs = $user->documents()->orderBy('id')->get();
+        $documents = $user->documents()->orderBy('id')->get()->keyBy(function ($d) {
+            // Backward compat for views expecting single row per type:
+            // keep first file per type.
+            return $d->document_type . '|' . $d->id;
+        });
+        // Single-row map (first file per type) for legacy single-file views.
+        $firstByType = $allDocs->groupBy('document_type')->map(fn($g) => $g->first());
+        // Full multi-file map grouped by type.
+        $docsByType = $allDocs->groupBy('document_type');
         $types     = AgentDocument::requiredTypes();
         $docConfig = AgentDocument::types();
 
-        return view('documents.index', compact('documents', 'types', 'docConfig', 'appStatus'));
+        // Legacy $documents variable kept as first-per-type for existing blade helpers.
+        $documents = $firstByType;
+
+        return view('documents.index', compact('documents', 'types', 'docConfig', 'appStatus', 'docsByType', 'allDocs'));
     }
 
     /**
      * Agent uploads or re-uploads a document.
      * Blocked if admin has not yet enabled uploading.
+     *
+     * Rules:
+     * - aadhaar: up to 2 files (front/back)
+     * - pan_card, bank_proof: 1 file
+     * - rest: multiple files (up to max_files)
+     * - allowed: jpg, jpeg, webp, png, pdf
      */
     public function store(Request $request)
     {
@@ -52,42 +72,115 @@ class DocumentController extends Controller
 
         $request->validate([
             'document_type' => ['required', 'in:' . implode(',', AgentDocument::requiredTypes())],
-            'file'          => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'file'          => ['nullable', 'file', 'mimes:jpg,jpeg,webp,png,pdf', 'max:5120'],
+            'files'         => ['nullable', 'array', 'max:5'],
+            'files.*'       => ['file', 'mimes:jpg,jpeg,webp,png,pdf', 'max:5120'],
+            'slot'          => ['nullable', 'string', 'max:30'],
         ]);
 
-        $agentId = $user->detail?->agent_id_number ?? ('agent_' . $user->id);
-        $type    = $request->document_type;
+        $type = $request->document_type;
+        $maxFiles = AgentDocument::maxFiles($type);
+        $isSingle = ! AgentDocument::isMultiple($type);
 
-        // Check if agent already has an approved doc for this type
+        // Collect incoming files (support both single `file` and multiple `files[]`).
+        $incoming = [];
+        if ($request->hasFile('files')) {
+            foreach ((array) $request->file('files') as $f) {
+                if ($f) {
+                    $incoming[] = $f;
+                }
+            }
+        }
+        if ($request->hasFile('file')) {
+            $incoming[] = $request->file('file');
+        }
+
+        if (empty($incoming)) {
+            return back()->withErrors(['file' => 'Please choose a file to upload (jpg, jpeg, webp, png, pdf).'])->withInput();
+        }
+
+        $agentId = $user->detail?->agent_id_number ?? ('agent_' . $user->id);
+
         $existing = AgentDocument::where('user_id', $user->id)
             ->where('document_type', $type)
-            ->first();
+            ->orderBy('id')
+            ->get();
 
-        if ($existing && $existing->status === 'approved') {
+        // Block if any file already approved and type is single-file.
+        // For multi-file types, approved files cannot be replaced — new uploads are added as pending.
+        if ($isSingle && $existing->where('status', 'approved')->count() > 0) {
             return back()->with('error', AgentDocument::typeLabel($type) . ' is already approved and cannot be re-uploaded.');
         }
 
-        // Delete old file if exists
-        if ($existing && $existing->file_path) {
-            Storage::disk('public')->delete($existing->file_path);
-        }
+        if ($isSingle) {
+            // Single-file types (pan_card, bank_proof): replace existing pending file.
+            $file = $incoming[0];
+            $old = $existing->first();
+            if ($old && $old->file_path) {
+                Storage::disk('public')->delete($old->file_path);
+            }
+            if ($old) {
+                $old->delete();
+            }
 
-        // Store file in {agent_id}/{type}.{ext}
-        $ext      = $request->file->getClientOriginalExtension();
-        $filename = $type . '.' . $ext;
-        $path     = $request->file('file')->storeAs($agentId, $filename, 'public');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $filename = $type . '_' . time() . '.' . $ext;
+            $path = $file->storeAs($agentId, $filename, 'public');
 
-        // Create or update the document record
-        $document = AgentDocument::updateOrCreate(
-            ['user_id' => $user->id, 'document_type' => $type],
-            [
+            $document = AgentDocument::create([
+                'user_id'       => $user->id,
+                'document_type' => $type,
+                'slot'          => 'default',
                 'file_path'     => $path,
-                'original_name' => $request->file->getClientOriginalName(),
+                'original_name' => $file->getClientOriginalName(),
                 'status'        => 'pending',
                 'admin_note'    => null,
                 'reviewed_at'   => null,
-            ]
-        );
+            ]);
+        } else {
+            // Multi-file types: aadhaar (max 2 front/back), rest (up to max_files).
+            $remaining = $maxFiles - $existing->count();
+            if ($remaining <= 0) {
+                return back()->with('error', AgentDocument::typeLabel($type) . " already has maximum {$maxFiles} file(s). Delete one to upload again.");
+            }
+            if (count($incoming) > $remaining) {
+                return back()->withErrors(['files' => AgentDocument::typeLabel($type) . " accepts max {$maxFiles} file(s). You can add {$remaining} more."])->withInput();
+            }
+
+            $document = null;
+            foreach ($incoming as $i => $file) {
+                // Aadhaar slots: front/back auto-assigned; others: file_1, file_2...
+                if ($type === 'aadhaar') {
+                    $usedSlots = $existing->pluck('slot')->all();
+                    $slot = ! in_array('front', $usedSlots) ? 'front' : (! in_array('back', $usedSlots) ? 'back' : 'extra_' . time() . '_' . $i);
+                    // If explicit slot passed and free, honor it.
+                    if ($request->filled('slot') && ! in_array($request->slot, $usedSlots) && in_array($request->slot, ['front', 'back'])) {
+                        $slot = $request->slot;
+                    }
+                } else {
+                    $slot = 'file_' . time() . '_' . $i . '_' . \Illuminate\Support\Str::random(4);
+                    if ($request->filled('slot')) {
+                        $slot = preg_replace('/[^a-z0-9_\-]/i', '', $request->slot) . '_' . time() . '_' . $i;
+                    }
+                }
+
+                $ext = strtolower($file->getClientOriginalExtension());
+                $filename = $type . '_' . $slot . '_' . time() . '_' . $i . '.' . $ext;
+                $path = $file->storeAs($agentId, $filename, 'public');
+
+                $document = AgentDocument::create([
+                    'user_id'       => $user->id,
+                    'document_type' => $type,
+                    'slot'          => $slot,
+                    'file_path'     => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'status'        => 'pending',
+                    'admin_note'    => null,
+                    'reviewed_at'   => null,
+                ]);
+                $existing->push($document);
+            }
+        }
 
         // Notify all admins
         $admins = User::whereHas('role', fn($q) => $q->whereIn('slug', ['admin', 'super-admin']))->get();
@@ -98,6 +191,26 @@ class DocumentController extends Controller
         return back()->with('success', AgentDocument::typeLabel($type) . ' uploaded successfully!');
     }
 
+    /**
+     * Agent deletes one of their uploaded files (only if not approved).
+     */
+    public function destroy($docId)
+    {
+        $user = auth()->user();
+        $doc = AgentDocument::where('user_id', $user->id)->findOrFail($docId);
+
+        if ($doc->status === 'approved') {
+            return back()->with('error', AgentDocument::typeLabel($doc->document_type) . ' is already approved and cannot be deleted.');
+        }
+
+        if ($doc->file_path) {
+            Storage::disk('public')->delete($doc->file_path);
+        }
+        $doc->delete();
+
+        return back()->with('success', AgentDocument::typeLabel($doc->document_type) . ' file removed.');
+    }
+
     // -------------------------------------------------------
     // ADMIN SIDE
     // -------------------------------------------------------
@@ -105,6 +218,7 @@ class DocumentController extends Controller
     /**
      * Admin overview: all agents with a live document summary.
      * Single entry point to find documents awaiting review.
+     * Multi-file aware: counts distinct types, compliance needs min files per type.
      */
     public function adminOverview()
     {
@@ -116,18 +230,33 @@ class DocumentController extends Controller
             ->where('status', 'active')
             ->orderBy('name')
             ->get()
-            ->map(function (User $agent) use ($total) {
+            ->map(function (User $agent) use ($total, $types) {
                 $docs = $agent->documents;
+                $byType = $docs->groupBy('document_type');
+
+                // Distinct types uploaded.
+                $uploadedTypes = $byType->keys()->count();
+                // Compliance: each type meets its minimum (aadhaar needs 2 approved, others at least 1 approved;
+                // single-file types need approved, multi-file need >=1 approved, aadhaar needs 2).
+                $compliantTypes = 0;
+                foreach ($types as $t => $cfg) {
+                    $approved = $docs->where('document_type', $t)->where('status', 'approved')->count();
+                    $need = ($t === 'aadhaar') ? 2 : 1;
+                    if ($approved >= $need) {
+                        $compliantTypes++;
+                    }
+                }
 
                 return [
                     'agent'            => $agent,
                     'total'            => $total,
-                    'uploaded'         => $docs->count(),
+                    'uploaded'         => $uploadedTypes,
+                    'uploaded_files'   => $docs->count(),
                     'approved'         => $docs->where('status', 'approved')->count(),
                     'pending'          => $docs->where('status', 'pending')->count(),
                     'action_needed'    => $docs->whereIn('status', ['rejected', 're_upload'])->count(),
-                    'not_uploaded'     => max(0, $total - $docs->count()),
-                    'is_compliant'     => $docs->where('status', 'approved')->count() === $total,
+                    'not_uploaded'     => max(0, $total - $uploadedTypes),
+                    'is_compliant'     => $compliantTypes === $total,
                     'app_status'       => $agent->detail?->application_status ?? 'pending',
                 ];
             });
@@ -137,14 +266,18 @@ class DocumentController extends Controller
 
     /**
      * Admin views all documents for a specific agent.
+     * Multi-file aware: passes both single-row map (legacy) and grouped files.
      */
     public function adminIndex($userId)
     {
-        $agent     = User::with(['detail', 'documents'])->findOrFail($userId);
-        $documents = $agent->documents()->get()->keyBy('document_type');
+        $agent     = User::with(['detail', 'documents', 'sanctionLetters'])->findOrFail($userId);
+        $allDocs   = $agent->documents()->orderBy('id')->get();
+        $documents = $allDocs->groupBy('document_type')->map(fn($g) => $g->first());
+        $docsByType = $allDocs->groupBy('document_type');
         $types     = AgentDocument::types();
+        $sanctions = $agent->sanctionLetters()->latest()->get();
 
-        return view('admin.documents.index', compact('agent', 'documents', 'types'));
+        return view('admin.documents.index', compact('agent', 'documents', 'types', 'docsByType', 'allDocs', 'sanctions'));
     }
 
     /**

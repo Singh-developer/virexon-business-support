@@ -18,7 +18,7 @@ class SanctionLetterController extends Controller
 
     public function index(Request $request)
     {
-        $query = SanctionLetter::with(["user", "business"]);
+        $query = SanctionLetter::with(["user", "user.detail", "business"]);
 
         $status = in_array($request->get('status'), ['pending', 'under_review', 'reupload_required', 'approved'], true)
             ? $request->get('status')
@@ -28,14 +28,24 @@ class SanctionLetterController extends Controller
             $query->where('review_status', $status);
         }
 
-        $letters = $query->latest()->paginate($this->perPage($request))->withQueryString();
+        // Filter by agent (used by "Review Sanction Letters" button on agent edit page).
+        $agentId = $request->get('agent_id') ?: $request->get('user_id');
+        $filterAgent = null;
+        if ($agentId) {
+            $query->where('user_id', $agentId);
+            $filterAgent = User::find($agentId);
+        }
 
-        return view("sanctions.index", compact("letters", "status"));
+        // Load all matching letters for client-side DataTables filtering/search
+        // (same UX as Agents page: Start/End Date, dropdowns, Quick Search, export).
+        $letters = $query->latest()->get();
+
+        return view("sanctions.index", compact("letters", "status", "filterAgent"));
     }
 
     public function create(Request $request)
     {
-        $agents = User::whereHas("role", fn($q) => $q->where("slug", "agent"))->orderBy("name")->get();
+        $agents = User::with(['business', 'detail'])->whereHas("role", fn($q) => $q->where("slug", "agent"))->orderBy("name")->get();
         $selectedAgent = null;
         if ($request->filled("agent_id")) { $selectedAgent = User::with("business", "detail")->find($request->agent_id); }
         elseif ($request->filled("user_id")) { $selectedAgent = User::with("business", "detail")->find($request->user_id); }
@@ -250,7 +260,7 @@ class SanctionLetterController extends Controller
             "signature_designation" => ["nullable", "string", "max:180"],
             "signature_company" => ["nullable", "string", "max:180"],
             "guardian_relation" => ["nullable", "string", "in:S/o,D/o,W/o"],
-            "signature_image" => ["nullable", "file", "image", "mimes:png,jpg,jpeg,svg", "max:2048"],
+            "signature_image" => ["nullable", "file", "image", "mimes:png,jpg,jpeg,webp,svg", "max:2048"],
             "existing_signature_image" => ["nullable", "string"],
             "dynamic_fields" => ["nullable"],
             "approved_amount" => ["required", "numeric", "min:0"],

@@ -71,14 +71,16 @@ class RegistrationController extends Controller
             'references.*.person_name' => 'required|string|max:255',
             'references.*.mobile' => ['required', 'regex:/^[0-9]{10}$/'],
             'references.*.company_agent_id' => 'required|string|max:255|unique:reference_people,company_agent_id',
-            
-            // OTP
-            'otp' => 'required|digits:6',
+
+            // FUTURE OTP: Email OTP verification disabled for now, will be required in future.
+            // Uncomment to re-enable OTP check on fund application submit.
+            // 'otp' => 'required|digits:6',
         ]);
 
-        if ($request->otp != session('loan_form_otp')) {
-            return back()->withErrors(['otp' => 'The provided OTP is incorrect or has expired.'])->withInput();
-        }
+        // FUTURE OTP: OTP verification commented for now (required in future).
+        // if ($request->otp != session('loan_form_otp')) {
+        //     return back()->withErrors(['otp' => 'The provided OTP is incorrect or has expired.'])->withInput();
+        // }
 
         try {
             DB::beginTransaction();
@@ -118,6 +120,10 @@ class RegistrationController extends Controller
                     'purpose_of_advance' => $validated['purpose_of_advance'],
                     
                     'loan_tenure' => 60, // Fixed 60 months tenure as per UI
+
+                    // New fund applications start with 0 transaction limit.
+                    // Admin sets the real limit via Limit & Commission / sanction approval.
+                    'max_limit' => 0,
                 ]
             );
 
@@ -131,7 +137,8 @@ class RegistrationController extends Controller
                 ]);
             }
 
-            session()->forget('loan_form_otp');
+            // FUTURE OTP: cleared after successful OTP check (disabled for now).
+            // session()->forget('loan_form_otp');
 
             DB::commit();
 
@@ -211,16 +218,17 @@ class RegistrationController extends Controller
             $request->validate([
                 'pan_number' => 'required|string|unique:user_details,pan_number,' . optional(auth()->user()->detail)->id,
                 'aadhar_number' => 'required|string|unique:user_details,aadhar_number,' . optional(auth()->user()->detail)->id,
-                'pan_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-                'aadhar_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+                'pan_file' => 'nullable|file|mimes:jpg,jpeg,webp,png,pdf|max:2048',
+                'aadhar_file' => 'nullable|file|mimes:jpg,jpeg,webp,png,pdf|max:2048',
                 'terms' => 'accepted',
-                'otp' => 'required|digits:6', // Added OTP validation rule
+                // FUTURE OTP: Email OTP verification disabled for now, will be required in future.
+                // 'otp' => 'required|digits:6', // Added OTP validation rule
             ]);
 
-            // Verify the OTP before allowing database updates for Step 7
-            if ($request->otp != session('loan_form_otp')) {
-                return back()->withErrors(['otp' => 'The provided OTP is incorrect or has expired.'])->withInput();
-            }
+            // FUTURE OTP: Verify the OTP before allowing database updates for Step 7 (commented for now).
+            // if ($request->otp != session('loan_form_otp')) {
+            //     return back()->withErrors(['otp' => 'The provided OTP is incorrect or has expired.'])->withInput();
+            // }
         }
 
         // ---------------------------------------------------------
@@ -251,11 +259,14 @@ class RegistrationController extends Controller
             }
 
             if ($request->filled('loan_amount') && $request->filled('loan_tenure')) {
+                // New fund applications start with 0 transaction limit until sanction approval.
+                $existingMax = $user->detail?->max_limit;
                 $user->detail()->updateOrCreate(
                     ['user_id' => $user->id],
                     [
                         'loan_amount' => $request->loan_amount,
-                        'loan_tenure' => $request->loan_tenure
+                        'loan_tenure' => $request->loan_tenure,
+                        'max_limit' => $existingMax ?? 0,
                     ]
                 );
             }
@@ -275,7 +286,12 @@ class RegistrationController extends Controller
             } elseif ($step === 7) {
                 $detail = $user->detail()->updateOrCreate(
                     ['user_id' => $user->id],
-                    ['pan_number' => strtoupper($request->pan_number), 'aadhar_number' => $request->aadhar_number]
+                    [
+                        'pan_number' => strtoupper($request->pan_number),
+                        'aadhar_number' => $request->aadhar_number,
+                        // Ensure transaction limit starts at 0 for new fund applications.
+                        'max_limit' => $user->detail?->max_limit ?? 0,
+                    ]
                 );
 
                 if ($request->hasFile('pan_file')) {
@@ -285,8 +301,8 @@ class RegistrationController extends Controller
                     $detail->update(['aadhar_file_path' => $request->file('aadhar_file')->store('documents/aadhar', 'public')]);
                 }
 
-                // OTP is valid and data is saved; clear it from session to prevent reuse
-                session()->forget('loan_form_otp');
+                // FUTURE OTP: OTP is valid and data is saved; clear it from session to prevent reuse (disabled for now).
+                // session()->forget('loan_form_otp');
             }
 
             DB::commit();

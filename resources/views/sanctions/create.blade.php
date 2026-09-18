@@ -70,6 +70,7 @@ iframe#previewFrame { width: 100%; height: 100%; border: none; border-radius: 8p
 @php
     $prefillName = $selectedAgent?->name ?? '';
     $prefillAgentId = $selectedAgent?->detail?->agent_id_number ?? '';
+    $prefillMaxLimit = $selectedAgent?->detail?->max_limit ?? $selectedAgent?->detail?->loan_amount ?? '';
     $prefillAddress = '';
     if ($selectedAgent?->detail?->current_address) {
         $prefillAddress = $selectedAgent->detail->current_address;
@@ -108,6 +109,7 @@ iframe#previewFrame { width: 100%; height: 100%; border: none; border-radius: 8p
                             data-name="{{ $agent->name }}"
                             data-agent-id="{{ $agent->detail?->agent_id_number ?? '' }}"
                             data-loan-amount="{{ $agent->detail?->loan_amount ?? '' }}"
+                            data-max-limit="{{ $agent->detail?->max_limit ?? '' }}"
                             data-address="{{ ($agent->detail?->current_address ?? '') . ($agent->detail?->current_city ? ', ' . $agent->detail->current_city : '') . ($agent->detail?->current_state ? ', ' . $agent->detail->current_state : '') . ($agent->detail?->current_pincode ? ' - ' . $agent->detail->current_pincode : '') }}"
                             data-email="{{ $agent->email }}"
                             data-pemail="{{ $agent->detail?->personal_email ?? '' }}"
@@ -163,7 +165,8 @@ iframe#previewFrame { width: 100%; height: 100%; border: none; border-radius: 8p
                 <div class="row-2">
                     <div class="field">
                         <label for="approved_amount">Approved Amount (₹)</label>
-                        <input id="approved_amount" name="approved_amount" type="number" step="0.01" min="0" required value="{{ old('approved_amount', optional($selectedAgent?->detail)->loan_amount ?? '') }}" placeholder="0.00">
+                        <input id="approved_amount" name="approved_amount" type="number" step="0.01" min="0" required value="{{ old('approved_amount', $prefillMaxLimit) }}" placeholder="0.00">
+                        <div class="hint" id="maxLimitHint">Fill the same value as the agent's Maximum Transaction Limit (₹) set in Agent Management. New fund applications start at ₹0 until sanctioned.</div>
                     </div>
                     <div class="field">
                         <label for="disbursement_mode">Disbursement Mode</label>
@@ -288,11 +291,14 @@ form.addEventListener('keydown', function(e){
 
 function updateAgentInfo(){
     var opt = userSelect.options[userSelect.selectedIndex];
+    var hintEl = document.getElementById('maxLimitHint');
+    var baseHint = 'Fill the same value as the agent\u2019s Maximum Transaction Limit (\u20B9) set in Agent Management. New fund applications start at \u20B90 until sanctioned.';
                     if(!opt || !opt.value){
         agentNameEl.value = '';
         agentIdDisplayEl.value = '';
         letterAddressEl.value = '';
         approvedAmountEl.value = '';
+        if(hintEl) hintEl.textContent = baseHint;
         return;
     }
     agentNameEl.value = opt.getAttribute('data-name') || '';
@@ -301,9 +307,22 @@ function updateAgentInfo(){
         letterAddressEl.value = opt.getAttribute('data-address') || '';
         letterAddressEl.dataset.touched = '0';
     }
+    var maxLimit = opt.getAttribute('data-max-limit');
+    var loanAmount = opt.getAttribute('data-loan-amount');
+    // Prefer the agent's Maximum Transaction Limit; fall back to requested loan amount.
+    var prefill = (maxLimit !== null && maxLimit !== '') ? maxLimit : (loanAmount || '');
     if(!approvedAmountEl.value || approvedAmountEl.dataset.touched !== '1'){
-        approvedAmountEl.value = opt.getAttribute('data-loan-amount') || '';
+        approvedAmountEl.value = prefill;
         approvedAmountEl.dataset.touched = '0';
+    }
+    if(hintEl){
+        if(maxLimit !== null && maxLimit !== ''){
+            var num = parseFloat(maxLimit);
+            var formatted = isNaN(num) ? maxLimit : '\u20B9' + num.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            hintEl.textContent = 'Agent\u2019s current Maximum Transaction Limit: ' + formatted + '. Fill the same value here.';
+        } else {
+            hintEl.textContent = baseHint;
+        }
     }
 }
 
@@ -363,6 +382,7 @@ function debounceRefresh(){
 }
 
 letterAddressEl.addEventListener('input', function(){ letterAddressEl.dataset.touched = '1'; });
+approvedAmountEl.addEventListener('input', function(){ approvedAmountEl.dataset.touched = '1'; });
 
 ['input','change'].forEach(function(e){ form.addEventListener(e, debounceRefresh, true); });
 document.getElementById('monthly_principal_settlement').addEventListener('input', recalcTotal);

@@ -313,13 +313,24 @@
         </div>
 
         <!-- Uploaded Files (Preview Only) -->
-        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px;">
+        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin-bottom:16px;">
             <h4 style="margin:0 0 12px; font-size:14px; font-weight:700; color:#1e293b;">Uploaded Documents</h4>
             <p style="margin:0 0 12px; font-size:12px; color:#64748b;">
                 Files below are what the agent uploaded from their dashboard. To approve/reject them,
                 <a id="reviewAllLink" href="#" target="_blank" rel="noopener" style="color:#2563eb; font-weight:600;">open the full review page</a>.
             </p>
             <div id="agentFilesList"></div>
+        </div>
+
+        <!-- Sanction Letters (status can be changed here, similar to documents) -->
+        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px;">
+            <h4 style="margin:0 0 12px; font-size:14px; font-weight:700; color:#1e293b;">Sanction Letter Status</h4>
+            <p style="margin:0 0 12px; font-size:12px; color:#64748b;">
+                Change each letter's review status directly here (works even after Approved).
+                For full preview use
+                <a id="reviewSanctionsLink" href="#" target="_blank" rel="noopener" style="color:#2563eb; font-weight:600;">open sanction letters</a>.
+            </p>
+            <div id="agentSanctionsList"></div>
         </div>
     </div>
 </div>
@@ -338,10 +349,19 @@
             'documents' => $a->documents->map(function ($d) {
                 return [
                     'type'          => $d->document_type,
-                    'type_label'    => \App\Models\AgentDocument::typeLabel($d->document_type),
+                    'type_label'    => \App\Models\AgentDocument::typeLabel($d->document_type) . (!empty($d->slot) && $d->slot !== 'default' ? ' (' . ucfirst($d->slot) . ')' : ''),
                     'status'        => $d->status,
                     'original_name' => $d->original_name,
                     'url'           => \Illuminate\Support\Facades\Storage::url($d->file_path),
+                ];
+            })->values()->all(),
+            'sanctions' => $a->sanctionLetters->map(function ($s) {
+                return [
+                    'id'            => $s->id,
+                    'no'            => $s->sanction_letter_no ?? ('#' . $s->id),
+                    'review_status' => $s->review_status ?? 'pending',
+                    'has_signed'    => !empty($s->signed_pdf_path),
+                    'upload_count'  => (int) ($s->signed_pdf_upload_count ?? 0),
                 ];
             })->values()->all(),
         ];
@@ -569,6 +589,7 @@ $(document).ready(function() {
         toggleCommFields();
         $('#commForm').attr('action', agentsBase + '/' + id + '/limit-commission');
         $('#reviewAllLink').attr('href', "<?php echo e(url('admin/agents')); ?>" + '/' + id + '/documents');
+        $('#reviewSanctionsLink').attr('href', "<?php echo e(url('sanctions')); ?>" + '?agent_id=' + id);
 
         var list = $('#agentFilesList').empty();
         if (!data.documents.length) {
@@ -602,6 +623,45 @@ $(document).ready(function() {
                 );
                 list.append(row);
                 if (isPdf) renderPdfPreview(doc.url, row.find('.pdf-thumb'));
+            });
+        }
+
+        // Sanction letters with inline status changer.
+        var sList = $('#agentSanctionsList').empty();
+        var sanctions = data.sanctions || [];
+        var csrfToken = '<?php echo e(csrf_token()); ?>';
+        var sanctionsBase = "<?php echo e(url('sanctions')); ?>";
+        if (!sanctions.length) {
+            sList.html('<p style="margin:0; font-size:13px; color:#94a3b8;">No sanction letters issued to this agent yet.</p>');
+        } else {
+            sanctions.forEach(function (s) {
+                var badgeClass = 'neutral';
+                if (s.review_status === 'approved') badgeClass = 'success';
+                if (s.review_status === 'reupload_required' || s.review_status === 'rejected') badgeClass = 'failed';
+                if (s.review_status === 'under_review') badgeClass = 'neutral';
+                var signedTxt = s.has_signed ? 'Signed copy uploaded (' + s.upload_count + ')' : 'Signed copy not uploaded';
+                var opts = ['pending', 'under_review', 'reupload_required', 'approved'].map(function (st) {
+                    return '<option value="' + st + '"' + (s.review_status === st ? ' selected' : '') + '>' + st.replace('_', ' ') + '</option>';
+                }).join('');
+                var row = $(
+                    '<div style="display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:8px; background:#f8fafc;">' +
+                        '<div style="width:40px;height:48px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">✉️</div>' +
+                        '<div style="flex:1; min-width:0;">' +
+                            '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+                                '<span style="font-weight:700; font-size:13px; color:#1e293b;">' + s.no + '</span>' +
+                                '<span class="badge ' + badgeClass + '">' + s.review_status + '</span>' +
+                            '</div>' +
+                            '<div style="margin-top:4px; font-size:12px; color:#64748b;">' + signedTxt + '</div>' +
+                            '<form method="POST" action="' + sanctionsBase + '/' + s.id + '/status" style="margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+                                '<input type="hidden" name="_token" value="' + csrfToken + '">' +
+                                '<select name="review_status" style="padding:6px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px;">' + opts + '</select>' +
+                                '<button type="submit" class="btn tiny primary" onclick="return confirm(\'Change this letter\\\'s review status? The agent will be notified.\');">Save Status</button>' +
+                                '<a href="' + sanctionsBase + '/' + s.id + '/review" target="_blank" rel="noopener" class="btn tiny secondary">Review Letter</a>' +
+                            '</form>' +
+                        '</div>' +
+                    '</div>'
+                );
+                sList.append(row);
             });
         }
 

@@ -151,6 +151,8 @@ class SanctionLetter extends Model
 
     /**
      * Derived workflow badge used across admin and agent UIs.
+     * The explicit admin-set review_status always wins, so changing
+     * pending <-> under_review is reflected immediately on both sides.
      * Priority: approved -> re-upload required -> under review -> pending.
      */
     public function workflowStatus(): array
@@ -163,6 +165,16 @@ class SanctionLetter extends Model
             return ['key' => 'reupload_required', 'label' => 'Re-upload Required'];
         }
 
+        if ($this->review_status === 'under_review') {
+            return ['key' => 'under_review', 'label' => 'Under Review'];
+        }
+
+        if ($this->review_status === 'pending') {
+            return ['key' => 'pending', 'label' => 'Pending'];
+        }
+
+        // Legacy fallback for rows without an explicit review_status:
+        // an uploaded signed copy implies it is waiting for admin review.
         if (($this->signed_pdf_upload_count ?? 0) > 0) {
             return ['key' => 'under_review', 'label' => 'Under Review'];
         }
@@ -177,8 +189,10 @@ class SanctionLetter extends Model
             return false;
         }
 
-        // Already uploaded and waiting for the admin decision - cannot re-upload yet.
-        if (($this->signed_pdf_upload_count ?? 0) > 0 && $this->review_status === 'under_review') {
+        // One signed copy at a time: once uploaded, the agent must wait for
+        // the admin decision. Another upload is allowed only after the admin
+        // explicitly requests a re-upload (which opens a fresh 48h slot).
+        if (($this->signed_pdf_upload_count ?? 0) > 0 && $this->review_status !== 'reupload_required') {
             return false;
         }
 

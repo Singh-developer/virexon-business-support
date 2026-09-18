@@ -214,7 +214,8 @@
                             <div>
                                 <label class="form-label">Personal Email ID <span class="req">*</span></label>
                                 <input type="email" id="email" name="personal_email" value="{{ old('personal_email') }}" class="form-input" placeholder="Enter personal email" required>
-                                <div class="text-[10px] text-gray-400 mt-1">This email will be used for OTP verification.</div>
+                                {{-- FUTURE OTP: This email will be used for OTP verification (feature disabled for now, required in future). --}}
+                                {{-- <div class="text-[10px] text-gray-400 mt-1">This email will be used for OTP verification.</div> --}}
                             </div>
                             <div>
                                 <label class="form-label">PAN Number <span class="req">*</span></label>
@@ -334,6 +335,8 @@
                         </div>
                     </div>
 
+                    {{-- FUTURE OTP: Email OTP Verification disabled for now, will be required in future. Uncomment block below to re-enable. --}}
+                    {{--
                     <!-- 6. OTP Verification -->
                     <div class="mb-8 border border-gray-100 rounded-lg p-5 js-mstep" data-mstep-title="Email OTP Verification">
                         <h2 class="form-section-title"><span class="number">6</span> Email OTP Verification</h2>
@@ -348,6 +351,7 @@
                             </div>
                         </div>
                     </div>
+                    --}}
 
                     <!-- Declaration & Submit -->
                     <div class="flex flex-col md:flex-row items-center justify-between gap-6 pt-4 border-t border-gray-200 js-mstep" data-mstep-title="Review & Submit">
@@ -526,6 +530,9 @@
             }
         }
 
+        // FUTURE OTP: Email OTP verification disabled for now, will be required in future.
+        // Uncomment function below to re-enable OTP sending on fund application.
+        /*
         function sendOtp() {
             const emailInput = document.querySelector('input[name="personal_email"]');
             if (!emailInput || !emailInput.value) {
@@ -539,7 +546,8 @@
             btn.innerText = 'Sending...';
             btn.disabled = true;
 
-            fetch('{{ route('agent.send-otp') }}', {
+            // NOTE: hardcoded URL (not route()) so this disabled block never 500s even if the route is removed.
+            fetch('/register/agent/send-otp', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -566,6 +574,7 @@
                 btn.disabled = false;
             });
         }
+        */
     </script>
     <script>
         window.__agentRegErrors = @json($errors->keys());

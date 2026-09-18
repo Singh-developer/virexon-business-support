@@ -18,7 +18,7 @@ class AdvanceController extends Controller
         // Load agent settings (max_limit, commission)
         $user->loadMissing('detail');
         $detail = $user->detail;
-        $maxLimit = $detail->max_limit ?? 500000;
+        $maxLimit = $detail->max_limit ?? 0;
         $commissionType = $detail->commission_type ?? 'percentage';
         $commissionRate = $detail->commission_rate ?? 0;
         $commissionFixed = $detail->commission_fixed ?? 0;

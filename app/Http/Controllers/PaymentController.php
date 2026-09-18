@@ -22,6 +22,7 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $isAdmin = $user->isAdmin();
 
         $payments = Payment::with([
             'business',
@@ -33,6 +34,14 @@ class PaymentController extends Controller
                 fn($query) => $query->where(
                     'user_id',
                     $user->id
+                )
+            )
+            ->when(
+                $isAdmin && $request->filled('agent_id'),
+                fn($query) =>
+                $query->where(
+                    'user_id',
+                    $request->agent_id
                 )
             )
             ->when(
@@ -59,33 +68,21 @@ class PaymentController extends Controller
                     $request->payment_type
                 )
             )
-            ->when(
-                $request->filled('q'),
-                function ($query) use ($request) {
-
-                    $search = $request->q;
-
-                    $query->where(function ($q) use ($search) {
-                        $q->where(
-                            'reference',
-                            'like',
-                            "%{$search}%"
-                        )
-                            ->orWhere(
-                                'gateway_payment_id',
-                                'like',
-                                "%{$search}%"
-                            );
-                    });
-                }
-            )
+            // NOTE: free-text search (`q`) is handled live client-side by
+            // DataTables (seeded from the query string); only dropdown
+            // filters are applied here so shared links keep working.
             ->latest()
-            ->paginate($this->perPage($request))
-            ->withQueryString();
+            ->get();
+
+        $agents = $isAdmin
+            ? \App\Models\User::whereHas('role', fn($q) => $q->where('slug', 'agent'))
+                ->orderBy('name')
+                ->get(['id', 'name', 'email'])
+            : collect();
 
         return view(
             'payments.index',
-            compact('payments')
+            compact('payments', 'agents')
         );
     }
     public function create(Request $r)

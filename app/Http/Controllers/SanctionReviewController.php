@@ -81,30 +81,82 @@ class SanctionReviewController extends Controller
         return back()->with('success', 'Agent notified: signed PDF re-upload required for letter ' . $sanction->sanction_letter_no . '.');
     }
 
-    /** Inline preview of a specific signed PDF upload (used in the review iframe). */
+    /**
+     * Admin changes the review status at any time — including after approval.
+     * This makes it easy to reopen an approved letter (e.g. back to
+     * reupload_required / under_review / pending) without being locked.
+     */
+    public function updateStatus(Request $request, SanctionLetter $sanction, AuditService $audit)
+    {
+        $request->validate([
+            'review_status' => ['required', 'in:pending,under_review,reupload_required,approved'],
+            'review_comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $status = $request->input('review_status');
+        $comment = $request->input('review_comment');
+
+        $data = [
+            'review_status' => $status,
+            'reviewed_at' => now(),
+            'reviewed_by' => auth()->id(),
+            'review_comment' => $comment,
+        ];
+
+        // Resetting to pending revokes any prior review, so the workflow
+        // progress (e.g. the "Reviewed" step) goes back to incomplete too.
+        if ($status === 'pending') {
+            $data['reviewed_at'] = null;
+            $data['reviewed_by'] = null;
+        }
+
+        // Reopening for re-upload always opens a fresh 48h upload slot.
+        if ($status === 'reupload_required') {
+            $data['upload_deadline_at'] = now()->addHours(SanctionLetter::UPLOAD_WINDOW_HOURS);
+        }
+
+        $sanction->update($data);
+
+        // Approving (including re-approving) syncs loan data so limits stay correct.
+        if ($status === 'approved') {
+            $this->syncApprovedLoanData($sanction);
+        }
+
+        $sanction->user->notify(new SanctionLetterReviewedNotification($sanction));
+
+        $audit->record($request, 'sanction_letter.status_changed', $sanction, [
+            'reviewed_by' => auth()->id(),
+            'status' => $status,
+            'comment' => $comment,
+        ]);
+
+        return back()->with('success', 'Sanction letter ' . $sanction->sanction_letter_no . ' status changed to ' . $status . '.');
+    }
+
+    /** Inline preview of a specific signed upload (PDF or image, used in the review preview). */
     public function signedPdf(SanctionLetter $sanction, SanctionLetterUpload $upload)
     {
         $this->authorizeUpload($sanction, $upload);
 
         if (!Storage::disk('local')->exists($upload->file_path)) {
-            abort(404, 'Signed PDF file not found.');
+            abort(404, 'Signed file not found.');
         }
 
-        return Storage::disk('local')->response($upload->file_path, $upload->original_name ?? 'signed-sanction-letter.pdf');
+        return Storage::disk('local')->response($upload->file_path, $upload->original_name ?? 'signed-sanction-letter');
     }
 
-    /** Download a specific signed PDF upload. */
+    /** Download a specific signed upload (PDF or image). */
     public function signedDownload(SanctionLetter $sanction, SanctionLetterUpload $upload)
     {
         $this->authorizeUpload($sanction, $upload);
 
         if (!Storage::disk('local')->exists($upload->file_path)) {
-            abort(404, 'Signed PDF file not found.');
+            abort(404, 'Signed file not found.');
         }
 
         return Storage::disk('local')->download(
             $upload->file_path,
-            $upload->original_name ?? 'signed-sanction-letter.pdf'
+            $upload->original_name ?? 'signed-sanction-letter'
         );
     }
 

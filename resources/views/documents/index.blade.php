@@ -3,46 +3,65 @@
 @section('content')
 @php
     $cfg = $docConfig ?? \App\Models\AgentDocument::types();
-    $statusOf = function ($type) use ($documents) {
-        return $documents[$type]->status ?? 'not_uploaded';
-    };
-    $fileOf = function ($type) use ($documents) {
+    // Multi-file aware: $docsByType (grouped) preferred, fallback to single $documents.
+    $grouped = isset($docsByType) ? $docsByType : (isset($documents) ? $documents->groupBy('document_type') : collect());
+    // Normalize: $documents may be first-per-type map; ensure grouped collections.
+    $filesOf = function ($type) use ($grouped, $documents) {
+        if (isset($grouped[$type])) return $grouped[$type];
         $d = $documents[$type] ?? null;
+        return $d ? collect([$d]) : collect();
+    };
+    $countOf = function ($type) use ($filesOf) {
+        return $filesOf($type)->count();
+    };
+    $maxOf = function ($type) use ($cfg) {
+        return (int) ($cfg[$type]['max_files'] ?? 1);
+    };
+    $statusOf = function ($type) use ($filesOf, $cfg) {
+        $files = $filesOf($type);
+        if ($files->isEmpty()) return 'not_uploaded';
+        $statuses = $files->pluck('status')->all();
+        $max = (int) ($cfg[$type]['max_files'] ?? 1);
+        // Aadhaar needs 2 files (front/back) to be complete.
+        if ($type === 'aadhaar') {
+            if (in_array('rejected', $statuses)) return 'rejected';
+            if (in_array('re_upload', $statuses)) return 're_upload';
+            $approved = collect($statuses)->filter(fn($s) => $s === 'approved')->count();
+            if ($approved >= 2 && $files->count() >= 2) return 'approved';
+            if (in_array('pending', $statuses)) return 'pending';
+            return 'pending';
+        }
+        if (in_array('rejected', $statuses)) return 'rejected';
+        if (in_array('re_upload', $statuses)) return 're_upload';
+        if (in_array('pending', $statuses)) return 'pending';
+        if (count(array_unique($statuses)) === 1 && $statuses[0] === 'approved') return 'approved';
+        return 'pending';
+    };
+    $fileOf = function ($type) use ($filesOf) {
+        $d = $filesOf($type)->first();
         return $d && $d->file_path ? \Illuminate\Support\Facades\Storage::url($d->file_path) : '';
     };
-    $noteOf = function ($type) use ($documents) {
-        $d = $documents[$type] ?? null;
-        return ($d && $d->admin_note && in_array($d->status ?? '', ['rejected', 're_upload'])) ? $d->admin_note : '';
+    $noteOf = function ($type) use ($filesOf) {
+        foreach ($filesOf($type) as $d) {
+            if ($d && $d->admin_note && in_array($d->status ?? '', ['rejected', 're_upload'])) return $d->admin_note;
+        }
+        return '';
+    };
+    $countText = function ($type) use ($countOf, $maxOf, $cfg) {
+        $c = $countOf($type);
+        $m = $maxOf($type);
+        if ($type === 'aadhaar') return $c . '/' . $m . ' files (Front + Back)';
+        if (($cfg[$type]['multiple'] ?? false)) return $c . '/' . $m . ' files';
+        return $c >= 1 ? '1 file uploaded' : 'No file yet (1 required)';
     };
 
-    // KYC row combines PAN + Aadhaar + Photo
-    $kycTypes = ['pan_card', 'aadhaar', 'photo'];
-    $kycStatuses = [];
-    foreach ($kycTypes as $t) { $kycStatuses[$t] = $statusOf($t); }
-    if (in_array('rejected', $kycStatuses) || in_array('re_upload', $kycStatuses)) {
-        $kycStatus = in_array('rejected', $kycStatuses) ? 'rejected' : 're_upload';
-    } elseif (in_array('pending', $kycStatuses)) {
-        $kycStatus = 'pending';
-    } elseif (count(array_unique($kycStatuses)) === 1 && $kycStatuses['pan_card'] === 'approved') {
-        $kycStatus = 'approved';
-    } else {
-        $kycStatus = 'not_uploaded';
-    }
-    $kycUploadType = 'pan_card';
-    foreach ($kycTypes as $t) {
-        if (($statusOf($t)) !== 'approved') { $kycUploadType = $t; break; }
-    }
-    $kycFileUrl = '';
-    foreach ($kycTypes as $t) {
-        if ($fileOf($t) !== '') { $kycFileUrl = $fileOf($t); break; }
-    }
-    $kycNote = '';
-    foreach ($kycTypes as $t) {
-        if ($noteOf($t) !== '') { $kycNote = $noteOf($t); break; }
-    }
+    // KYC Documents = Aadhaar Card (Front + Back, 2 files).
+    $kycStatus = $statusOf('aadhaar');
+    $kycNote = $noteOf('aadhaar');
 
     $panStatus = $statusOf('pan_card');
     $bankStatus = $statusOf('bank_proof');
+    $photoStatus = $statusOf('photo');
     $agreeStatus = $statusOf('agent_id_proof');
     $underStatus = $statusOf('address_proof');
 
@@ -58,11 +77,12 @@
         $rowBucket($kycStatus),
         $rowBucket($panStatus),
         $rowBucket($bankStatus),
+        $rowBucket($photoStatus),
         $rowBucket($agreeStatus),
         $rowBucket($underStatus),
         $rowBucket($purposeStatus),
     ];
-    $totalRows = 6;
+    $totalRows = 7;
     $compCount = count(array_filter($buckets, fn($b) => $b === 'completed'));
     $pendCount = count(array_filter($buckets, fn($b) => $b === 'pending'));
     $rejCount = count(array_filter($buckets, fn($b) => $b === 'rejected'));
@@ -203,14 +223,30 @@
     <h2 class="comp-label">Compliance Snapshot</h2>
 
     <div class="comp-list">
-        <!-- KYC Documents (combined PAN + Aadhaar + Photo) -->
-        <button type="button" class="comp-card" onclick="openUploadModal('{{ $kycUploadType }}', '{{ $cfg[$kycUploadType]['label'] }}', '{{ $cfg[$kycUploadType]['accept'] }}', '{{ $kycFileUrl }}')">
+        @php
+            // Precompute file lists for modal (urls, names, statuses, ids, slots).
+            $modalFiles = [];
+            foreach (array_keys($cfg) as $t) {
+                $modalFiles[$t] = $filesOf($t)->map(function ($d) {
+                    return [
+                        'id' => $d->id,
+                        'url' => $d->file_path ? \Illuminate\Support\Facades\Storage::url($d->file_path) : '',
+                        'name' => $d->original_name ?? '',
+                        'status' => $d->status ?? 'pending',
+                        'slot' => $d->slot ?? 'default',
+                        'note' => $d->admin_note ?? '',
+                    ];
+                })->values()->all();
+            }
+        @endphp
+        <!-- KYC Documents = Aadhaar Card (Front + Back, 2 files) -->
+        <button type="button" class="comp-card" onclick="openUploadModal('aadhaar')">
             <span class="comp-ico" style="background:#e6f6ec;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#1faa59" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 17c.6-1.8 1.7-2.7 3-2.7s2.4.9 3 2.7"/><path d="M14 9h4M14 12.5h4M14 16h2.5"/></svg>
             </span>
             <span class="comp-main">
-                <span class="comp-name">KYC Documents</span>
-                <span class="comp-desc">All KYC documents are verified</span>
+                <span class="comp-name">KYC Documents – Aadhaar Card</span>
+                <span class="comp-desc">Front &amp; back of Aadhaar &middot; {{ $countText('aadhaar') }}</span>
                 @if($kycNote !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $kycNote }}</span>@endif
             </span>
             <span class="comp-right">
@@ -219,14 +255,14 @@
             </span>
         </button>
 
-        <!-- PAN Verification -->
-        <button type="button" class="comp-card" onclick="openUploadModal('pan_card', '{{ $cfg['pan_card']['label'] }}', '{{ $cfg['pan_card']['accept'] }}', '{{ $fileOf('pan_card') }}')">
+        <!-- PAN Verification: 1 file -->
+        <button type="button" class="comp-card" onclick="openUploadModal('pan_card')">
             <span class="comp-ico" style="background:#e6f6ec;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#1faa59" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="6" y="8.5" width="5" height="3.5" rx="0.8"/><path d="M6 15h12"/></svg>
             </span>
             <span class="comp-main">
                 <span class="comp-name">PAN Verification</span>
-                <span class="comp-desc">PAN number is verified</span>
+                <span class="comp-desc">PAN number is verified &middot; {{ $countText('pan_card') }} (1 file)</span>
                 @if($noteOf('pan_card') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('pan_card') }}</span>@endif
             </span>
             <span class="comp-right">
@@ -235,14 +271,14 @@
             </span>
         </button>
 
-        <!-- Bank Details -->
-        <button type="button" class="comp-card" onclick="openUploadModal('bank_proof', '{{ $cfg['bank_proof']['label'] }}', '{{ $cfg['bank_proof']['accept'] }}', '{{ $fileOf('bank_proof') }}')">
+        <!-- Bank Details: 1 file -->
+        <button type="button" class="comp-card" onclick="openUploadModal('bank_proof')">
             <span class="comp-ico" style="background:#e0f5f0;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#14a085" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 4l9 5.5"/><path d="M4 9.5V19M20 9.5V19"/><path d="M2.5 19.5h19"/><path d="M8.5 12v7M12 12v7M15.5 12v7"/></svg>
             </span>
             <span class="comp-main">
                 <span class="comp-name">Bank Details</span>
-                <span class="comp-desc">Bank account details are verified</span>
+                <span class="comp-desc">Bank account details are verified &middot; {{ $countText('bank_proof') }} (1 file)</span>
                 @if($noteOf('bank_proof') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('bank_proof') }}</span>@endif
             </span>
             <span class="comp-right">
@@ -251,14 +287,30 @@
             </span>
         </button>
 
-        <!-- Agreement -->
-        <button type="button" class="comp-card" onclick="openUploadModal('agent_id_proof', '{{ $cfg['agent_id_proof']['label'] }}', '{{ $cfg['agent_id_proof']['accept'] }}', '{{ $fileOf('agent_id_proof') }}')">
+        <!-- Photograph: multiple allowed -->
+        <button type="button" class="comp-card" onclick="openUploadModal('photo')">
+            <span class="comp-ico" style="background:#f3e8ff;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#9333ea" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="11" r="3"/><path d="M5 19l4-4 3 3 3-3 4 4"/></svg>
+            </span>
+            <span class="comp-main">
+                <span class="comp-name">Photograph</span>
+                <span class="comp-desc">Recent passport size photograph &middot; {{ $countText('photo') }}</span>
+                @if($noteOf('photo') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('photo') }}</span>@endif
+            </span>
+            <span class="comp-right">
+                <span class="comp-pill {{ $pill($statusOf('photo'), 'Verified')['cls'] }}">{{ $pill($statusOf('photo'), 'Verified')['txt'] }}</span>
+                <span class="comp-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+            </span>
+        </button>
+
+        <!-- Agreement: multiple allowed -->
+        <button type="button" class="comp-card" onclick="openUploadModal('agent_id_proof')">
             <span class="comp-ico" style="background:#e6f6ec;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#1faa59" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8L19 8.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M13.5 3.5V9H19"/><path d="M8.5 13h5M8.5 16h3"/></svg>
             </span>
             <span class="comp-main">
                 <span class="comp-name">Agreement</span>
-                <span class="comp-desc">Agreement is signed by both parties</span>
+                <span class="comp-desc">Agreement is signed by both parties &middot; {{ $countText('agent_id_proof') }}</span>
                 @if($noteOf('agent_id_proof') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('agent_id_proof') }}</span>@endif
             </span>
             <span class="comp-right">
@@ -267,14 +319,14 @@
             </span>
         </button>
 
-        <!-- Agent Undertaking -->
-        <button type="button" class="comp-card" onclick="openUploadModal('address_proof', '{{ $cfg['address_proof']['label'] }}', '{{ $cfg['address_proof']['accept'] }}', '{{ $fileOf('address_proof') }}')">
+        <!-- Agent Undertaking: multiple allowed -->
+        <button type="button" class="comp-card" onclick="openUploadModal('address_proof')">
             <span class="comp-ico" style="background:#fff1e0;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h8L19 8.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M13.5 3.5V9H19"/><path d="M8.5 13h5M8.5 16h3"/><circle cx="16.5" cy="16.5" r="2.4"/><path d="M15.6 16.5l.7.7 1.3-1.4"/></svg>
             </span>
             <span class="comp-main">
                 <span class="comp-name">Agent Undertaking</span>
-                <span class="comp-desc">Undertaking is submitted</span>
+                <span class="comp-desc">Undertaking is submitted &middot; {{ $countText('address_proof') }}</span>
                 @if($noteOf('address_proof') !== '')<span class="comp-note"><strong>Admin Note:</strong> {{ $noteOf('address_proof') }}</span>@endif
             </span>
             <span class="comp-right">
@@ -348,9 +400,9 @@
         </a>
     </nav>
 
-    <!-- Upload Modal (functionality preserved) -->
+    <!-- Upload Modal: single / double / multiple files + webp support -->
     <div id="upload-modal" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center p-4">
-        <div class="modal-card">
+        <div class="modal-card" style="max-height:90vh;overflow-y:auto;">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-bold text-slate-900" id="modal-title">Upload Document</h3>
                 <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -360,15 +412,25 @@
                 @csrf
                 <input type="hidden" name="document_type" id="modal-doc-type">
 
-                <a id="modal-view-link" href="#" target="_blank" class="hidden mb-3 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 items-center gap-2 text-sm text-blue-700 font-semibold" style="display:none;">
-                    View current file &rarr;
-                </a>
+                <div id="modal-existing" class="mb-3" style="display:none;">
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Uploaded files</div>
+                    <div id="modal-existing-list" class="flex flex-col gap-2"></div>
+                </div>
+
+                <div id="modal-slot-wrap" class="mb-3" style="display:none;">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Aadhaar side (Front / Back)</label>
+                    <select name="slot" id="modal-slot" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <option value="">Auto (first free side)</option>
+                        <option value="front">Front side</option>
+                        <option value="back">Back side</option>
+                    </select>
+                </div>
 
                 <div id="drop-zone" class="border-2 border-dashed border-blue-200 rounded-xl p-8 text-center cursor-pointer hover:bg-blue-50 transition mb-4 group"
                      onclick="document.getElementById('file-input').click()">
                     <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-400 mb-2 group-hover:text-blue-600"></i>
-                    <p class="text-sm font-semibold text-slate-700">Click or drag a file here</p>
-                    <p class="text-xs text-slate-400 mt-1" id="modal-accept-text">PDF, JPG, PNG up to 5MB</p>
+                    <p class="text-sm font-semibold text-slate-700" id="modal-drop-text">Click or drag a file here</p>
+                    <p class="text-xs text-slate-400 mt-1" id="modal-accept-text">JPG, JPEG, WEBP, PNG, PDF up to 5MB</p>
                     <input type="file" name="file" id="file-input" class="hidden" required onchange="updateFileName(this)">
                 </div>
 
@@ -379,7 +441,7 @@
 
                 <p class="text-xs text-slate-400 mb-5">
                     <i class="fa-solid fa-shield-halved mr-1 text-green-500"></i>
-                    Your file will be encrypted and stored securely.
+                    Allowed: JPG, JPEG, WEBP, PNG, PDF (max 5MB each). Your files are stored securely.
                 </p>
 
                 <div class="flex gap-3">
@@ -397,22 +459,68 @@
     </div>
 
     <script>
-        function openUploadModal(type, label, accept, fileUrl) {
+        window.DOC_CONFIG = @json($cfg);
+        window.DOC_FILES = @json($modalFiles);
+        function openUploadModal(type) {
+            var cfg = (window.DOC_CONFIG && window.DOC_CONFIG[type]) || {};
+            var label = cfg.label || type;
+            var accept = cfg.accept || '.jpg,.jpeg,.webp,.png,.pdf';
+            var maxFiles = parseInt(cfg.max_files || 1, 10);
+            var multiple = !!cfg.multiple;
+            var files = (window.DOC_FILES && window.DOC_FILES[type]) || [];
+
             document.getElementById('modal-doc-type').value = type;
-            document.getElementById('modal-title').textContent = 'Upload: ' + label;
-            document.getElementById('file-input').accept = accept || '';
-            var exts = (accept || '').split(',')
-                .map(function(e) { return e.replace(/^\./, '').toUpperCase(); })
-                .filter(function(e) { return e; })
-                .join(', ');
-            document.getElementById('modal-accept-text').textContent = (exts ? exts : 'PDF, JPG, PNG') + ' up to 5MB';
-            document.getElementById('file-name-display').classList.add('hidden');
-            var vl = document.getElementById('modal-view-link');
-            if (fileUrl) {
-                vl.href = fileUrl;
-                vl.style.display = 'flex';
+            document.getElementById('modal-title').textContent = 'Upload: ' + label + (type === 'aadhaar' ? ' (Front + Back, 2 files)' : (maxFiles === 1 ? ' (1 file)' : ' (up to ' + maxFiles + ' files)'));
+            var fi = document.getElementById('file-input');
+            fi.accept = accept;
+            // Toggle single vs multiple upload.
+            if (multiple) {
+                fi.setAttribute('name', 'files[]');
+                fi.setAttribute('multiple', 'multiple');
             } else {
-                vl.style.display = 'none';
+                fi.setAttribute('name', 'file');
+                fi.removeAttribute('multiple');
+            }
+            var exts = (accept || '').split(',').map(function(e){ return e.replace(/^\./,'').toUpperCase(); }).filter(function(e){return e;}).join(', ');
+            document.getElementById('modal-accept-text').textContent = (exts || 'JPG, JPEG, WEBP, PNG, PDF') + ' up to 5MB' + (multiple ? ' · max ' + maxFiles + ' files' : ' · 1 file');
+            document.getElementById('modal-drop-text').textContent = multiple ? 'Click or drag file(s) here (up to ' + maxFiles + ')' : 'Click or drag a file here';
+            document.getElementById('file-name-display').classList.add('hidden');
+            fi.value = '';
+            fi.required = files.length < maxFiles;
+
+            // Aadhaar front/back slot selector.
+            var slotWrap = document.getElementById('modal-slot-wrap');
+            if (type === 'aadhaar') {
+                slotWrap.style.display = 'block';
+                document.getElementById('modal-slot').value = '';
+            } else {
+                slotWrap.style.display = 'none';
+            }
+
+            // Existing files list with view + delete.
+            var box = document.getElementById('modal-existing');
+            var list = document.getElementById('modal-existing-list');
+            list.innerHTML = '';
+            if (files.length) {
+                box.style.display = 'block';
+                files.forEach(function(f){
+                    var row = document.createElement('div');
+                    row.className = 'flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm';
+                    var slotTxt = f.slot && f.slot !== 'default' ? ' [' + f.slot + ']' : '';
+                    row.innerHTML = '<a href="' + f.url + '" target="_blank" class="text-blue-700 font-semibold" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (f.name || 'View file') + slotTxt + '</a>' +
+                        '<span class="text-xs text-slate-400">' + (f.status || '') + '</span>';
+                    if ((f.status || '') !== 'approved') {
+                        var del = document.createElement('form');
+                        del.method = 'POST';
+                        del.action = "{{ url('documents') }}/" + f.id;
+                        del.style.margin = '0';
+                        del.innerHTML = '@csrf @method("DELETE")<button type="submit" onclick="return confirm(\'Remove this file?\')" class="text-xs text-red-600 font-bold hover:underline">Remove</button>';
+                        row.appendChild(del);
+                    }
+                    list.appendChild(row);
+                });
+            } else {
+                box.style.display = 'none';
             }
             document.getElementById('upload-modal').classList.remove('hidden');
         }
@@ -424,7 +532,8 @@
 
         function updateFileName(input) {
             if (input.files.length > 0) {
-                document.getElementById('file-name-text').textContent = input.files[0].name;
+                var names = Array.prototype.map.call(input.files, function(f){ return f.name; }).join(', ');
+                document.getElementById('file-name-text').textContent = names;
                 document.getElementById('file-name-display').classList.remove('hidden');
             }
         }

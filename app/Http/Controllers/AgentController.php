@@ -20,6 +20,7 @@ class AgentController extends Controller
                 'virtualCard',
                 'detail',
                 'documents',
+                'sanctionLetters',
             ])
             ->whereHas(
                 'role',
@@ -361,7 +362,7 @@ class AgentController extends Controller
                 ['user_id' => $agent->id],
                 [
                     'personal_email' => $data['personal_email'] ?? null,
-                    'max_limit' => $request->max_limit ?? 500000.00,
+                    'max_limit' => $request->filled('max_limit') ? $request->max_limit : ($agent->detail?->max_limit ?? 0),
                     'commission_type' => $request->commission_type ?? 'percentage',
                     'commission_rate' => $request->commission_rate ?? 0,
                     'commission_fixed' => $request->commission_fixed ?? 0,
@@ -573,7 +574,7 @@ class AgentController extends Controller
             'action' => 'required|in:save,save_and_card',
         ]);
 
-        $maxLimit = $data['max_limit'] ?? 500000.00;
+        $maxLimit = $data['max_limit'] ?? $agent->detail?->max_limit ?? 0;
 
         $agent->detail()->updateOrCreate(
             ['user_id' => $agent->id],

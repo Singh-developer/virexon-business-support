@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class AgentSanctionLetterController extends Controller
@@ -79,19 +80,34 @@ class AgentSanctionLetterController extends Controller
         );
     }
 
-    /** Inline preview of the agent's latest uploaded signed PDF. */
+    /** Inline preview of the agent's latest uploaded signed copy (PDF or image). */
     public function signedPdf(SanctionLetter $sanction)
     {
         $this->authorizeAccess($sanction);
 
         if (!$sanction->signed_pdf_path || !Storage::disk('local')->exists($sanction->signed_pdf_path)) {
-            abort(404, 'Signed PDF not found.');
+            abort(404, 'Signed file not found.');
         }
 
-        return Storage::disk('local')->response($sanction->signed_pdf_path, 'signed-sanction-letter.pdf');
+        $fallback = 'signed-sanction-letter.' . strtolower(pathinfo($sanction->signed_pdf_path, PATHINFO_EXTENSION) ?: 'pdf');
+
+        return Storage::disk('local')->response($sanction->signed_pdf_path, $fallback);
     }
 
-/** Agent uploads (or re-uploads) the signed sanction letter PDF. */
+    /** Inline preview of a specific uploaded signed file belonging to this letter. */
+    public function signedFile(SanctionLetter $sanction, SanctionLetterUpload $upload)
+    {
+        $this->authorizeAccess($sanction);
+        abort_unless($upload->sanction_letter_id === $sanction->id, 404, 'Upload does not belong to this letter.');
+
+        if (!$upload->file_path || !Storage::disk('local')->exists($upload->file_path)) {
+            abort(404, 'Signed file not found.');
+        }
+
+        return Storage::disk('local')->response($upload->file_path, $upload->original_name ?? 'signed-sanction-letter');
+    }
+
+/** Agent uploads the signed sanction letter files (PDF or images, up to 5 per upload). */
     public function upload(Request $request, SanctionLetter $sanction, AuditService $audit)
     {
         $this->authorizeAccess($sanction);
@@ -99,7 +115,7 @@ class AgentSanctionLetterController extends Controller
         if (! $sanction->processFeePaid()) {
             $message = $sanction->processFeePending()
                 ? 'Your processing fee payment is still being confirmed. Please wait a moment and try again.'
-                : 'You must pay the processing fee before uploading the signed PDF.';
+                : 'You must pay the processing fee before uploading the signed copy.';
 
             return back()->with('error', $message);
         }
@@ -108,44 +124,64 @@ class AgentSanctionLetterController extends Controller
             return back()->with('error', 'Upload is not available for this letter right now.');
         }
 
-        $request->validate([
-            'signed_pdf' => ['required', 'file', 'mimes:pdf', 'max:10240'],
-        ]);
+        // Accept a single file or an array of files, then validate uniformly
+        // against explicit data (avoids the request's memoised file cache).
+        $raw = $request->file('signed_pdf');
+        $files = is_array($raw) ? array_values(array_filter($raw)) : ($raw ? [$raw] : []);
 
-        $file = $request->file('signed_pdf');
-        $extension = $file->getClientOriginalExtension();
+        Validator::make(
+            ['signed_pdf' => $files],
+            [
+                'signed_pdf' => ['required', 'array', 'min:1', 'max:5'],
+                'signed_pdf.*' => ['required', 'file', 'mimes:pdf,jpg,jpeg,webp,png', 'max:10240'],
+            ],
+            [
+                'signed_pdf.required' => 'Please choose at least one signed file to upload.',
+                'signed_pdf.max' => 'You can upload up to 5 files at a time.',
+            ]
+        )->validate();
 
         $directory = 'signed-sanction-letters';
-        $filename = 'letter-' . ($sanction->sanction_number ?: $sanction->id)
-            . '-' . now()->format('Ymd-His')
-            . '-' . Str::lower(Str::random(6)) . '.' . $extension;
+        $storedPaths = [];
+        $storedNames = [];
 
-        $path = Storage::disk('local')->putFileAs($directory, $file, $filename);
+        foreach ($files as $file) {
+            $extension = $file->getClientOriginalExtension();
 
-        if (!$path) {
-            return back()->with('error', 'Could not store the uploaded PDF. Please try again.');
+            $filename = 'letter-' . ($sanction->sanction_number ?: $sanction->id)
+                . '-' . now()->format('Ymd-His')
+                . '-' . Str::lower(Str::random(6)) . '.' . $extension;
+
+            $path = Storage::disk('local')->putFileAs($directory, $file, $filename);
+
+            if (!$path) {
+                return back()->with('error', 'Could not store the uploaded file(s). Please try again.');
+            }
+
+            SanctionLetterUpload::create([
+                'sanction_letter_id' => $sanction->id,
+                'uploaded_by' => auth()->id(),
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'file_size' => $file->getSize(),
+                'uploaded_at' => now(),
+            ]);
+
+            $storedPaths[] = $path;
+            $storedNames[] = $file->getClientOriginalName();
         }
 
-        SanctionLetterUpload::create([
-            'sanction_letter_id' => $sanction->id,
-            'uploaded_by' => auth()->id(),
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'file_size' => $file->getSize(),
-            'uploaded_at' => now(),
-        ]);
-
         $sanction->update([
-            'signed_pdf_path' => $path,
+            'signed_pdf_path' => end($storedPaths),
             'signed_pdf_uploaded_at' => now(),
-            'signed_pdf_upload_count' => ($sanction->signed_pdf_upload_count ?? 0) + 1,
+            'signed_pdf_upload_count' => ($sanction->signed_pdf_upload_count ?? 0) + count($storedPaths),
             'review_status' => 'under_review',
             'reviewed_at' => null,
             'reviewed_by' => null,
             'review_comment' => null,
         ]);
 
-        // Notify all admins that a signed PDF awaits review.
+        // Notify all admins that signed copies await review.
         $admins = User::whereHas('role', fn ($q) => $q->whereIn('slug', ['admin', 'super-admin']))->get();
         foreach ($admins as $admin) {
             $admin->notify(new SanctionLetterUploadedNotification($sanction, auth()->user()->name));
@@ -153,10 +189,15 @@ class AgentSanctionLetterController extends Controller
 
         $audit->record($request, 'sanction_letter.signed_uploaded', $sanction, [
             'upload_count' => $sanction->signed_pdf_upload_count,
-            'file' => $path,
+            'file_count' => count($storedPaths),
+            'files' => $storedNames,
         ]);
 
-        return back()->with('success', 'Signed Sanction Letter uploaded successfully. It is now pending admin review.');
+        $fileCount = count($storedPaths);
+
+        return back()->with('success', $fileCount > 1
+            ? "{$fileCount} signed files uploaded successfully. They are now pending admin review."
+            : 'Signed sanction letter uploaded successfully. It is now pending admin review.');
     }
 
     /**

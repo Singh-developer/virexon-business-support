@@ -288,6 +288,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <a href="{{ route('admin.documents.index', $agent->id) }}" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
             📁 Review Documents
         </a>
+        <a href="{{ route('sanctions.index', ['agent_id' => $agent->id]) }}" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            ✉️ Review Sanction Letters
+        </a>
     </form>
 </div>
 

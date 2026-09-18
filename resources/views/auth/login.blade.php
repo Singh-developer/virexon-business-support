@@ -47,6 +47,7 @@
                     <span class="eye-icon">👁️</span>
                 </button>
             </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 6px; line-height: 1.5;">Default login password will be {pan_number}@{last 4 digits of phone}, e.g. ABCDE1234F@3210.</div>
             
             <script>
                 function togglePassword(inputId, btn) {
@@ -63,7 +64,7 @@
                 {{-- <div class="remember">
                     <label><input type="checkbox" name="remember" value="1"> Remember me</label><span>Forgot Password?</span>
                 </div> --}}
-                <button class="btn primary full">Login →</button>
+                <button class="btn primary full" style="margin-top: 16px;">Login →</button>
             </form>
             @if (request()->query('slug') === 'test')
             <div class="demo-credentials"><strong>Local demo</strong><br>admin@agent-support.local / Admin@12345<br>agent@agent-support.local / Agent@12345</div>

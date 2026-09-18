@@ -141,6 +141,7 @@ Route::middleware('auth')->group(function () {
     */
     Route::get('documents', [App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
     Route::post('documents', [App\Http\Controllers\DocumentController::class, 'store'])->name('documents.store');
+    Route::delete('documents/{doc}', [App\Http\Controllers\DocumentController::class, 'destroy'])->name('documents.destroy');
 
     // Advances & Balance (Agent)
     Route::get('advances', [App\Http\Controllers\AdvanceController::class, 'index'])->name('advances.index');
@@ -423,6 +424,11 @@ Route::middleware('auth')->group(function () {
             'signedPdf'
         ])->name('sanctions.signed-pdf');
 
+        Route::get('/sanction-letters/{sanction}/signed/{upload}', [
+            AgentSanctionLetterController::class,
+            'signedFile'
+        ])->name('sanctions.signed-file');
+
         Route::post('/sanction-letters/{sanction}/pay-fee', [
             AgentSanctionLetterController::class,
             'payFee'
@@ -487,6 +493,11 @@ Route::middleware('auth')->group(function () {
             SanctionReviewController::class,
             'requestReupload'
         ])->name('sanctions.reupload-required');
+
+        Route::post('/sanctions/{sanction}/status', [
+            SanctionReviewController::class,
+            'updateStatus'
+        ])->name('sanctions.status');
 
         Route::get('/sanctions/{sanction}/signed/{upload}', [
             SanctionReviewController::class,
@@ -612,8 +623,10 @@ Route::post('/paytm-callback', [PaytmPaymentController::class, 'handleCallback']
 
 
 
-/* Step form mail OTP */
-
+/* FUTURE OTP: Step form mail OTP route kept so pages calling route('agent.send-otp')
+   keep loading while OTP verification stays disabled. Validation + UI are commented;
+   uncomment those to fully re-enable OTP.
+*/
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 

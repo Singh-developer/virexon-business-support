@@ -93,12 +93,12 @@
                         <?php elseif($letter->processFeePending()): ?>
                         <span class="text-amber-600 font-semibold">Payment Processing · ₹ <?php echo e(number_format($letter->processFeeAmount(), 2)); ?></span>
                         <?php else: ?>
-                        <span class="text-red-600 font-semibold">₹ <?php echo e(number_format($letter->processFeeAmount(), 2)); ?> — Pay to upload signed PDF</span>
+                        <span class="text-red-600 font-semibold">₹ <?php echo e(number_format($letter->processFeeAmount(), 2)); ?> — Pay to upload signed copy</span>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
                     <?php if(($letter->signed_pdf_upload_count ?? 0) > 0): ?>
-                    <div class="text-slate-400 text-xs mt-0.5">Signed PDF uploaded: <?php echo e($letter->signed_pdf_uploaded_at->format('d M Y, h:i A')); ?></div>
+                    <div class="text-slate-400 text-xs mt-0.5"><?php echo e($letter->signed_pdf_upload_count); ?> signed file(s) uploaded: <?php echo e($letter->signed_pdf_uploaded_at?->format('d M Y, h:i A')); ?></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -132,7 +132,7 @@
                 <a href="<?php echo e(route('agent.sanctions.show', $letter)); ?>#upload"
                    class="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg <?php echo e($ws['key'] === 'reupload_required' ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'); ?> flex items-center gap-1.5 transition">
                     <i class="fa-solid fa-arrow-up-from-bracket text-[10px]"></i>
-                    <?php echo e($ws['key'] === 'reupload_required' ? 'Re-upload Signed PDF' : 'Upload Signed PDF'); ?>
+                    <?php echo e($ws['key'] === 'reupload_required' ? 'Re-upload Signed Copy' : 'Upload Signed Copy'); ?>
 
                 </a>
                 <?php endif; ?>

@@ -17,7 +17,7 @@ class UserDetail extends Model
      */
     public function getFormattedMaxLimitAttribute(): string
     {
-        return '₹' . number_format($this->max_limit ?? 500000, 2);
+        return '₹' . number_format($this->max_limit ?? 0, 2);
     }
 
     /**

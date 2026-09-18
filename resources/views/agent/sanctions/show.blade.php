@@ -63,7 +63,7 @@
             </div>
         </div>
     </div>
-    @elseif($ws['key'] === 'under_review')
+    @elseif($ws['key'] === 'under_review' || ($ws['key'] === 'pending' && ($letter->signed_pdf_upload_count ?? 0) > 0))
     <div class="mb-6 bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 flex items-start gap-3">
         <i class="fa-solid fa-clock text-blue-500 mt-0.5"></i>
         <div>
@@ -120,7 +120,7 @@
                 ⬆ Signed PDF Uploaded
             </span>
             <span class="text-slate-300">→</span>
-            <span class="px-3 py-1.5 rounded-full font-semibold {{ $letter->reviewed_at ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-slate-50 text-slate-400 border border-slate-200' }}">
+            <span class="px-3 py-1.5 rounded-full font-semibold {{ $letter->reviewed_at && $ws['key'] !== 'pending' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-slate-50 text-slate-400 border border-slate-200' }}">
                 ⚖ Reviewed
             </span>
             <span class="text-slate-300">→</span>
@@ -148,11 +148,11 @@
         <iframe src="{{ route('agent.sanctions.pdf', $letter) }}" class="w-full" style="height:560px;" title="Sanction Letter PDF"></iframe>
     </div>
 
-    {{-- Upload signed PDF --}}
+    {{-- Upload signed copy --}}
     <div id="upload" class="bg-white rounded-xl border border-slate-100 shadow-sm p-5 mb-6 {{ $letter->canUpload() ? '' : '' }}">
         <div class="flex items-center gap-2 mb-1">
             <i class="fa-solid fa-file-signature text-blue-500"></i>
-            <div class="font-bold text-slate-800 text-sm">Upload Signed Sanction Letter PDF</div>
+            <div class="font-bold text-slate-800 text-sm">Upload Signed Sanction Letter</div>
         </div>
 
         @if($hasFee && ! $feePaid)
@@ -199,23 +199,23 @@
             </div>
         </div>
         <p class="text-slate-500 text-xs mt-2 mb-5">
-            After downloading, please print / physically or electronically sign the PDF, then upload the signed copy (PDF only, up to 10MB).
+            After downloading, please print / physically or electronically sign the letter, then upload the signed copies (PDF, JPG, JPEG, WEBP, PNG — up to 5 files, 10MB each).
         </p>
 
         <form action="{{ route('agent.sanctions.upload', $letter) }}" method="POST" enctype="multipart/form-data" id="signed-upload-form" class="max-w-2xl">
             @csrf
             @if($ws['key'] === 'reupload_required')
             <div class="mb-4 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 text-xs text-orange-700">
-                ⚠️ This is a <strong>re-upload</strong>. The previously uploaded PDF will be replaced for review while keeping the upload history.
+                ⚠️ This is a <strong>re-upload</strong>. The previously uploaded file will be replaced for review while keeping the upload history.
             </div>
             @endif
 
             <div id="signed-drop-zone" class="border-2 border-dashed border-blue-200 rounded-xl p-8 text-center cursor-pointer hover:bg-blue-50 transition mb-4 group"
                  onclick="document.getElementById('signed-file-input').click()">
                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-400 mb-2 group-hover:text-blue-600"></i>
-                <p class="text-sm font-semibold text-slate-700">Click or drag the signed PDF here</p>
-                <p class="text-xs text-slate-400 mt-1">PDF only · up to 10MB</p>
-                <input type="file" name="signed_pdf" id="signed-file-input" class="hidden" accept="application/pdf" required onchange="updateSignedFileName(this)">
+                <p class="text-sm font-semibold text-slate-700">Click or drag the signed copies here</p>
+                <p class="text-xs text-slate-400 mt-1">PDF, JPG, JPEG, WEBP, PNG · up to 5 files · 10MB each</p>
+                <input type="file" name="signed_pdf[]" id="signed-file-input" class="hidden" accept=".pdf,.jpg,.jpeg,.webp,.png" multiple required onchange="updateSignedFileName(this)">
             </div>
 
             <div id="signed-file-display" class="hidden mb-4 bg-green-50 border border-green-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm text-green-700">
@@ -230,26 +230,70 @@
             @error('signed_pdf')
             <div class="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-3">{{ $message }}</div>
             @enderror
+            @php
+                $signedFileErrors = collect($errors->getMessages())
+                    ->filter(fn($msgs, $key) => str_starts_with($key, 'signed_pdf.'))
+                    ->flatten()->values();
+            @endphp
+            @if($signedFileErrors->isNotEmpty())
+            <div class="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-3">{{ $signedFileErrors->first() }}</div>
+            @endif
 
             <button type="submit" id="signed-upload-btn"
                 class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2">
-                <i class="fa-solid fa-arrow-up-from-bracket"></i> Upload Signed PDF
+                <i class="fa-solid fa-arrow-up-from-bracket"></i> Upload Signed Copy
             </button>
         </form>
         @elseif($deadlinePassed && $ws['key'] !== 'under_review' && $ws['key'] !== 'approved')
         <div class="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700 inline-block">
             <i class="fa-solid fa-lock mr-1"></i> The 48-hour upload window has expired. Upload is disabled — please contact the admin to get a new upload slot.
         </div>
-        @elseif($ws['key'] === 'under_review' && $letter->signed_pdf_path)
+        @elseif(in_array($ws['key'], ['pending', 'under_review']) && $letter->signed_pdf_path)
         <p class="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mt-3 inline-block">
-            ⏳ Your signed PDF is under review. Please wait for the admin's decision before uploading again.
+            ⏳ Your signed PDF has been submitted and is waiting for admin review. Please wait for the admin's decision before uploading again.
         </p>
+        @if($letter->uploads->isNotEmpty())
+        @php
+            $firstUpload = $letter->uploads->first();
+            $firstExt = strtolower(pathinfo($firstUpload->file_path ?? $firstUpload->original_name ?? '', PATHINFO_EXTENSION));
+            $firstIsImage = in_array($firstExt, ['jpg', 'jpeg', 'png', 'webp']);
+            $firstUrl = route('agent.sanctions.signed-file', [$letter, $firstUpload]);
+        @endphp
+        <div id="agentSignedPreviewPanel" class="mt-4" style="scroll-margin-top:90px;">
+            <div class="text-xs text-slate-500 font-semibold mb-2" id="agentSignedPreviewTitle">Signed file preview:</div>
+            <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                <img id="agentSignedPreviewImg" src="{{ $firstUrl }}" alt="Signed file preview" style="display:{{ $firstIsImage ? 'block' : 'none' }}; width:100%; object-fit:contain; background:#fff;">
+                <iframe id="agentSignedPreviewFrame" src="{{ $firstUrl }}" style="display:{{ $firstIsImage ? 'none' : 'block' }}; width:100%; height:480px; border:0; background:#fff;" title="Signed file preview"></iframe>
+            </div>
+            <div id="agentSignedPreviewCaption" class="text-[11px] text-slate-400 mt-1">{{ $firstUpload->original_name ?? 'signed file' }}</div>
+        </div>
+        <div class="mt-4">
+            <div class="text-xs text-slate-500 font-semibold mb-2">Your uploaded signed files ({{ $letter->uploads->count() }}):</div>
+            <div class="grid gap-2">
+                @foreach($letter->uploads as $upload)
+                <div class="flex items-center gap-x-2 gap-y-1 flex-wrap bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" style="min-width:0;">
+                    <i class="fa-regular fa-file-lines text-blue-500" style="flex-shrink:0;"></i>
+                    <span class="text-xs font-semibold text-slate-700 truncate min-w-0" style="flex:1 1 140px;" title="{{ $upload->original_name }}">{{ $upload->original_name ?? 'signed file' }}</span>
+                    <span class="text-[11px] text-slate-400" style="white-space:nowrap;">{{ $upload->uploaded_at?->format('d M Y, h:i A') ?? $upload->created_at->format('d M Y, h:i A') }}</span>
+                    @if($upload->file_size)<span class="text-[11px] text-slate-400" style="white-space:nowrap;">{{ number_format($upload->file_size / 1024, 1) }} KB</span>@endif
+                    <a href="{{ route('agent.sanctions.signed-file', [$letter, $upload]) }}" target="_blank" class="ml-auto text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 agent-file-view" style="flex-shrink:0; white-space:nowrap;"
+                       data-url="{{ route('agent.sanctions.signed-file', [$letter, $upload]) }}"
+                       data-name="{{ $upload->original_name ?? 'signed file' }}"
+                       data-ext="{{ strtolower(pathinfo($upload->file_path ?? $upload->original_name ?? '', PATHINFO_EXTENSION)) }}">
+                        <i class="fa-regular fa-eye"></i> Preview
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @else
         <div class="mt-4 flex items-center gap-3 flex-wrap">
             <div class="text-xs text-slate-500 font-semibold">Your latest signed PDF:</div>
             <a href="{{ route('agent.sanctions.signed-pdf', $letter) }}" target="_blank" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
                 <i class="fa-regular fa-eye"></i> Preview signed copy
             </a>
         </div>
+        @endif
         @elseif($ws['key'] === 'approved')
         <div class="mt-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-700 inline-block">
             <i class="fa-solid fa-circle-check mr-1"></i> This letter is approved. No further upload required.
@@ -262,9 +306,14 @@
 
 <script>
     function updateSignedFileName(input) {
+        const box = document.getElementById('signed-file-display');
+        const txt = document.getElementById('signed-file-text');
         if (input.files.length > 0) {
-            document.getElementById('signed-file-text').textContent = input.files[0].name;
-            document.getElementById('signed-file-display').classList.remove('hidden');
+            const names = Array.from(input.files).map(f => f.name).join(', ');
+            txt.textContent = input.files.length + ' file(s): ' + names;
+            box.classList.remove('hidden');
+        } else {
+            box.classList.add('hidden');
         }
     }
 
@@ -284,7 +333,10 @@
             signedDropZone.classList.remove('border-blue-500', 'bg-blue-50');
             const files = e.dataTransfer.files;
             if (files.length) {
-                signedFileInput.files = files;
+                // Multi-file upload: keep up to 5 dropped files.
+                const dt = new DataTransfer();
+                Array.from(files).slice(0, 5).forEach(f => dt.items.add(f));
+                signedFileInput.files = dt.files;
                 updateSignedFileName(signedFileInput);
             }
         });
@@ -340,4 +392,44 @@
         setInterval(tick, 1000);
     });
 </script>
+<script>
+    // Signed-file preview: popup on mobile, inline panel + scroll-to-top on desktop.
+    (function () {
+        var panel = document.getElementById('agentSignedPreviewPanel');
+        var img = document.getElementById('agentSignedPreviewImg');
+        var frame = document.getElementById('agentSignedPreviewFrame');
+        var caption = document.getElementById('agentSignedPreviewCaption');
+        if (!panel || !img || !frame) return;
+
+        function isImageExt(ext) {
+            return ['jpg', 'jpeg', 'png', 'webp'].indexOf(String(ext || '').toLowerCase()) !== -1;
+        }
+
+        document.querySelectorAll('.agent-file-view').forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                var url = link.getAttribute('data-url');
+                var name = link.getAttribute('data-name') || 'Signed file';
+                var ext = link.getAttribute('data-ext') || '';
+                if (window.FilePreviewModal && FilePreviewModal.usePopup()) {
+                    FilePreviewModal.open({ url: url, name: name, downloadUrl: url, ext: ext });
+                    return;
+                }
+                if (isImageExt(ext)) {
+                    img.src = url;
+                    img.style.display = 'block';
+                    frame.style.display = 'none';
+                } else {
+                    frame.src = url;
+                    img.style.display = 'none';
+                    frame.style.display = 'block';
+                }
+                if (caption) caption.textContent = name;
+                try { panel.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+                catch (err) { panel.scrollIntoView(); }
+            });
+        });
+    })();
+</script>
+@include('partials.file-preview-modal')
 @endsection

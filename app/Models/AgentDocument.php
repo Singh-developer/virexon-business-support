@@ -12,6 +12,7 @@ class AgentDocument extends Model
     protected $fillable = [
         'user_id',
         'document_type',
+        'slot',
         'file_path',
         'original_name',
         'status',
@@ -50,7 +51,13 @@ class AgentDocument extends Model
      *  - accept       allowed file extensions shown in the upload modal
      *  - admin_*      admin-side row title + description
      *  - emoji        admin-side row icon
+     *  - max_files    how many files this type accepts
+     *                 (aadhaar=2 front/back, pan_card=1, bank_proof=1, rest=multiple)
+     *  - multiple     whether the upload input allows multiple file selection
      */
+    public const ALLOWED_EXTENSIONS = 'jpg,jpeg,webp,png,pdf';
+    public const ALLOWED_ACCEPT = '.jpg,.jpeg,.webp,.png,.pdf';
+
     public static function types(): array
     {
         return [
@@ -61,22 +68,26 @@ class AgentDocument extends Model
                 'icon'        => 'fa-id-card',
                 'color'       => 'blue',
                 'fields'      => ['PAN Card', 'Address Proof', 'Photo'],
-                'accept'      => '.jpg,.jpeg,.png,.pdf',
+                'accept'      => self::ALLOWED_ACCEPT,
                 'admin_label' => 'PAN Card',
                 'admin_desc'  => 'Clear scan of PAN card. Required for KYC.',
                 'emoji'       => '🪪',
+                'max_files'   => 1,
+                'multiple'    => false,
             ],
             'aadhaar' => [
                 'name'        => 'Aadhaar Card',
                 'label'       => 'Aadhaar Card',
-                'desc'        => 'Front and back of Aadhaar',
+                'desc'        => 'Front and back of Aadhaar (2 files)',
                 'icon'        => 'fa-address-card',
                 'color'       => 'green',
                 'fields'      => ['Front Side', 'Back Side'],
-                'accept'      => '.jpg,.jpeg,.png,.pdf',
+                'accept'      => self::ALLOWED_ACCEPT,
                 'admin_label' => 'Aadhaar Card',
-                'admin_desc'  => 'Front & back of Aadhaar. Used for identity verification.',
+                'admin_desc'  => 'Front & back of Aadhaar. Used for identity verification (upload 2 files).',
                 'emoji'       => '📋',
+                'max_files'   => 2,
+                'multiple'    => true,
             ],
             'photo' => [
                 'name'        => 'Photograph',
@@ -85,10 +96,12 @@ class AgentDocument extends Model
                 'icon'        => 'fa-image',
                 'color'       => 'purple',
                 'fields'      => ['Passport Size Photo'],
-                'accept'      => '.jpg,.jpeg,.png',
+                'accept'      => self::ALLOWED_ACCEPT,
                 'admin_label' => 'Photograph',
                 'admin_desc'  => 'Passport-size photo. Recent and clear.',
                 'emoji'       => '📸',
+                'max_files'   => 5,
+                'multiple'    => true,
             ],
             'bank_proof' => [
                 'name'        => 'Bank Passbook / Cancelled Cheque',
@@ -97,10 +110,12 @@ class AgentDocument extends Model
                 'icon'        => 'fa-building-columns',
                 'color'       => 'yellow',
                 'fields'      => ['Cancelled Cheque', 'Account Details', 'IFSC Verification'],
-                'accept'      => '.jpg,.jpeg,.png,.pdf',
+                'accept'      => self::ALLOWED_ACCEPT,
                 'admin_label' => 'Bank Passbook / Cancelled Cheque',
                 'admin_desc'  => 'First page of passbook or cancelled cheque leaf.',
                 'emoji'       => '🏦',
+                'max_files'   => 1,
+                'multiple'    => false,
             ],
             'agent_id_proof' => [
                 'name'        => 'Agent ID Proof',
@@ -109,10 +124,12 @@ class AgentDocument extends Model
                 'icon'        => 'fa-id-badge',
                 'color'       => 'orange',
                 'fields'      => ['Agreement Form', 'Firm Signature', 'Agent Signature'],
-                'accept'      => '.jpg,.jpeg,.png,.pdf',
+                'accept'      => self::ALLOWED_ACCEPT,
                 'admin_label' => 'Agent ID Proof / Agreement',
                 'admin_desc'  => 'Agent ID card, appointment letter, or signed agreement.',
                 'emoji'       => '📄',
+                'max_files'   => 5,
+                'multiple'    => true,
             ],
             'address_proof' => [
                 'name'        => 'Address Proof',
@@ -121,10 +138,12 @@ class AgentDocument extends Model
                 'icon'        => 'fa-house-user',
                 'color'       => 'red',
                 'fields'      => ['Address Proof Document'],
-                'accept'      => '.jpg,.jpeg,.png,.pdf',
+                'accept'      => self::ALLOWED_ACCEPT,
                 'admin_label' => 'Address Proof',
                 'admin_desc'  => 'Voter ID, utility bill, or any government address proof.',
                 'emoji'       => '🏠',
+                'max_files'   => 5,
+                'multiple'    => true,
             ],
         ];
     }
@@ -144,6 +163,25 @@ class AgentDocument extends Model
     public static function requiredTypes(): array
     {
         return array_keys(self::types());
+    }
+
+    /**
+     * Max files allowed for a document type.
+     * aadhaar=2 (front/back), pan_card=1, bank_proof=1, rest=multiple (5).
+     */
+    public static function maxFiles(string $type): int
+    {
+        return (int) (self::types()[$type]['max_files'] ?? 1);
+    }
+
+    public static function isMultiple(string $type): bool
+    {
+        return (bool) (self::types()[$type]['multiple'] ?? false);
+    }
+
+    public static function allowedMimes(): string
+    {
+        return self::ALLOWED_EXTENSIONS;
     }
 }
 

@@ -24,14 +24,20 @@
                 maxStep: {{ $unlockedStep ?? 1 }},
                 isMarried: '{{ old('is_married', '0') }}',
                 sameAsCurrent: false,
-                otpSent: {{ session()->has('loan_form_otp') || $errors->has('otp') ? 'true' : 'false' }},
+                // FUTURE OTP: Email OTP verification disabled for now, will be required in future.
+                // otpSent tracks whether OTP was sent; hardcoded false while OTP is disabled.
+                // otpSent: {{ session()->has('loan_form_otp') || $errors->has('otp') ? 'true' : 'false' }},
+                otpSent: false,
                 sendingOtp: false,
                 next() { this.step++; window.scrollTo({ top: 0, behavior: 'smooth' }); },
                 prev() { this.step--; window.scrollTo({ top: 0, behavior: 'smooth' }); },
+                // FUTURE OTP: Uncomment sendOtp() below to re-enable OTP sending.
+                /*
                 async sendOtp() {
                     this.sendingOtp = true;
                     try {
-                        let response = await fetch('{{ route('agent.send-otp') }}', {
+                // NOTE: hardcoded URL (not route()) so this disabled block never 500s even if the route is removed.
+                        let response = await fetch('/register/agent/send-otp', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -48,7 +54,8 @@
                     }
                     this.sendingOtp = false;
                 }
-             }">
+                */
+              }">
             <!-- RESPONSIVE SIDEBAR -->
             <!-- <div class="w-full md:w-2/5 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-6 md:p-10 text-white flex flex-col justify-center md:justify-between relative overflow-hidden">
                 <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-blue-500 opacity-10 blur-3xl hidden md:block"></div>
@@ -650,7 +657,7 @@
                                 @if($isApproved)
                                 <div>
                                     <label class="block text-sm font-bold text-gray-700 mb-2">Upload PAN Document (Image or PDF)</label>
-                                    <input type="file" name="pan_file" accept=".jpg,.jpeg,.png,.pdf"
+                                    <input type="file" name="pan_file" accept=".jpg,.jpeg,.webp,.png,.pdf"
                                         x-on:change="
                             const file = $event.target.files[0];
                             if (file && file.type.match('image.*')) {
@@ -690,7 +697,7 @@
                                 @if($isApproved)
                                 <div>
                                     <label class="block text-sm font-bold text-gray-700 mb-2">Upload ID Document (Image or PDF)</label>
-                                    <input type="file" name="aadhar_file" accept=".jpg,.jpeg,.png,.pdf"
+                                    <input type="file" name="aadhar_file" accept=".jpg,.jpeg,.webp,.png,.pdf"
                                         x-on:change="
                             const file = $event.target.files[0];
                             if (file && file.type.match('image.*')) {
@@ -726,6 +733,8 @@
                             </label>
                             <x-input-error :messages="$errors->get('terms')" class="mt-2" />
                         </div>
+                        {{-- FUTURE OTP: Email OTP Verification disabled for now, will be required in future. Uncomment block below to re-enable. --}}
+                        {{--
                         <!-- NEW: OTP Verification Section -->
                         <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mt-8 shadow-sm">
                             <h4 class="text-sm font-bold text-blue-900 mb-3">Email Verification Required</h4>
@@ -749,6 +758,7 @@
                                 <p class="text-xs text-blue-600 mt-2">Check your inbox and spam folder.</p>
                             </div>
                         </div>
+                        --}}
                     </div>
 
 

@@ -48,13 +48,26 @@
         </p>
     </div>
 
-    {{-- Summary Badges --}}
+    {{-- Summary Badges (multi-file aware) --}}
     @php
-        $totalDocs      = count($types);
-        $approvedCount  = $documents->where('status','approved')->count();
-        $pendingCount   = $documents->where('status','pending')->count();
-        $rejectedCount  = $documents->whereIn('status',['rejected','re_upload'])->count();
-        $notUploadedCount = $totalDocs - $documents->count();
+        $totalDocs = count($types);
+        $allFiles = isset($allDocs) ? $allDocs : $documents->values();
+        // Type-level approval: aadhaar needs 2 approved, others need >=1 approved.
+        $approvedTypes = 0;
+        $pendingFiles = 0;
+        $actionFiles = 0;
+        foreach ($types as $t => $cfgT) {
+            $tFiles = isset($docsByType[$t]) ? $docsByType[$t] : collect();
+            $approved = $tFiles->where('status', 'approved')->count();
+            $need = ($t === 'aadhaar') ? 2 : 1;
+            if ($approved >= $need) $approvedTypes++;
+            $pendingFiles += $tFiles->where('status', 'pending')->count();
+            $actionFiles += $tFiles->whereIn('status', ['rejected', 're_upload'])->count();
+        }
+        $approvedCount = $approvedTypes;
+        $pendingCount = $pendingFiles;
+        $rejectedCount = $actionFiles;
+        $notUploadedCount = $totalDocs - (isset($docsByType) ? $docsByType->keys()->count() : $documents->count());
     @endphp
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <span class="status-pill approved" style="font-size:13px;padding:5px 16px;">✓ {{ $approvedCount }}/{{ $totalDocs }} Approved</span>
@@ -123,17 +136,35 @@
 </div>
 @endif
 
-{{-- =============================== DOCUMENT ROWS =============================== --}}
+{{-- =============================== DOCUMENT ROWS (multi-file aware) =============================== --}}
 @foreach($types as $type => $meta)
     @php
-        $doc    = $documents[$type] ?? null;
-        $status = $doc?->status ?? 'not_uploaded';
-        $meta   = $meta ?? ['emoji' => '📎', 'admin_label' => ucfirst(str_replace('_',' ',$type)), 'admin_desc' => ''];
+        $meta = $meta ?? ['emoji' => '📎', 'admin_label' => ucfirst(str_replace('_',' ',$type)), 'admin_desc' => ''];
+        $typeFiles = isset($docsByType[$type]) ? $docsByType[$type] : (isset($documents[$type]) ? collect([$documents[$type]]) : collect());
+        $maxFiles = (int) ($meta['max_files'] ?? 1);
+        $fileCount = $typeFiles->count();
+        $countLabel = $type === 'aadhaar' ? "({$fileCount}/{$maxFiles} files: Front + Back)" : ($maxFiles === 1 ? ($fileCount ? '(1 file)' : '(1 file required)') : "({$fileCount}/{$maxFiles} files)");
+        // Overall type status for row highlight.
+        $statuses = $typeFiles->pluck('status')->all();
+        if (empty($statuses)) {
+            $status = 'not_uploaded';
+        } elseif (in_array('rejected', $statuses)) {
+            $status = 'rejected';
+        } elseif (in_array('re_upload', $statuses)) {
+            $status = 're_upload';
+        } elseif (in_array('pending', $statuses)) {
+            $status = 'pending';
+        } elseif (count(array_unique($statuses)) === 1 && $statuses[0] === 'approved') {
+            // Aadhaar needs 2 approved to be fully approved.
+            $status = ($type === 'aadhaar' && $fileCount < 2) ? 'pending' : 'approved';
+        } else {
+            $status = 'pending';
+        }
 
         $statusHelp = match($status) {
-            'approved'     => 'Document accepted. No action needed.',
-            'pending'      => 'Agent has uploaded this. Review and take action below.',
-            'rejected'     => 'You rejected this. Agent can see your note and re-upload.',
+            'approved'     => 'All files accepted. No action needed.',
+            'pending'      => 'Agent has uploaded file(s). Review each file below.',
+            'rejected'     => 'One or more files rejected. Agent can see your note and re-upload.',
             're_upload'    => 'You requested re-upload. Waiting for agent to re-submit.',
             default        => 'Agent has not uploaded this document yet.',
         };
@@ -146,92 +177,89 @@
             <div style="min-width:36px;font-size:26px;padding-top:2px;">{{ $meta['emoji'] }}</div>
 
             {{-- Info --}}
-            <div style="flex:1;min-width:180px;">
-                <div style="font-weight:700;font-size:15px;color:#1e293b;">{{ $meta['admin_label'] }}</div>
-                <div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">{{ $meta['admin_desc'] }}</div>
+            <div style="flex:1;min-width:220px;">
+                <div style="font-weight:700;font-size:15px;color:#1e293b;">{{ $meta['admin_label'] }} <span style="font-size:12px;color:#64748b;font-weight:600;">{{ $countLabel }}</span></div>
+                <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">{{ $meta['admin_desc'] }} Allowed: JPG, JPEG, WEBP, PNG, PDF.</div>
 
-                @if($doc)
-                    <div style="font-size:12px;color:#64748b;margin-bottom:2px;">
-                        📅 Uploaded: {{ $doc->created_at->format('d M Y, h:i A') }}
-                        @if($doc->reviewed_at)
-                        &nbsp;| 🔍 Reviewed: {{ $doc->reviewed_at->format('d M Y') }}
-                        @endif
-                    </div>
-                    @if($doc->original_name)
-                    <div style="font-size:11px;color:#94a3b8;">📎 {{ $doc->original_name }}</div>
-                    @endif
-                @else
+                @if($typeFiles->isEmpty())
                     <div style="font-size:12px;color:#94a3b8;font-style:italic;">No file uploaded yet by agent.</div>
-                @endif
-
-                {{-- Admin Note --}}
-                @if($doc && $doc->admin_note)
-                <div style="margin-top:8px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:7px 10px;font-size:12px;color:#92400e;">
-                    <strong>Your Note:</strong> {{ $doc->admin_note }}
-                </div>
+                @else
+                    @foreach($typeFiles as $doc)
+                    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#f8fafc;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span class="status-pill {{ $doc->status }}">
+                                {{ match($doc->status) {
+                                    'approved'    => '✓ Approved',
+                                    'pending'     => '⏳ Pending Review',
+                                    'rejected'    => '✗ Rejected',
+                                    're_upload'   => '↺ Re-upload Requested',
+                                    default       => $doc->status,
+                                } }}
+                            </span>
+                            @if($doc->slot && $doc->slot !== 'default')
+                            <span style="font-size:11px;font-weight:700;color:#475569;background:#e2e8f0;border-radius:99px;padding:2px 10px;">{{ ucfirst($doc->slot) }}</span>
+                            @endif
+                            <span style="font-size:12px;color:#64748b;">📅 {{ $doc->created_at->format('d M Y, h:i A') }}</span>
+                            @if($doc->reviewed_at)
+                            <span style="font-size:12px;color:#64748b;">🔍 Reviewed: {{ $doc->reviewed_at->format('d M Y') }}</span>
+                            @endif
+                        </div>
+                        @if($doc->original_name)
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">📎 {{ $doc->original_name }}</div>
+                        @endif
+                        @if($doc->admin_note)
+                        <div style="margin-top:6px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:6px 10px;font-size:12px;color:#92400e;">
+                            <strong>Your Note:</strong> {{ $doc->admin_note }}
+                        </div>
+                        @endif
+                        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+                            @if($doc->file_path)
+                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
+                               class="btn secondary tiny" style="text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
+                                👁 View File
+                            </a>
+                            @endif
+                            <form action="{{ route('admin.documents.review', [$agent->id, $doc->id]) }}" method="POST"
+                                  style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;flex:1;">
+                                @csrf
+                                @method('PATCH')
+                                <div>
+                                    <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;display:block;margin-bottom:4px;">Your Decision</label>
+                                    <select name="status" class="action-select">
+                                        <option value="approved"  {{ $doc->status==='approved'  ? 'selected':'' }}>✓ Approve File</option>
+                                        <option value="pending"   {{ $doc->status==='pending'   ? 'selected':'' }}>⏳ Keep as Pending</option>
+                                        <option value="rejected"  {{ $doc->status==='rejected'  ? 'selected':'' }}>✗ Reject File</option>
+                                        <option value="re_upload" {{ $doc->status==='re_upload' ? 'selected':'' }}>↺ Request Re-upload</option>
+                                    </select>
+                                </div>
+                                <div style="flex:1;min-width:140px;">
+                                    <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;display:block;margin-bottom:4px;">Reason / Note (sent to agent)</label>
+                                    <input type="text" name="admin_note" class="note-input" placeholder="e.g. Document is blurry, please re-upload" value="{{ $doc->admin_note }}">
+                                </div>
+                                <div style="padding-top:18px;">
+                                    <button type="submit" class="btn primary tiny" style="white-space:nowrap;">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    @endforeach
                 @endif
 
                 {{-- Status Help Text --}}
                 <div class="status-help-box status-help-{{ $status }}">
                     💬 {{ $statusHelp }}
                 </div>
-            </div>
 
-            {{-- Status Badge --}}
-            <div style="text-align:center;min-width:100px;padding-top:4px;">
-                <span class="status-pill {{ $status }}">
-                    {{ match($status) {
-                        'approved'    => '✓ Approved',
-                        'pending'     => '⏳ Pending Review',
-                        'rejected'    => '✗ Rejected',
-                        're_upload'   => '↺ Re-upload Requested',
-                        default       => '— Not Uploaded',
-                    } }}
-                </span>
-            </div>
-
-            {{-- View File --}}
-            @if($doc && $doc->file_path)
-            <div style="padding-top:4px;">
-                <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                   class="btn secondary tiny" style="text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">
-                    👁 View File
-                </a>
-            </div>
-            @endif
-
-            {{-- Admin Action Form --}}
-            @if($doc)
-            <form action="{{ route('admin.documents.review', [$agent->id, $doc->id]) }}" method="POST"
-                  style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;min-width:280px;padding-top:2px;">
-                @csrf
-                @method('PATCH')
-                <div>
-                    <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;display:block;margin-bottom:4px;">Your Decision</label>
-                    <select name="status" class="action-select">
-                        <option value="approved"  {{ $status==='approved'  ? 'selected':'' }}>✓ Approve Document</option>
-                        <option value="pending"   {{ $status==='pending'   ? 'selected':'' }}>⏳ Keep as Pending</option>
-                        <option value="rejected"  {{ $status==='rejected'  ? 'selected':'' }}>✗ Reject Document</option>
-                        <option value="re_upload" {{ $status==='re_upload' ? 'selected':'' }}>↺ Request Re-upload</option>
-                    </select>
+                @if($typeFiles->isEmpty())
+                <div style="padding-top:8px;font-size:12px;color:#cbd5e1;font-style:italic;min-width:200px;">
+                    @if(in_array($appStatus, ['form_received', 'approved']))
+                        ⌛ Waiting for agent to upload this document.
+                    @else
+                        🔒 Enable uploads first by updating the agent's application status.
+                    @endif
                 </div>
-                <div style="flex:1;min-width:160px;">
-                    <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;display:block;margin-bottom:4px;">Reason / Note (sent to agent)</label>
-                    <input type="text" name="admin_note" class="note-input" placeholder="e.g. Document is blurry, please re-upload" value="{{ $doc->admin_note }}">
-                </div>
-                <div style="padding-top:18px;">
-                    <button type="submit" class="btn primary tiny" style="white-space:nowrap;">Save Decision</button>
-                </div>
-            </form>
-            @else
-            <div style="padding-top:8px;font-size:12px;color:#cbd5e1;font-style:italic;min-width:200px;">
-                @if(in_array($appStatus, ['form_received', 'approved']))
-                    ⌛ Waiting for agent to upload this document.
-                @else
-                    🔒 Enable uploads first by updating the agent's application status.
                 @endif
             </div>
-            @endif
         </div>
     </div>
 @endforeach

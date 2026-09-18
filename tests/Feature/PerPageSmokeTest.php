@@ -24,7 +24,7 @@ class PerPageSmokeTest extends TestCase
 
     public function test_server_tables_default_to_20_and_accept_40_100(): void
     {
-        foreach (['businesses.index', 'transactions.index', 'payments.index', 'cards.index', 'sanctions.index'] as $route) {
+        foreach (['businesses.index', 'transactions.index', 'cards.index'] as $route) {
             // Default
             $res = $this->actingAs($this->admin)->get(route($route));
             $res->assertOk();
@@ -61,6 +61,39 @@ class PerPageSmokeTest extends TestCase
             ->assertOk()
             ->assertSee("dom: 'Blfrtip'", false)
             ->assertSee('lengthMenu', false);
+    }
+
+    public function test_sanctions_datatable_renders_filters_like_agents(): void
+    {
+        // Sanctions index uses client-side DataTables like Agents (Start/End Date,
+        // Review/Sent filters, Quick Search, export buttons) instead of server per_page.
+        $this->actingAs($this->admin)->get(route('sanctions.index'))
+            ->assertOk()
+            ->assertSee("dom: 'Blfrtip'", false)
+            ->assertSee('lengthMenu', false)
+            ->assertSee('id="min-date"', false)
+            ->assertSee('id="max-date"', false)
+            ->assertSee('id="review-filter"', false)
+            ->assertSee('id="sent-filter"', false)
+            ->assertSee('Quick Search:', false);
+    }
+
+    public function test_payments_datatable_renders_live_filters(): void
+    {
+        // Payments index uses client-side DataTables like Agents/Sanctions:
+        // live dropdown + date filters, Quick Search, export buttons — no Filter submit.
+        $this->actingAs($this->admin)->get(route('payments.index'))
+            ->assertOk()
+            ->assertSee("dom: 'Blfrtip'", false)
+            ->assertSee('lengthMenu', false)
+            ->assertSee('id="pay-min-date"', false)
+            ->assertSee('id="pay-max-date"', false)
+            ->assertSee('id="pay-agent-filter"', false)
+            ->assertSee('id="pay-status-filter"', false)
+            ->assertSee('id="pay-gateway-filter"', false)
+            ->assertSee('id="pay-type-filter"', false)
+            ->assertSee('Quick Search:', false)
+            ->assertDontSee('name="per_page"', false);
     }
 
     public function test_plain_tables_render_with_entries_control(): void
